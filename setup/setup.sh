@@ -7,5 +7,6 @@ conda create -n guide-seq-pipe --file ./setup/requirements.txt --yes
 source activate guide-seq-pipe
 cd scripts/
 git clone https://github.com/cnobles/dualDemultiplexR.git
+git clone https://github.com/cnobles/seqTrimmer.git
 cd ../
 Rscript ./setup/bioconductor_setup.R
