@@ -15,5 +15,6 @@ r-ggplot2
 r-scales
 r-pubmedwordcloud
 r-rcolorbrewer
+snakemake
 bwa
 samtools
