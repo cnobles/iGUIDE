@@ -1,2 +1,2 @@
-# guide-seq-pipe
+# guideSeqR
 Bioinformatic processing of GuideSeq treated specimens.
