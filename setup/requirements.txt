@@ -16,5 +16,6 @@ r-scales
 r-pubmedwordcloud
 r-rcolorbrewer
 snakemake
+blat
 bwa
 samtools
