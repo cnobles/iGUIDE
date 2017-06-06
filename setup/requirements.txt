@@ -4,6 +4,7 @@ r-pander
 r-stringr
 r-dplyr
 r-data.table
+r-matrix
 r-igraph
 r-rmysql
 r-rsqlite
@@ -15,6 +16,13 @@ r-ggplot2
 r-scales
 r-pubmedwordcloud
 r-rcolorbrewer
+bioconductor-biocgenerics
+bioconductor-genomicranges
+bioconductor-bsgenome
+bioconductor-hiannotator
+bioconductor-biostrings
+bioconductor-shortread
+bioconductor-rsamtools
 snakemake
 blat
 bwa
