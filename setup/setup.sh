@@ -3,9 +3,9 @@
 conda config --prepend channels 'bushmanlab'
 conda config --prepend channels 'r'
 conda config --prepend channels 'bioconda'
-conda create -n guide-seq-pipe --file ./setup/requirements.txt --yes
+conda create -n guidesnaker --file ./setup/requirements.txt --yes
 sleep 1
-source activate guide-seq-pipe
+source activate guidesnaker
 cd scripts/
 git clone https://github.com/cnobles/dualDemultiplexR.git
 git clone https://github.com/cnobles/seqTrimR.git
