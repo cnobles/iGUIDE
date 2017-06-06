@@ -14,15 +14,8 @@ r-reldist
 r-reshape2
 r-ggplot2
 r-scales
-#r-pubmedwordcloud          # Need to upload 3.3 version 
+r-pubmedwordcloud          # Need to upload 3.3 version 
 r-rcolorbrewer
-bioconductor-biocgenerics
-bioconductor-genomicranges
-bioconductor-bsgenome
-#bioconductor-hiannotator   # Need to upload 3.3 version
-bioconductor-biostrings
-bioconductor-shortread
-bioconductor-rsamtools
 snakemake
 blat
 bwa
