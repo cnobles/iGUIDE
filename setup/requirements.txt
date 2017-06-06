@@ -14,7 +14,7 @@ r-reldist
 r-reshape2
 r-ggplot2
 r-scales
-r-pubmedwordcloud          # Need to upload 3.3 version 
+r-pubmedwordcloud
 r-rcolorbrewer
 snakemake
 blat
