@@ -1,2 +1,2 @@
-# guideSnakeR
-Bioinformatic processing of GuideSeq treated specimens.
+# iGUIDEseq
+Bioinformatic pipeline for processing iGUIDEseq samples.
