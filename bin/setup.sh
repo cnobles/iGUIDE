@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Setup bash script for conda environment iGUIDEseq
+# Setup bash script for conda environment iDSBseq
 conda config --prepend channels 'bushmanlab'
 conda config --prepend channels 'r'
 conda config --prepend channels 'bioconda'
-conda create -n iGUIDEseq --file ./setup/requirements.txt --yes
+conda create -n idsb --file ./setup/requirements.txt --yes
 sleep 1
-source activate iGUIDEseq
+source activate idsb
 
 cd tools
 git clone https://github.com/cnobles/dualDemultiplexR.git
