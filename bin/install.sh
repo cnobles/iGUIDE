@@ -36,3 +36,6 @@ conda env list | grep -Fxq ${IDSBSEQ_ENV_NAME} || {
 }
 
 echo "To get started, ensure ${PREFIX}/bin is in your path and run 'source activate ${IDSBSEQ_ENV_NAME}'"
+echo "To ensure ${PREFIX}/bin is in your path each time you long in, append the following to your .bashrc or .bash_profile:"
+echo "# Append miniconda3/bin to path"
+echo "export PATH=~/miniconda3/bin:\$PATH"
