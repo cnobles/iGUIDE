@@ -1,2 +1,2 @@
-# iGUIDEseq
-Bioinformatic pipeline for processing iGUIDEseq samples.
+# iDSBseq
+Bioinformatic pipeline for processing iDSBseq and GUIDE-seq samples.
