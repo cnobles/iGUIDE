@@ -1,4 +1,4 @@
-# Supporting functions for postProcessing GuideSeq data
+# Supporting functions for postProcessing of iDSBseq or GUIDE-seq data
 get_site_seqs <- function(gr, upstream_flank, downstream_flank, ref_genome){
   require(BSgenome)
   require(GenomicRanges)
