@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.Ruserdata
+*.RData
+*.Rproj
+.snakemake
+*.fastq.gz
+output
+*.yml
+*.yaml
+tools/dualDemultiplexR
+tools/seqTrimR
+tools/seqConsolidateR
+tools/blatCoupleR
