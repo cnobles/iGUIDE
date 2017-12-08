@@ -1,0 +1,25 @@
+# -*- mode: Snakemake -*-
+# Post-Alignment Processing: BLAT
+
+rule post_align:
+  input:
+    sampleR1=expand(aligned/{sample}.R1.psl.gz, sample=SAMPLES)
+    sampleR2=expand(aligned/{sample}.R2.psl.gz, sample=SAMPLES)
+    keyR1=expand(consolidated/{sample}.R1.csv, sample=SAMPLES)
+    keyR2=expand(consolidated/{sample}.R2.csv, sample=SAMPLES)
+  output:
+    uniq=expand("processedData/uniqSites{sample}.uniq.csv", sample=SAMPLES)
+    chimera=expand("processedData/chimeras/{sample}.chimera.rds", sample=SAMPLES)
+    multihit=expand("processedData/multihits/{sample}.multihits.rds", sample=SAMPLES)
+  params:
+    ROOT_DIR=config["install_directory"]
+    RUN_DIR=config["run_name"]
+  shell:
+    """
+    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
+    TOOL="${WORK_DIR}/blatCoupleR/blatCouple.R"
+    Rscript ${TOOL} {input.sampleR2} {input.sampleR1} \
+      -k {input.keyR2} {input.keyR1} \
+      -o {output.uniq} --chimera {output.chimera} --multihit {output.multihit}
+    """
+

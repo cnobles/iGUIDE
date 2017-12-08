@@ -1,0 +1,19 @@
+# -*- mode: Snakemake -*-
+# Sequence Consolidating Rules
+
+rule consolidate:
+  input:
+    sample=expand(trimmed/{sample}.{type}.trim.fastq.gz, sample=SAMPLES, type=[R1, R2])
+  output:
+    consol=expand("consolidated/{sample}.{type}.consol.fasta", sample=SAMPLES, type=[R1, R2])
+    key=expand("consolidated/{sample}.{type}.key.csv", sample=SAMPLES, type=[R1, R2])
+  params:
+    ROOT_DIR=config["install_directory"]
+    RUN_DIR=config["run_name"]
+  shell:
+    """
+    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
+    TOOL="${WORK_DIR}/seqConsolidateR/seqConsolidate.R"
+    Rscript ${TOOL} {input.sample} -o {output.consol} -k {output.key}
+    """
+

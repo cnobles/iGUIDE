@@ -1,0 +1,24 @@
+# -*- mode: Snakemake -*-
+# Demultiplexing Rules
+
+rule demultiplex:
+  input:
+    sampleInfo=config["sampleInfo"]
+    R1=config["R1"]
+    R2=config["R2"]
+    I1=config["I1"]
+    I2=config["I2"]
+  output:
+    expand("demultiplexed/{sample}.fastq.gz", sample=SAMPLES)
+  params:
+    ROOT_DIR=config["install_directory"]
+    RUN_DIR=config["run_name"]
+  shell:
+    """
+    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
+    TOOL="${WORK_DIR}/dualDemultiplexR/dualDemultiplex.R"
+    Rscript ${TOOL} {sampleInfo} \
+      --read1 {R1} --read2 {R2} --index1 {I1} --index2 {I2} \
+      -o '{params:WORK_DIR}'/process/demultiplexed
+    """
+

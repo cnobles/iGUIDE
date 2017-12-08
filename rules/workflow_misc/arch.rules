@@ -1,0 +1,23 @@
+# -*- mode: Snakemake -*-
+# Architecture Rules
+# Related to setting up analysis directories
+
+rule setup_working_dir:
+  input:
+  params:
+    ROOT_DIR=config["install_directory"]
+    RUN_NAME=config["run_name"]
+  shell:
+    """
+    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
+    mkdir ${WORK_DIR}
+    mkdir ${WORK_DIR}/input_data
+    mkdir ${WORK_DIR}/output
+    mkdir ${WORK_DIR}/process
+    mkdir ${WORK_DIR}/reports
+
+    echo "'{params:dir_name}' run has been set up."
+    echo "Please place input fastq.gz files into the following directory:"
+    echo ${WORK_DIR}/input_data
+    """
+

@@ -1,0 +1,53 @@
+# -*- mode: Snakemake -*-
+# Sequence Trimming Rules
+
+rule seq_trim:
+  input:
+    sampleInfo
+    sampleNames=SAMPLES
+    sample=expand(demultiplexed/{sample}.{type}.fastq.gz, sample=SAMPLES, type=[R1, R2])
+  output:
+    trim=expand("trimmed/{sample}.{type}.trim.fastq.gz", sample=SAMPLES, type=[R1, R2])
+  params:
+    ROOT_DIR=config["install_directory"]
+    RUN_DIR=config["run_name"]
+  shell:
+    """
+    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
+    TOOL="${WORK_DIR}/seqTrimR/seqTrim.R"
+
+    # Match columns required for input parameters
+    R1leadTrimCol=$(head -n 1 {input.sampleInfo} | sed 's/,/\n/g' | \
+      grep {'config:R1leadTrimCol'} -n | cut -d : -f 1)
+    R1overTrimCol=$(head -n 1 {input.sampleInfo} | sed 's/,/\n/g' | \
+      grep {'config:R1overTrimCol'} -n | cut -d : -f 1)
+    R2leadTrimCol=$(head -n 1 {input.sampleInfo} | sed 's/,/\n/g' | \
+      grep {'config:R2leadTrimCol'} -n | cut -d : -f 1)
+    R2overTrimCol=$(head -n 1 {input.sampleInfo} | sed 's/,/\n/g' | \
+      grep {'config:R2overTrimCol'} -n | cut -d : -f 1)
+    PrimerCol=$(head -n 1 {input.sampleInfo} | sed 's/,/\n/g' | \
+      grep {'config:PrimerCol'} -n | cut -d : -f 1)
+    BitSeqCol=$(head -n 1 {input.sampleInfo} | sed 's/,/\n/g' | \
+      grep {'config:BitSeqCol'} -n | cut -d : -f 1)
+
+    # Identify trimming parameters from sampleInfo
+    sampleData=$(grep {input.sampleNames} {input.sampleInfo})
+    R1leadTrim=$(echo ${sampleData} | cut -d , -f ${R1leadTrimCol}))
+    R1overTrim=$(echo ${sampleData} | cut -d , -f ${R1overTrimCol})
+    R2leadTrim=$(echo ${sampleData} | cut -d , -f ${R2leadTrimCol})
+    R2overTrim=$(echo ${sampleData} | cut -d , -f ${R2overTrimCol})
+    Primer=$(echo ${sampleData} | cut -d , -f ${PrimerCol})
+    BitSeq=$(echo ${sampleData} | cut -d , -f ${BitSeqCol})
+
+    Type=$(echo {sample} | cut -d '.' -f 2)
+    if [ ${Type} = "R1"]
+      Rscript ${TOOL} {input.sample} \
+        -o {output.trim} \
+        -l ${R1leadTrim} -r ${R1overTrim} --compress
+    else
+      Rscript ${TOOL} {input.sample} \
+        -o {output.trim} \
+        -l ${R2leadTrim} -r ${R2overTrim} --compress
+    fi
+    """
+

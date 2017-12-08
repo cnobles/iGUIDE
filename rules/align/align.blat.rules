@@ -1,0 +1,28 @@
+# -*- mode: Snakemake -*-
+# Sequence Alignment: BLAT
+
+rule align:
+  input:
+    expand(consolidated/{sample}.{type}.consol.fasta, sample=SAMPLES, type=[R1, R2])
+  output:
+    expand("aligned/{sample}.{type}.psl", sample=SAMPLES, type=[R1, R2])
+  params:
+    ROOT_DIR=config["install_directory"]
+    RUN_DIR=config["run_name"]
+    GENOME=config["refGenome"]
+    BLATparams=config["BLATparams"]
+  shell:
+    """
+    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
+    TOOL="${WORK_DIR}/seqConsolidateR/seqConsolidate.R"
+    blat '{params:GENOME}' {input} {output} '{params:BLATparams}'
+    """
+
+rule compress_align:
+  input:
+    expand("aligned/{sample}.{type}.psl", sample=SAMPLES, type=[R1, R2])
+  output:
+    expand("aligned/{sample}.{type}.psl.gz", sample=SAMPLES, type=[R1, R2])
+  shell:
+    "gzip {input}"
+
