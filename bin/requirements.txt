@@ -1,6 +1,7 @@
 r-base
 r-argparse
 r-pander
+r-yaml
 r-stringr
 r-dplyr
 r-data.table

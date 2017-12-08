@@ -3,26 +3,23 @@
 
 rule align:
   input:
-    expand(consolidated/{sample}.{type}.consol.fasta, sample=SAMPLES, type=[R1, R2])
+    "process/consolidated/{sample}.{read}.consol.fasta"
   output:
-    expand("aligned/{sample}.{type}.psl", sample=SAMPLES, type=[R1, R2])
+    "process/aligned/{sample}.{read}.psl"
   params:
-    ROOT_DIR=config["install_directory"]
-    RUN_DIR=config["run_name"]
-    GENOME=config["refGenome"]
+    ROOT_DIR,
+    GENOME=config["RefGenome"],
     BLATparams=config["BLATparams"]
   shell:
     """
-    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
-    TOOL="${WORK_DIR}/seqConsolidateR/seqConsolidate.R"
-    blat '{params:GENOME}' {input} {output} '{params:BLATparams}'
+    blat {params.GENOME} {input} {output} {params.BLATparams}
     """
 
 rule compress_align:
   input:
-    expand("aligned/{sample}.{type}.psl", sample=SAMPLES, type=[R1, R2])
+    "process/aligned/{sample}.{type}.psl"
   output:
-    expand("aligned/{sample}.{type}.psl.gz", sample=SAMPLES, type=[R1, R2])
+    "process/aligned/{sample}.{type}.psl.gz"
   shell:
     "gzip {input}"
 

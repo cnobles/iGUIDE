@@ -3,21 +3,19 @@
 
 rule post_align:
   input:
-    sampleR1=expand(aligned/{sample}.R1.psl.gz, sample=SAMPLES)
-    sampleR2=expand(aligned/{sample}.R2.psl.gz, sample=SAMPLES)
-    keyR1=expand(consolidated/{sample}.R1.csv, sample=SAMPLES)
-    keyR2=expand(consolidated/{sample}.R2.csv, sample=SAMPLES)
+    sampleR1="process/aligned/{sample}.R1.psl.gz",
+    sampleR2="process/aligned/{sample}.R2.psl.gz",
+    keyR1="process/consolidated/{sample}.R1.csv",
+    keyR2="process/consolidated/{sample}.R2.csv"
   output:
-    uniq=expand("processedData/uniqSites{sample}.uniq.csv", sample=SAMPLES)
-    chimera=expand("processedData/chimeras/{sample}.chimera.rds", sample=SAMPLES)
-    multihit=expand("processedData/multihits/{sample}.multihits.rds", sample=SAMPLES)
+    uniq="process/processedData/uniqSites/{sample}.uniq.csv",
+    chimera="process/processedData/chimeras/{sample}.chimera.rds",
+    multihit="process/processedData/multihits/{sample}.multihits.rds"
   params:
-    ROOT_DIR=config["install_directory"]
-    RUN_DIR=config["run_name"]
+    ROOT_DIR
   shell:
     """
-    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
-    TOOL="${WORK_DIR}/blatCoupleR/blatCouple.R"
+    TOOL="{params.ROOT_DIR}/tools/blatCoupleR/blatCouple.R"
     Rscript ${TOOL} {input.sampleR2} {input.sampleR1} \
       -k {input.keyR2} {input.keyR1} \
       -o {output.uniq} --chimera {output.chimera} --multihit {output.multihit}

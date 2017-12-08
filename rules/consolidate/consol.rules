@@ -3,17 +3,15 @@
 
 rule consolidate:
   input:
-    sample=expand(trimmed/{sample}.{type}.trim.fastq.gz, sample=SAMPLES, type=[R1, R2])
+    sample=process/trimmed/{sample}.{read}.trim.fastq.gz
   output:
-    consol=expand("consolidated/{sample}.{type}.consol.fasta", sample=SAMPLES, type=[R1, R2])
-    key=expand("consolidated/{sample}.{type}.key.csv", sample=SAMPLES, type=[R1, R2])
+    consol=process/consolidated/{sample}.{read}.consol.fasta,
+    key=process/consolidated/{sample}.{read}.key.csv
   params:
-    ROOT_DIR=config["install_directory"]
-    RUN_DIR=config["run_name"]
+    ROOT_DIR
   shell:
     """
-    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
-    TOOL="${WORK_DIR}/seqConsolidateR/seqConsolidate.R"
+    TOOL="{params.ROOT_DIR}/tools/seqConsolidateR/seqConsolidate.R"
     Rscript ${TOOL} {input.sample} -o {output.consol} -k {output.key}
     """
 
