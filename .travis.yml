@@ -3,5 +3,5 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install xdotool
 install:
-  - bash bin/install.sh idsb conda_log.txt
+  - bash bin/install.sh
   
