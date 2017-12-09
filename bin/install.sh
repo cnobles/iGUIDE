@@ -40,7 +40,7 @@ conda env list | grep -Fxq ${IDSBSEQ_ENV_NAME} || {
     echo "Home:"
     echo ${HOME}
     #Rscript bin/setup_bioconductor.R >> ${OUTPUT}
-    echo "iDSBseq successfully installed."; source deactivate
+    echo "iDSBseq successfully installed.";
 }
 
 echo "To get started, ensure ${PREFIX}/bin is in your path and run 'source activate ${IDSBSEQ_ENV_NAME}'"
