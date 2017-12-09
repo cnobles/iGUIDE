@@ -31,9 +31,15 @@ conda env list | grep -Fxq ${IDSBSEQ_ENV_NAME} || {
     git clone https://github.com/cnobles/seqConsolidateR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/blatCoupleR.git >> ${OUTPUT}
     cd ../
+    echo "Working Dir:"
     pwd
+    echo "Contents:"
     ls
-    Rscript bin/setup_bioconductor.R >> ${OUTPUT}
+    echo "Path:"
+    echo ${PATH}
+    echo "Home:"
+    echo ${HOME}
+    #Rscript bin/setup_bioconductor.R >> ${OUTPUT}
     echo "iDSBseq successfully installed."; source deactivate
 }
 
