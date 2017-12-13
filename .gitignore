@@ -6,7 +6,6 @@
 *.RData
 *.Rproj
 .snakemake
-*.fastq.gz
 output
 *.yml
 *.yaml
