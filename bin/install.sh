@@ -39,7 +39,7 @@ conda env list | grep -Fxq ${IDSBSEQ_ENV_NAME} || {
     echo ${PATH}
     echo "Home:"
     echo ${HOME}
-    Rscript bin/setup_bioconductor.R >> ${OUTPUT}
+#    Rscript bin/setup_bioconductor.R >> ${OUTPUT}
     echo "iDSBseq successfully installed.";
 }
 
