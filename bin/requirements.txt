@@ -1,3 +1,7 @@
+snakemake
+blat
+bwa
+samtools
 r-base
 r-argparse
 r-pander
@@ -17,7 +21,12 @@ r-ggplot2
 r-scales
 r-pubmedwordcloud
 r-rcolorbrewer
-snakemake
-blat
-bwa
-samtools
+bioconductor-biocgenerics
+bioconductor-iranges
+bioconductor-genomicranges
+bioconductor-hiannotator
+bioconductor-biostrings
+bioconductor-shortread
+bioconductor-rsamtools
+bioconductor-bsgenome
+bioconductor-bsgenome.hsapiens.ucsc.hg38
