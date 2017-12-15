@@ -15,10 +15,10 @@ rule seq_trim:
   shell:
     """
     TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
-    READ=$(echo {input} | cut -d '.' -f 2)
-    if [ ${{READ}} = "R1" ]
+
+    if [ "{wildcards.read}" = "R1" ]; then
       Rscript ${{TOOL}} {input.seq} -o {output} \
-        -l {params.R1lead} -r {params.R1over} --compress
+        -l {params.R1lead} -r {params.R1over} --compress 
     else
       Rscript ${{TOOL}} {input.seq} -o {output} \
         -l {params.R2lead} -r {params.R2over} --compress
