@@ -3,15 +3,15 @@
 
 rule consolidate:
   input:
-    sample=process/trimmed/{sample}.{read}.trim.fastq.gz
+    "{sample}.{read}.trim.fastq.gz"
   output:
-    consol=process/consolidated/{sample}.{read}.consol.fasta,
-    key=process/consolidated/{sample}.{read}.key.csv
-  params:
-    ROOT_DIR
+    consol="{sample}.{read}.consol.fasta",
+    key="{sample}.{read}.key.csv"
   shell:
     """
-    TOOL="{params.ROOT_DIR}/tools/seqConsolidateR/seqConsolidate.R"
-    Rscript ${TOOL} {input.sample} -o {output.consol} -k {output.key}
+    TOOL="{ROOT_DIR}/tools/seqConsolidateR/seqConsolidate.R"
+    Rscript ${{TOOL}} {RUN_DIR}/process/trimmed/{input} \
+      -o {RUN_DIR}/process/consolidated/{output.consol} \
+      -k {RUN_DIR}/process/consolidated/{output.key}
     """
 

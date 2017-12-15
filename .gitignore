@@ -13,3 +13,5 @@ tools/dualDemultiplexR
 tools/seqTrimR
 tools/seqConsolidateR
 tools/blatCoupleR
+tools/pytools/__pycache__
+analysis/*

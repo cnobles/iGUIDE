@@ -16,9 +16,9 @@ if not config:
         "config file, and specify with --configfile")
 
 # Import sampleInfo
-if ".csv" in config["sampleInfo"]:
+if ".csv" in config["Sample_Info"]:
     delim = ","
-elif ".tsv" in config["sampleInfo"]:
+elif ".tsv" in config["Sample_Info"]:
     delim = "\t"
 else:
     raise SystemExit("Sample Info file contain extention '.csv' or '.tsv'.")
@@ -27,9 +27,15 @@ else:
 sampleInfo = import_sample_info(
     config["Sample_Info"], config["Sample_Name_Column"], delim)
 
-SAMPLES=sampleInfo[config["sample_name_column"]]
+SAMPLES=sampleInfo[config["Sample_Name_Column"]]
 TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
+
+# Trimming data references
+R1leadTrim = sampleInfo[config["R1_Leading_Trim_Column"]]
+R1overTrim = sampleInfo[config["R1_Overreading_Trim_Column"]]
+R2leadTrim = sampleInfo[config["R2_Leading_Trim_Column"]]
+R2overTrim = sampleInfo[config["R2_Overreading_Trim_Column"]]
 
 # Working paths
 RUN = config["Run_Name"]
@@ -39,10 +45,6 @@ RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
 # Check for directory paths !!! Not sure if this is going to work just yet.
 if not os.path.isdir(ROOT_DIR):
     raise SystemExit("Path to iDSBseq is not found. Check configuration file.")
-if not os.path.isdir(RUN_DIR):
-    raise SystemExit(
-        "Analysis directory is not constructed for the run.",
-        "Please run 'snakemake setup_working_dir -c [config.file]'.")
 
 # Architecture Rules
 include: "rules/workflow_misc/arch.rules"

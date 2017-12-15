@@ -4,26 +4,26 @@
 
 rule seq_trim:
   input:
-    "demultiplexed/{sample}.{read}.fastq.gz"
+    seq="{sample}.{read}.fastq.gz"
   output:
-    "trimmed/{sample}.{read}.trim.fastq.gz"
+    "{sample}.{read}.trim.fastq.gz"
   params:
-    ROOT_DIR,
-    RUN_DIR,
-    R1leadTrim=sampleInfo["R1leadTrim"],
-    R1overTrim=sampleInfo["R1overTrim"],
-    R2leadTrim=sampleInfo["R2leadTrim"],
-    R2overTrim=sampleInfo["R2overTrim"]
+    R1lead=lambda wildcards: R1leadTrim[wildcards.sample],
+    R1over=lambda wildcards: R1overTrim[wildcards.sample],
+    R2lead=lambda wildcards: R2leadTrim[wildcards.sample],
+    R2over=lambda wildcards: R2overTrim[wildcards.sample]
   shell:
     """
-    TOOL="'{params:ROOT_DIR}'/tools/seqTrimR/seqTrim.R"
-    READ=$(echo {sample} | cut -d '.' -f 2)
-    if [ ${READ} = "R1"]
-      Rscript ${TOOL} {input.sample} -o {output.trim} \
-        -l {params.R1leadTrim} -r {params.R1overTrim} --compress
+    TOOL="'{ROOT_DIR}'/tools/seqTrimR/seqTrim.R"
+    READ=$(echo {input} | cut -d '.' -f 2)
+    if [ ${{READ}} = "R1" ]
+      Rscript ${{TOOL}} {RUN_DIR}/process/demultiplexed/{input.seq} \
+        -o {RUN_DIR}/process/trimmed/{output} \
+        -l {params.R1lead} -r {params.R1over} --compress
     else
-      Rscript ${TOOL} {input.sample} -o {output.trim} \
-        -l {params.R2leadTrim} -r {params.R2overTrim} --compress
+      Rscript ${{TOOL}} {RUN_DIR}/process/demultiplexed/{input.seq} \
+        -o {RUN_DIR}/process/trimmed/{output} \
+        -l {params.R2lead} -r {params.R2over} --compress
     fi
     """
 

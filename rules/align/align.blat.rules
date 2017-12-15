@@ -3,23 +3,23 @@
 
 rule align:
   input:
-    "process/consolidated/{sample}.{read}.consol.fasta"
+    "{sample}.{read}.consol.fasta"
   output:
-    "process/aligned/{sample}.{read}.psl"
+    "{sample}.{read}.psl"
   params:
-    ROOT_DIR,
     GENOME=config["RefGenome"],
     BLATparams=config["BLATparams"]
   shell:
     """
-    blat {params.GENOME} {input} {output} {params.BLATparams}
+    blat {params.GENOME} {RUN_DIR}/process/consolidated/{input} \
+      {RUN_DIR}/process/aligned/{output} {params.BLATparams}
     """
 
 rule compress_align:
   input:
-    "process/aligned/{sample}.{type}.psl"
+    "{sample}.{type}.psl"
   output:
-    "process/aligned/{sample}.{type}.psl.gz"
+    "{sample}.{type}.psl.gz"
   shell:
-    "gzip {input}"
+    "gzip {RUN_DIR}/process/aligned/{input}"
 

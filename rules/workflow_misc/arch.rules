@@ -3,29 +3,26 @@
 # Related to setting up analysis directories
 
 rule setup_working_dir:
-  input:
-  params:
-    ROOT_DIR=config["install_directory"],
-    RUN_NAME=config["run_name"]
+  input: "configs/{RUN}.config.yml"
+  output: "analysis/{RUN}"
   shell:
     """
-    WORK_DIR="'{params:ROOT_DIR}'/analysis/'{params:RUN_NAME}'"
-    mkdir ${WORK_DIR}
-    mkdir ${WORK_DIR}/input_data
-    mkdir ${WORK_DIR}/output
-    mkdir ${WORK_DIR}/process
-    mkdir ${WORK_DIR}/process/demultiplexed
-    mkdir ${WORK_DIR}/process/trimmed
-    mkdir ${WORK_DIR}/process/consolidated
-    mkdir ${WORK_DIR}/process/aligned
-    mkdir ${WORK_DIR}/process/processedData
-    mkdir ${WORK_DIR}/process/processedData/uniqSites
-    mkdir ${WORK_DIR}/process/processedData/chimeras
-    mkdir ${WORK_DIR}/process/processedData/multihits
-    mkdir ${WORK_DIR}/reports
+    WORK_DIR="{ROOT_DIR}/analysis/{RUN}"
+    mkdir ${{WORK_DIR}}
+    mkdir ${{WORK_DIR}}/input_data
+    mkdir ${{WORK_DIR}}/output
+    mkdir ${{WORK_DIR}}/process
+    mkdir ${{WORK_DIR}}/process/demultiplexed
+    mkdir ${{WORK_DIR}}/process/trimmed
+    mkdir ${{WORK_DIR}}/process/consolidated
+    mkdir ${{WORK_DIR}}/process/aligned
+    mkdir ${{WORK_DIR}}/process/processedData
+    mkdir ${{WORK_DIR}}/process/processedData/uniqSites
+    mkdir ${{WORK_DIR}}/process/processedData/chimeras
+    mkdir ${{WORK_DIR}}/process/processedData/multihits
+    mkdir ${{WORK_DIR}}/reports
 
-    echo "'{params:dir_name}' run has been set up."
+    echo "{RUN} run has been set up."
     echo "Please place input fastq.gz files into the following directory:"
-    echo ""${WORK_DIR}/input_data"
+    echo "${{WORK_DIR}}/input_data"
     """
-
