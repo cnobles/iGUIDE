@@ -3,23 +3,19 @@
 
 rule post_align:
   input:
-    sampleR1="{sample}.R1.psl.gz",
-    sampleR2="{sample}.R2.psl.gz",
-    keyR1="{sample}.R1.key.csv",
-    keyR2="{sample}.R2.key.csv"
+    sampleR1=RUN_DIR + "/process/aligned/{sample}.R1.psl.gz",
+    sampleR2=RUN_DIR + "/process/aligned/{sample}.R2.psl.gz",
+    keyR1=RUN_DIR + "/process/consolidated/{sample}.R1.key.csv",
+    keyR2=RUN_DIR + "/process/consolidated/{sample}.R2.key.csv"
   output:
-    uniq="{sample}.uniq.csv",
-    chimera="{sample}.chimera.rds",
-    multihit="{sample}.multihits.rds"
+    uniq=RUN_DIR + "/process/processedData/uniqSites/{sample}.uniq.csv",
+    chimera=RUN_DIR + "/process/processedData/chimeras/{sample}.chimera.rds",
+    multihit=RUN_DIR + "/process/processedData/multihits/{sample}.multihits.rds"
   shell:
     """
     TOOL="{ROOT_DIR}/tools/blatCoupleR/blatCouple.R"
-    Rscript ${{TOOL}} {RUN_DIR}/process/aligned/{input.sampleR2} \
-      {RUN_DIR}/process/aligned/{input.sampleR1} \
-      -k {RUN_DIR}/process/consolidated/{input.keyR2} \
-      {RUN_DIR}/process/consolidated/{input.keyR1} \
-      -o {RUN_DIR}/process/processedData/uniqSites/{output.uniq} \
-      --chimera {RUN_DIR}/process/processedData/chimeras/{output.chimera} \
-      --multihit {RUN_DIR}/process/processedData/multihits/{output.multihit}
+    Rscript ${{TOOL}} {input.sampleR2} {input.sampleR1} \
+      -k {input.keyR2} {input.keyR1} \
+      -o {output.uniq} --chimera {output.chimera} --multihit {output.multihit}
     """
 

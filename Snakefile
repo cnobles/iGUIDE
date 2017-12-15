@@ -46,6 +46,10 @@ RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
 if not os.path.isdir(ROOT_DIR):
     raise SystemExit("Path to iDSBseq is not found. Check configuration file.")
 
+# Target Rules
+rule all:
+    input: RUN_DIR + "/process/processedData/unique_sites." + RUN + ".csv"
+
 # Architecture Rules
 include: "rules/workflow_misc/arch.rules"
 

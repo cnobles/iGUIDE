@@ -10,16 +10,15 @@ rule demultiplex:
     I1=RUN_DIR + "/input_data/" + config["I1"],
     I2=RUN_DIR + "/input_data/" + config["I2"]
   output:
-    expand("{sample}.{type}.fastq.gz", sample=SAMPLES, type=TYPES)
+    expand(RUN_DIR + "/process/demultiplexed/{sample}.{type}.fastq.gz", sample=SAMPLES, type=TYPES)
   threads: config["DemultiThreads"]
   shell:
     """
     TOOL="{ROOT_DIR}/tools/dualDemultiplexR/dualDemultiplex.R"
-    DATA_DIR="{RUN_DIR}/input_data"
-    Rscript ${{TOOL}} {ROOT_DIR}/{input.sampleInfo} \
-      --read1 ${{DATA_DIR}}/{input.R1} --read2 ${{DATA_DIR}}/{input.R2} \
-      --index1 ${{DATA_DIR}}/{input.I1} --index2 ${{DATA_DIR}}/{input.I2} \
+    Rscript ${{TOOL}} -m {ROOT_DIR}/{input.sampleInfo} \
+      --read1 {input.R1} --read2 {input.R2} \
+      --index1 {input.I1} --index2 {input.I2} \
       -o {RUN_DIR}/process/demultiplexed \
-      -c {threads}
+      -c {threads} --compress
     """
 

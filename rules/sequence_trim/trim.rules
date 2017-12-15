@@ -4,9 +4,9 @@
 
 rule seq_trim:
   input:
-    seq="{sample}.{read}.fastq.gz"
+    seq=RUN_DIR + "/process/demultiplexed/{sample}.{read}.fastq.gz"
   output:
-    "{sample}.{read}.trim.fastq.gz"
+    RUN_DIR + "/process/trimmed/{sample}.{read}.trim.fastq.gz"
   params:
     R1lead=lambda wildcards: R1leadTrim[wildcards.sample],
     R1over=lambda wildcards: R1overTrim[wildcards.sample],
@@ -14,15 +14,13 @@ rule seq_trim:
     R2over=lambda wildcards: R2overTrim[wildcards.sample]
   shell:
     """
-    TOOL="'{ROOT_DIR}'/tools/seqTrimR/seqTrim.R"
+    TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
     READ=$(echo {input} | cut -d '.' -f 2)
     if [ ${{READ}} = "R1" ]
-      Rscript ${{TOOL}} {RUN_DIR}/process/demultiplexed/{input.seq} \
-        -o {RUN_DIR}/process/trimmed/{output} \
+      Rscript ${{TOOL}} {input.seq} -o {output} \
         -l {params.R1lead} -r {params.R1over} --compress
     else
-      Rscript ${{TOOL}} {RUN_DIR}/process/demultiplexed/{input.seq} \
-        -o {RUN_DIR}/process/trimmed/{output} \
+      Rscript ${{TOOL}} {input.seq} -o {output} \
         -l {params.R2lead} -r {params.R2over} --compress
     fi
     """
