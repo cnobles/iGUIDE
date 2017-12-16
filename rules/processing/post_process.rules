@@ -8,11 +8,9 @@ rule all_uniq_sites:
     RUN_DIR + "/process/processedData/unique_sites." + RUN + ".csv"
   shell:
     """
-    PROC_DIR="${RUN_DIR}/process/processedData"
-    cat ${{PROC_DIR}}/uniqSites/* | sed '/seqnames/d' > ${{PROC_DIR}}/alluniqsites.csv
-    ls ${{PROC_DIR}}/uniqSites | head -n 1 | xargs head -n 1 > ${{PROC_DIR}}/header.csv
-    cat ${{PROC_DIR}}/header.csv ${{PROC_DIR}}/alluniqsites.csv > {output}
-    rm ${{PROC_DIR}}/header.csv ${{PROC_DIR}}/alluniqsites.csv
+    PROC_DIR="{RUN_DIR}/process/processedData"
+    head -n 1 -q ${{PROC_DIR}}/uniqSites/* | uniq > {output}
+    cat ${{PROC_DIR}}/uniqSites/* | sed '/seqnames/d' >> {output}
     """
 
 rule all_edit_sites:
