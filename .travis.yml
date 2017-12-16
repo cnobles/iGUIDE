@@ -4,4 +4,4 @@ before_install:
   - sudo apt-get install xdotool
 install:
   - bash bin/install.sh
-  
+script: source tests/test.sh  
