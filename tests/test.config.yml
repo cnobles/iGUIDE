@@ -1,0 +1,28 @@
+# Run configuration
+Run_Name : "test"
+Sample_Info : "sampleInfo/test.sampleInfo.csv"
+RefGenome : "hg38"
+RefGenomePath: "genomes/hg38.2bit"
+
+# Sequence files
+R1: "Undetermined_S0_L001_R1_001.fastq.gz"
+R2: "Undetermined_S0_L001_R2_001.fastq.gz"
+I1: "Undetermined_S0_L001_I1_001.fastq.gz"
+I2: "Undetermined_S0_L001_I2_001.fastq.gz"
+
+# SampleInfo formating
+Sample_Name_Column : "sampleName"
+R1_Leading_Trim_Column : "R1leadTrim"
+R1_Overreading_Trim_Column : "R1overTrim"
+R2_Leading_Trim_Column : "R2leadTrim"
+R2_Overreading_Trim_Column : "R2overTrim"
+
+# ------------------------------------------------------------------------------
+# iDSBseq configuration
+Install_Directory : "/home/nobles/dev/projects/iDSBseq"
+Read_Types : ["R1", "R2", "I1", "I2"]
+Genomic_Reads : ["R1", "R2"]
+Aligner : "blat"
+BLATparams : "-tileSize=11 -stepSize=9 -minIdentity=85 -maxIntron=5 -minScore=27 -dots=1000 -out=psl -noHead"
+DemultiThreads : 4
+
