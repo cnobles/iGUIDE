@@ -2,7 +2,7 @@
 Run_Name : "test"
 Sample_Info : "sampleInfo/test.sampleInfo.csv"
 RefGenome : "hg38"
-RefGenomePath: "genomes/hg38.2bit"
+RefGenomePath : "genomes/hg38.2bit"
 
 # Sequence files
 R1: "Undetermined_S0_L001_R1_001.fastq.gz"

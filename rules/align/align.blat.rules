@@ -3,14 +3,14 @@
 
 rule align:
   input:
-    RUN_DIR + "/process/consolidated/{sample}.{read}.consol.fasta"
+    SEQ=RUN_DIR + "/process/consolidated/{sample}.{read}.consol.fasta",
+    GENOME=ROOT_DIR + "/" + config["RefGenomePath"]
   output:
     RUN_DIR + "/process/aligned/{sample}.{read}.psl"
-  params:
-    GENOME=config["RefGenomePath"],
-    BLATparams=config["BLATparams"]
+  params: 
+    config["BLATparams"]
   shell:
-    "blat {params.GENOME} {input} {output} {params.BLATparams}"
+    "blat {input.GENOME} {input.SEQ} {output} {params}"
 
 rule compress_align:
   input: RUN_DIR + "/process/aligned/{sample}.{type}.psl"
@@ -19,11 +19,10 @@ rule compress_align:
 
 rule generate_2bit:
   input: "configs/" + RUN + ".config.yml"
-  output: ROOT_DIR + config["RefGenomePath"]
+  output: ROOT_DIR + "/" + config["RefGenomePath"]
   params: config["RefGenome"]
   run:
     R("""
     genome <- BSgenome.Hsapiens.UCSC.{params}::BSgenome.Hsapiens.UCSC.{params}
     BSgenome::export(genome, "{output}", format = "2bit")
     """)
-  
