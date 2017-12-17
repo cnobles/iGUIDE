@@ -7,16 +7,23 @@ rule align:
   output:
     RUN_DIR + "/process/aligned/{sample}.{read}.psl"
   params:
-    GENOME=config["RefGenome"],
+    GENOME=config["RefGenomePath"],
     BLATparams=config["BLATparams"]
   shell:
     "blat {params.GENOME} {input} {output} {params.BLATparams}"
 
 rule compress_align:
-  input:
-    RUN_DIR + "/process/aligned/{sample}.{type}.psl"
-  output:
-    RUN_DIR + "/process/aligned/{sample}.{type}.psl.gz"
-  shell:
-    "gzip {input}"
+  input: RUN_DIR + "/process/aligned/{sample}.{type}.psl"
+  output: RUN_DIR + "/process/aligned/{sample}.{type}.psl.gz"
+  shell: "gzip {input}"
 
+rule generate_2bit:
+  input: "configs/" + RUN + ".config.yml"
+  output: ROOT_DIR + config["RefGenomePath"]
+  params: config["RefGenome"]
+  run:
+    R("""
+    genome <- BSgenome.Hsapiens.UCSC.{params}::BSgenome.Hsapiens.UCSC.{params}
+    BSgenome::export(genome, "{output}", format = "2bit")
+    """)
+  

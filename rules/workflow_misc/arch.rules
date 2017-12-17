@@ -3,8 +3,8 @@
 # Related to setting up analysis directories
 
 rule setup_working_dir:
-  input: "configs/{RUN}.config.yml"
-  output: "analysis/{RUN}"
+  input: "configs/" + RUN + ".config.yml"
+  output: "analysis/" + RUN
   shell:
     """
     WORK_DIR="{ROOT_DIR}/analysis/{RUN}"
@@ -26,3 +26,4 @@ rule setup_working_dir:
     echo "Please place input fastq.gz files into the following directory:"
     echo "${{WORK_DIR}}/input_data"
     """
+
