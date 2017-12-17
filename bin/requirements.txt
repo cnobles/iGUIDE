@@ -2,6 +2,7 @@ snakemake
 blat
 bwa
 samtools
+graphviz
 r-base
 r-argparse
 r-pander
