@@ -2,7 +2,6 @@ snakemake
 blat
 bwa
 samtools
-rpy2
 r-base
 r-argparse
 r-pander

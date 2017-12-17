@@ -9,7 +9,6 @@ import re
 import yaml
 import configparser
 from tools.pytools.defs import *
-from snakemake.utils import R
 
 if not config:
     raise SystemExit(

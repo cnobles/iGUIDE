@@ -21,8 +21,6 @@ rule generate_2bit:
   input: "configs/" + RUN + ".config.yml"
   output: ROOT_DIR + "/" + config["RefGenomePath"]
   params: config["RefGenome"]
-  run:
-    R("""
-    genome <- BSgenome.Hsapiens.UCSC.{params}::BSgenome.Hsapiens.UCSC.{params}
-    BSgenome::export(genome, "{output}", format = "2bit")
-    """)
+  shell: 
+    "Rscript {ROOT_DIR}/tools/rtools/generate_2bit_genome.R {params} {output}"
+
