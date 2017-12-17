@@ -2,6 +2,8 @@
 set -e
 
 # Test script
+PREFIX=${HOME}/miniconda3
+export PATH=${PATH}:${PREFIX}/bin
 source activate idsb
 
 # Create test analysis directory
@@ -16,4 +18,3 @@ snakemake --configfile configs/test.config.yml -np
 snakemake --configfile configs/test.config.yml --dag | dot -Tsvg > test.dag.svg
 snakemake --configfile configs/test.config.yml --latency-wait 30
 cat analysis/test/process/processedData/unique_sites.test.csv
-
