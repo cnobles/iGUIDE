@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -ev
 
 # Test script
 PREFIX=${HOME}/miniconda3
