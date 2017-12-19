@@ -1,27 +1,46 @@
 # -*- mode: Snakemake -*-
-# Look into turning the metadata into a dictionary
 # Sequence Trimming Rules
 
-rule seq_trim:
+rule seq_trim_R1:
   input:
-    seq=RUN_DIR + "/process/demultiplexed/{sample}.{read}.fastq.gz"
+    RUN_DIR + "/processData/{sample}.R1.fastq.gz"
   output:
-    RUN_DIR + "/process/trimmed/{sample}.{read}.trim.fastq.gz"
+    temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz")
   params:
-    R1lead=lambda wildcards: R1leadTrim[wildcards.sample],
-    R1over=lambda wildcards: R1overTrim[wildcards.sample],
-    R2lead=lambda wildcards: R2leadTrim[wildcards.sample],
-    R2over=lambda wildcards: R2overTrim[wildcards.sample]
+    lead=config["R1_Leading_Trim"],
+    over=config["R1_Overreading_Trim"],
+    leadMis=config["R1leadMismatch"],
+    overMis=config["R1overMismatch"],
+    overLen=config["R2overMaxLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.R1.trim.log"
   shell:
     """
     TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
-
-    if [ "{wildcards.read}" = "R1" ]; then
-      Rscript ${{TOOL}} {input.seq} -o {output} \
-        -l {params.R1lead} -r {params.R1over} --compress 
-    else
-      Rscript ${{TOOL}} {input.seq} -o {output} \
-        -l {params.R2lead} -r {params.R2over} --compress
-    fi
+    Rscript ${{TOOL}} {input} -o {output} \
+      -l {params.lead} --leadMisMatch {params.leadMis} \
+      -r {params.over} --overMisMatch {params.overMis} \
+      --overMaxLength {params.overLen} --compress > {log} 2>&1
     """
 
+rule seq_trim_R2:
+  input:
+    RUN_DIR + "/processData/{sample}.R2.fastq.gz"
+  output:
+    temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz")
+  params:
+    lead=config["R2_Leading_Trim"],
+    over=config["R2_Overreading_Trim"],
+    leadMis=config["R2leadMismatch"],
+    overMis=config["R2overMismatch"],
+    overLen=config["R2overMaxLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.R2.trim.log"
+  shell:
+    """
+    TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
+    Rscript ${{TOOL}} {input} -o {output} \
+      -l {params.lead} --leadMisMatch {params.leadMis} \
+      -r {params.over} --overMisMatch {params.overMis} \
+      --overMaxLength {params.overLen} --compress > {log} 2>&1
+    """

@@ -10,15 +10,25 @@ rule demultiplex:
     I1=RUN_DIR + "/input_data/" + config["I1"],
     I2=RUN_DIR + "/input_data/" + config["I2"]
   output:
-    expand(RUN_DIR + "/process/demultiplexed/{sample}.{type}.fastq.gz", sample=SAMPLES, type=TYPES)
-  threads: config["DemultiThreads"]
+    temp(expand(RUN_DIR + "/processData/{sample}.{type}.fastq.gz", sample=SAMPLES, type=TYPES))
+  params:
+    bc1Len=config["barcode1Length"],
+    bc2Len=config["barcode2Length"],
+    bc1=config["barcode1"],
+    bc2=config["barcode2"],
+    bc1Mis=config["bc1Mismatch"],
+    bc2Mis=config["bc2Mismatch"]
+  log: 
+    RUN_DIR + "/logs/demultiplex." + RUN + ".log"
+  threads: 
+    config["demultiCores"]
   shell:
     """
     TOOL="{ROOT_DIR}/tools/dualDemultiplexR/dualDemultiplex.R"
     Rscript ${{TOOL}} -m {ROOT_DIR}/{input.sampleInfo} \
-      --read1 {input.R1} --read2 {input.R2} \
-      --index1 {input.I1} --index2 {input.I2} \
-      -o {RUN_DIR}/process/demultiplexed \
-      -c {threads} --compress
+      --read1 {input.R1} --read2 {input.R2} --index1 {input.I1} --index2 {input.I2} \
+      --barcode1 {params.bc1} --barcode1Length {params.bc1Len} --bc1Mismatch {params.bc1Mis} \
+      --barcode2 {params.bc2} --barcode2Length {params.bc2Len} --bc2Mismatch {params.bc2Mis} \
+      -o {RUN_DIR}/processData -c {threads} --compress > {log} 2>&1
     """
 

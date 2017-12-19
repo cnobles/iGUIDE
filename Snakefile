@@ -31,12 +31,6 @@ SAMPLES=sampleInfo[config["Sample_Name_Column"]]
 TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
 
-# Trimming data references
-R1leadTrim = sampleInfo[config["R1_Leading_Trim_Column"]]
-R1overTrim = sampleInfo[config["R1_Overreading_Trim_Column"]]
-R2leadTrim = sampleInfo[config["R2_Leading_Trim_Column"]]
-R2overTrim = sampleInfo[config["R2_Overreading_Trim_Column"]]
-
 # Working paths
 RUN = config["Run_Name"]
 ROOT_DIR = config["Install_Directory"]
@@ -48,7 +42,7 @@ if not os.path.isdir(ROOT_DIR):
 
 # Target Rules
 rule all:
-    input: RUN_DIR + "/process/processedData/unique_sites." + RUN + ".csv"
+    input: RUN_DIR + "/output/unique_sites." + RUN + ".csv"
 
 # Architecture Rules
 include: "rules/workflow_misc/arch.rules"
@@ -56,6 +50,9 @@ include: "rules/workflow_misc/arch.rules"
 # Processing Rules
 include: "rules/demultiplex/demulti.rules"
 include: "rules/sequence_trim/trim.rules"
+if (config["UMItags"]):
+    include: "rules/sequence_trim/umitag.rules"
+    UMIseqs = sampleInfo["barcode2"]
 include: "rules/consolidate/consol.rules"
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
     include: "rules/align/align.blat.rules"

@@ -17,4 +17,4 @@ cp tests/Data/Undetermined_S0_L001_* analysis/travis/input_data/
 snakemake --configfile configs/travis.config.yml -np
 snakemake --configfile configs/travis.config.yml --dag | dot -Tsvg > travis.dag.svg
 snakemake --configfile configs/travis.config.yml --latency-wait 30
-cat analysis/travis/process/processedData/unique_sites.travis.csv
+cat analysis/travis/output/unique_sites.travis.csv

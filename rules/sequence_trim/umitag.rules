@@ -1,0 +1,21 @@
+# -*- mode: Snakemake -*-
+# Sequence Collecting Rules
+
+rule collect_umitags:
+  input:
+    RUN_DIR + "/processData/{sample}.I2.fastq.gz"
+  output:
+    seq=temp(RUN_DIR + "/processData/{sample}.I2.fastq.gz"),
+    umi=RUN_DIR + "/processData/{sample}.umitags.fastq.gz"
+  params:
+    seq=lambda wildcards: UMIseqs[wildcards.sample],
+    mis=config["bc2Mismatch"]
+  log:
+    RUN_DIR + "/logs/{sample}.umitag.log"
+  shell:
+    """
+    TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
+    Rscript ${{TOOL}} {input} -o {output.seq} \
+      -l {params.seq} --leadMisMatch {params.mis} \
+      --collectRandomIDs {output.umi} --compress > {log} 2>&1
+    """

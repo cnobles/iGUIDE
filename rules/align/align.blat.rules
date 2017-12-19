@@ -3,18 +3,20 @@
 
 rule align:
   input:
-    SEQ=RUN_DIR + "/process/consolidated/{sample}.{read}.consol.fasta",
-    GENOME=ROOT_DIR + "/" + config["RefGenomePath"]
+    seq=RUN_DIR + "/processData/{sample}.{read}.consol.fasta",
+    genome=ROOT_DIR + "/" + config["RefGenomePath"]
   output:
-    RUN_DIR + "/process/aligned/{sample}.{read}.psl"
+    temp(RUN_DIR + "/processData/{sample}.{read}.psl")
   params: 
     config["BLATparams"]
+  log:
+    RUN_DIR + "/logs/{sample}.{read}.blat.log"
   shell:
-    "blat {input.GENOME} {input.SEQ} {output} {params}"
+    "blat {input.genome} {input.seq} {output} {params} > {log} 2>&1"
 
 rule compress_align:
-  input: RUN_DIR + "/process/aligned/{sample}.{type}.psl"
-  output: RUN_DIR + "/process/aligned/{sample}.{type}.psl.gz"
+  input: RUN_DIR + "/processData/{sample}.{type}.psl"
+  output: temp(RUN_DIR + "/processData/{sample}.{type}.psl.gz")
   shell: "gzip {input}"
 
 rule generate_2bit:

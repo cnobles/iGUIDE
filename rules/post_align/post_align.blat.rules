@@ -3,19 +3,29 @@
 
 rule post_align:
   input:
-    sampleR1=RUN_DIR + "/process/aligned/{sample}.R1.psl.gz",
-    sampleR2=RUN_DIR + "/process/aligned/{sample}.R2.psl.gz",
-    keyR1=RUN_DIR + "/process/consolidated/{sample}.R1.key.csv",
-    keyR2=RUN_DIR + "/process/consolidated/{sample}.R2.key.csv"
+    sampleR1=RUN_DIR + "/processData/{sample}.R1.psl.gz",
+    sampleR2=RUN_DIR + "/processData/{sample}.R2.psl.gz",
+    keyR1=RUN_DIR + "/processData/{sample}.R1.key.csv",
+    keyR2=RUN_DIR + "/processData/{sample}.R2.key.csv"
   output:
-    uniq=RUN_DIR + "/process/processedData/uniqSites/{sample}.uniq.csv",
-    chimera=RUN_DIR + "/process/processedData/chimeras/{sample}.chimera.rds",
-    multihit=RUN_DIR + "/process/processedData/multihits/{sample}.multihits.rds"
+    uniq=RUN_DIR + "/output/uniqSites/{sample}.uniq.csv",
+    chimera=RUN_DIR + "/output/chimeras/{sample}.chimera.rds",
+    multihit=RUN_DIR + "/output/multihits/{sample}.multihits.rds"
+  params:
+    ref=config["RefGenome"],
+    start=config["maxAlignStart"],
+    pct=config["minPercentIdentity"],
+    minLen=config["minTempLength"],
+    maxLen=config["maxTempLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.couple.log"
   shell:
     """
     TOOL="{ROOT_DIR}/tools/blatCoupleR/blatCouple.R"
     Rscript ${{TOOL}} {input.sampleR2} {input.sampleR1} \
       -k {input.keyR2} {input.keyR1} \
-      -o {output.uniq} --chimera {output.chimera} --multihit {output.multihit}
+      -o {output.uniq} --chimera {output.chimera} --multihit {output.multihit} \
+      -g {params.ref} --maxAlignStart {params.start} --minPercentIdentity {params.pct} \
+      --minTempLength {params.minLen} --maxTempLength {params.maxLen} > {log} 2>&1
     """
 

@@ -3,21 +3,21 @@
 
 rule all_uniq_sites:
   input:
-    expand(RUN_DIR + "/process/processedData/uniqSites/{sample}.uniq.csv", sample=SAMPLES)
+    expand(RUN_DIR + "/output/uniqSites/{sample}.uniq.csv", sample=SAMPLES)
   output:
-    RUN_DIR + "/process/processedData/unique_sites." + RUN + ".csv"
+    RUN_DIR + "/output/unique_sites." + RUN + ".csv"
   shell:
     """
-    PROC_DIR="{RUN_DIR}/process/processedData"
+    PROC_DIR="{RUN_DIR}/output"
     head -n 1 -q ${{PROC_DIR}}/uniqSites/* | uniq > {output}
     cat ${{PROC_DIR}}/uniqSites/* | sed '/seqnames/d' >> {output}
     """
 
 rule all_edit_sites:
   input:
-    RUN_DIR + "process/processedData/unique_sites." + RUN + ".csv"
+    RUN_DIR + "/output/unique_sites." + RUN + ".csv"
   output:
-    RUN_DIR + "process/processedData/edited_sites." + RUN + ".rds"
+    RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   shell:
     """
     PROC_DIR="{RUN_DIR}/process/processedData"
