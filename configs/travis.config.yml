@@ -23,7 +23,7 @@ R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # ------------------------------------------------------------------------------
 # iDSBseq configuration
-Install_Directory : "/home/nobles/dev/projects/iDSBseq"
+Install_Directory : "/home/travis/build/cnobles/iDSBseq"
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
 
