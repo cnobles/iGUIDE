@@ -7,11 +7,11 @@ rule seq_trim_R1:
   output:
     temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz")
   params:
-    lead=config["R1_Leading_Trim"],
-    over=config["R1_Overreading_Trim"],
+    lead=lambda wildcards: R1_LEAD[wildcards.sample],
+    over=lambda wildcards: R1_OVER[wildcards.sample],
     leadMis=config["R1leadMismatch"],
     overMis=config["R1overMismatch"],
-    overLen=config["R2overMaxLength"]
+    overLen=config["R1overMaxLength"]
   log:
     RUN_DIR + "/logs/{sample}.R1.trim.log"
   shell:
@@ -29,8 +29,8 @@ rule seq_trim_R2:
   output:
     temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz")
   params:
-    lead=config["R2_Leading_Trim"],
-    over=config["R2_Overreading_Trim"],
+    lead=lambda wildcards: R2_LEAD[wildcards.sample],
+    over=lambda wildcards: R2_OVER[wildcards.sample],
     leadMis=config["R2leadMismatch"],
     overMis=config["R2overMismatch"],
     overLen=config["R2overMaxLength"]

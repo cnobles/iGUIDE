@@ -15,3 +15,14 @@ def import_sample_info(filePath, sampleColName, delim):
             sampleInfo[m] = colData
     return sampleInfo
 
+def choose_sequence_data(config_input, sampleInfo):
+    if "sampleInfo" in config_input:
+        colnam = config_input.split(".")[1]
+        if not colnam in sampleInfo:
+            raise SystemExit(print("Cannot find ", colnam, "in sampleInfo."))
+        seq = sampleInfo[colnam]
+    else:
+        initial_col = list(sampleInfo)[0]
+        samples = list(sampleInfo[initial_col])
+        seq = dict(zip(samples, [config_input] * len(samples)))
+    return seq
