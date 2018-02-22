@@ -1,4 +1,4 @@
-# iDSBseq : Identification of DNA double-strand breaks
+# iGUIDE : Improved Genome-wide Unbiased Identification of Double-strand DNA brEaks
 #
 # Author : Christopher Nobles, Ph.D.
 # useful modules sys, os, csv
@@ -38,7 +38,7 @@ RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
 
 # Check for directory paths !!! Not sure if this is going to work just yet.
 if not os.path.isdir(ROOT_DIR):
-    raise SystemExit("Path to iDSBseq is not found. Check configuration file.")
+    raise SystemExit("Path to iGUIDE is not found. Check configuration file.")
 
 # Target Rules
 rule all:
