@@ -4,7 +4,7 @@ set -e
 
 PREFIX=${HOME}/miniconda3
 
-IDSBSEQ_ENV_NAME=${1-idsb}
+IGUIDE_ENV_NAME=${1-iguide}
 OUTPUT=${2-/dev/stdout}
 
 install_conda () {
@@ -23,9 +23,9 @@ conda config --prepend channels 'r'
 conda config --prepend channels 'bioconda'
 
 # Create enviroment if it does not exist
-conda env list | grep -Fxq ${IDSBSEQ_ENV_NAME} || {
-    conda create --name=${IDSBSEQ_ENV_NAME} --file=bin/requirements.txt --yes >> ${OUTPUT}
-    source activate ${IDSB_ENV_NAME}
+conda env list | grep -Fxq ${IGUIDE_ENV_NAME} || {
+    conda create --name=${IGUIDE_ENV_NAME} --file=bin/requirements.txt --yes >> ${OUTPUT}
+    source activate ${IGUIDE_ENV_NAME}
     cd tools
     git clone https://github.com/cnobles/dualDemultiplexR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/seqTrimR.git >> ${OUTPUT}
@@ -33,10 +33,10 @@ conda env list | grep -Fxq ${IDSBSEQ_ENV_NAME} || {
     git clone https://github.com/cnobles/blatCoupleR.git >> ${OUTPUT}
     cd ../
 #    Rscript bin/setup_bioconductor.R >> ${OUTPUT}
-    echo "iDSBseq successfully installed.";
+    echo "iGUIDE successfully installed.";
 }
 
-echo "To get started, ensure ${PREFIX}/bin is in your path and run 'source activate ${IDSBSEQ_ENV_NAME}'"
+echo "To get started, ensure ${PREFIX}/bin is in your path and run 'source activate ${IGUIDE_ENV_NAME}'"
 echo "To ensure ${PREFIX}/bin is in your path each time you long in, append the following to your .bashrc or .bash_profile:"
 echo "# Append miniconda3/bin to path"
 echo "export PATH='~/miniconda3/bin:${PATH}'"
