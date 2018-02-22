@@ -4,7 +4,7 @@ set -ev
 # Test script
 PREFIX=${HOME}/miniconda3
 export PATH=${PATH}:${PREFIX}/bin
-source activate idsb
+source activate iguide
 
 # Create test analysis directory
 snakemake analysis/travis --configfile configs/travis.config.yml -np
