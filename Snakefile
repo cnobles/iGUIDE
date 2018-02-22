@@ -21,7 +21,7 @@ if ".csv" in config["Sample_Info"]:
 elif ".tsv" in config["Sample_Info"]:
     delim = "\t"
 else:
-    raise SystemExit("Sample Info file contain extention '.csv' or '.tsv'.")
+    raise SystemExit("Sample Info file needs to contain extention '.csv' or '.tsv'.")
 
 # Sample information
 sampleInfo = import_sample_info(
