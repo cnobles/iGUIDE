@@ -17,6 +17,7 @@ cd iGUIDE
 bash bin/install.sh
 
 # Or
+
 cd iGUIDE
 bash bin/install.sh {env_name}
 ```
