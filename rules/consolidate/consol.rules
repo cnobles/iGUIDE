@@ -3,7 +3,7 @@
 
 rule consolidate:
   input:
-    RUN_DIR + "/processData/{sample}.{read}.trim.fastq.gz"
+    RUN_DIR + "/processData/{sample}.{read}.filt.fastq.gz"
   output:
     consol=temp(RUN_DIR + "/processData/{sample}.{read}.consol.fasta"),
     key=temp(RUN_DIR + "/processData/{sample}.{read}.key.csv")

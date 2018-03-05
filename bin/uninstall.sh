@@ -1,5 +1,5 @@
 #!bin/bash
-# Remove created environment for iDSBseq
+# Remove created environment for iGUIDE
 source deactivate
 conda env remove -n iguide --yes
 conda config --remove channels 'bushmanlab'

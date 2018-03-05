@@ -29,6 +29,7 @@ conda env list | grep -Fxq ${IGUIDE_ENV_NAME} || {
     cd tools
     git clone https://github.com/cnobles/dualDemultiplexR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/seqTrimR.git >> ${OUTPUT}
+    git clone https://github.com/cnobles/seqFiltR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/seqConsolidateR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/blatCoupleR.git >> ${OUTPUT}
     cd ../

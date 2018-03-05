@@ -57,6 +57,7 @@ include: "rules/sequence_trim/trim.rules"
 if (config["UMItags"]):
     include: "rules/sequence_trim/umitag.rules"
     UMIseqs = sampleInfo["barcode2"]
+include: "rules/filter/filt.rules"
 include: "rules/consolidate/consol.rules"
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
     include: "rules/align/align.blat.rules"
