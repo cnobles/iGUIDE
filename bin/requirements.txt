@@ -3,6 +3,7 @@ blat
 bwa
 samtools
 graphviz
+r=3.4.1=r3.4.1_0
 r-base
 r-argparse
 r-pander
@@ -12,15 +13,10 @@ r-dplyr
 r-data.table
 r-matrix
 r-igraph
-r-rmysql
-r-rsqlite
-r-devtools
 r-knitr
-r-reldist
 r-reshape2
 r-ggplot2
 r-scales
-r-pubmedwordcloud
 r-rcolorbrewer
 bioconductor-biocgenerics
 bioconductor-iranges
