@@ -9,14 +9,17 @@ rule setup_working_dir:
     """
     WORK_DIR="{ROOT_DIR}/analysis/{RUN}"
     mkdir ${{WORK_DIR}}
-    mkdir ${{WORK_DIR}}/input_data
-    mkdir ${{WORK_DIR}}/logs
-    mkdir ${{WORK_DIR}}/processData
-    mkdir ${{WORK_DIR}}/output
-    mkdir ${{WORK_DIR}}/output/uniqSites
-    mkdir ${{WORK_DIR}}/output/chimeras
-    mkdir ${{WORK_DIR}}/output/multihits
-    mkdir ${{WORK_DIR}}/reports
+    cd ${{WORK_DIR}}
+    ln -s ../../{input} config.yml
+    mkdir input_data
+    mkdir logs
+    mkdir processData
+    mkdir output
+    mkdir output/uniqSites
+    mkdir output/chimeras
+    mkdir output/multihits
+    mkdir reports
+    cd ../../
 
     echo "{RUN} run has been set up."
     echo "Please place input fastq.gz files into the following directory:"

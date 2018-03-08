@@ -146,7 +146,7 @@ load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
     ref_env <- new.env()
     load(config$refGenes, envir = refs)
     ref_set <- ref_env[[ls(ref_env)]]
-  }else if(file.exists(ref$file)){
+  }else if(file.exists(ref$file) | grepl("^http", ref$file)){
     ref_set <- data.table::fread(ref$file, data.table = FALSE)
   }else{
     stopifnot(require("hiAnnotator"))

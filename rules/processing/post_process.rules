@@ -19,10 +19,9 @@ rule all_edit_sites:
   output:
     RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   params:
-    configfile
-    #"./configs/" + RUN + ".config.yml"
+    RUN_DIR + "/" + "config.yml"
   log:
-    RUN_DIR + "/logs/{sample}.postproc.log"
+    RUN_DIR + "/logs/" + RUN + ".postproc.log"
   shell:
     """
     TOOL="{ROOT_DIR}/tools/postProcessing/dev_postProcess.R"
