@@ -165,12 +165,12 @@ pandoc.table(
 reads <- data.table::fread(args$uniqSites, data.table = FALSE)
 
 # Print out stats during analysis.
-cat("Tabulation of aligned templates per specimen:")
+cat("Tabulation of aligned reads per specimen:")
 temp_table <- table(str_extract(reads$sampleName, "[\\w]+"))
 pandoc.table(
   data.frame(
     "Specimen" = names(temp_table), 
-    "Aligned_Templates" = format(as.numeric(temp_table), big.mark = ","),
+    "Aligned_Reads" = format(as.numeric(temp_table), big.mark = ","),
     row.names = NULL),
   style = "simple",
   justify = "cr",
