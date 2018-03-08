@@ -18,9 +18,14 @@ rule all_edit_sites:
     RUN_DIR + "/output/unique_sites." + RUN + ".csv"
   output:
     RUN_DIR + "/output/edited_sites." + RUN + ".rds"
+  params:
+    configfile
+    #"./configs/" + RUN + ".config.yml"
+  log:
+    RUN_DIR + "/logs/{sample}.postproc.log"
   shell:
     """
     TOOL="{ROOT_DIR}/tools/postProcessing/dev_postProcess.R"
-    Rscript ${{TOOL}} {input} -o {output} -c {{CONFIG???}}
+    Rscript ${{TOOL}} {input} -o {output} -c {params} > {log} 2>&1
     """
 

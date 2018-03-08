@@ -130,10 +130,68 @@ identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
   pairs[order(un_grl$ori.order)]
 }
 
-# Supporting functions
 # Format number in tables with big.marks conveinently
 pNums <- function(x, ...){
   format(x, big.mark = ",", ...)
+}
+
+load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
+  stopifnot(type %in% c("gene.list", "GRanges", "data.frame"))
+  suppressMessages(require("data.table"))
+  suppressMessages(require("GenomicRanges"))
+  
+  if(grepl(".rds$", ref$file)){
+    ref_set <- readRDS(ref$file)
+  }else if(grepl(".RData$", ref$file)){
+    ref_env <- new.env()
+    load(config$refGenes, envir = refs)
+    ref_set <- ref_env[[ls(ref_env)]]
+  }else if(file.exists(ref$file)){
+    ref_set <- data.table::fread(ref$file, data.table = FALSE)
+  }else{
+    stopifnot(require("hiAnnotator"))
+    stopifnot(grepl(":", ref$file))
+    trackTable <- unlist(strsplit(ref$file, ":"))
+    ucsc_session <- makeUCSCsession(freeze)
+    stopifnot(
+      trackTable[2] %in% tableNames(ucscTableQuery(ucsc_session)))
+    ref_tbl <- getUCSCtable(
+      tableName = trackTable[2], trackName = trackTable[1], 
+      bsession = ucsc_session)
+    ref_set <- rtracklayer::track(
+      ucsc_session, name = trackTable[1], table = trackTable[2])
+    mcols(ref_set) <- ref_tbl
+  }
+  
+  if(!class(ref_set) %in% c("data.frame", "GRanges")){
+    stop("Import of reference data failed. Check input parameters.")
+  }
+  
+  if(type == "GRanges"){
+    if(class(ref_set) == "GRanges"){
+      ref_set$annot_sym <- mcols(ref_set)[,ref$symbol]
+      return(ref_set)
+    }else{
+      ref_set$annot_sym <- ref_set[,ref$symbol]
+      return(GenomicRanges::makeGRangesFromDataFrame(
+        ref_set, keep.extra.columns = TRUE))
+    }
+  }else if(type == "gene.list"){
+    ref_set <- try(as.data.frame(ref_set), silent = TRUE)
+    if(class(ref_set) == "data.frame"){
+      return(ref_set[,ref$symbol])
+    }else{
+      stop("Cannot coerce to geneList. Check input parameters.")
+    }
+  }else if(type == "data.frame"){
+    ref_set <- try(as.data.frame(ref_set), silent = TRUE)
+    if(class(ref_set) == "data.frame"){
+      ref_set$annot_sym <- ref_set[,ref$symbol]
+      return(ref_set)
+    }else{
+      stop("Cannot coerce to data.frame. Check input parameters.")
+    }
+  }
 }
 
 # Convert matches to GRanges objects
@@ -413,9 +471,9 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
   
   # Annotate Sites with Gene names for within and nearest genes
   gr <- getSitesInFeature(
-    gr, ref_genes, colnam = "in_gene", feature.colnam = "name2")
+    gr, ref_genes, colnam = "in_gene", feature.colnam = "annot_sym")
   gr <- getNearestFeature(
-    gr, ref_genes, colnam = "nearest_gene", feature.colnam = "name2")
+    gr, ref_genes, colnam = "nearest_gene", feature.colnam = "annot_sym")
   
   ## Add gene marks ("*" for in_gene, "~" for onco gene, and "!" for bad_actors)
   gr$gene_id_wo_annot <- ifelse(
@@ -440,101 +498,6 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
   }
 }
 
-refine_edit_sites <- function(gr, seq_col, guideRNASeqs, offset_nt = 4L, 
-                              PAM = "NGG", submat = NULL){
-  require(BSgenome)
-  require(GenomicRanges)
-  require(Biostrings)
-  require(stringr)
-  
-  if(is.null(submat)) submat <- banmat()
-  
-  seqs <- mcols(gr)[,match(seq_col, names(mcols(gr)))]
-  revl <- grepl("(rev)", gr$guideRNA.match)
-  
-  alns <- mapply(function(seq, rl, guide, guideRNASeqs, submat){
-    guide <- str_extract(guide, "[\\w\\-\\.]+")
-    if(!rl){
-      guideRNA <- guideRNASeqs[[guide]]
-    }else{
-      guideRNA <- reverseComplement(guideRNASeqs[[guide]])
-    }
-    pairwiseAlignment(
-      seq, guideRNA, type = "overlap", substitutionMatrix = submat)},
-    seq = seqs,
-    rl = revl,
-    guide = gr$guideRNA.match,
-    MoreArgs = list(guideRNASeqs = guideRNASeqs, submat = submat),
-    SIMPLIFY = FALSE)
-  
-  stopifnot(all(sapply(alns, score) == gr$guideRNA.score))
-  
-  gr$edit.sites <- sapply(
-    1:length(gr), function(i, alns, gr, revl, PAM, offset_nt){
-      aln <- alns[[i]]
-      g <- gr[i]
-      rl <- revl[i]
-      if(as.logical(strand(g) == "+" & !rl)){
-        pos <- start(g) + end(aln@pattern@range) - nchar(PAM) - offset_nt
-        return(paste0(seqnames(g), ":+:", pos))
-      }else if(as.logical(strand(g) == "+" & rl)){
-        pos <- start(g) + start(aln@pattern@range) + nchar(PAM) + offset_nt
-        return(paste0(seqnames(g), ":-:", pos))
-      }else if(as.logical(strand(g) == "-" & rl)){
-        pos <- end(g) - end(aln@pattern@range) + nchar(PAM) + offset_nt
-        return(paste0(seqnames(g), ":-:", pos))
-      }else if(as.logical(strand(g) == "-" & !rl)){
-        pos <- end(g) - start(aln@pattern@range) - nchar(PAM) - offset_nt
-        return(paste0(seqnames(g), ":+:", pos))
-      }},
-    alns = alns, gr = gr, revl = revl, PAM = PAM, offset_nt = offset_nt)
-  gr
-}
-
-extract_exons <- function(refGenes, exonStarts, exonEnds, geneNames){
-  stopifnot(
-    length(refGenes) == length(exonStarts) &
-      length(exonStarts) == length(exonEnds) &
-      length(exonEnds) == length(geneNames))
-  
-  exonStarts <- gsub(",$", "", exonStarts)
-  exonEnds <- gsub(",$", "", exonEnds)
-  
-  exonStarts <- strsplit(exonStarts, ",")
-  exonEnds <- strsplit(exonEnds, ",")
-  stopifnot(all(sapply(
-    1:length(geneNames), 
-    function(i) length(exonStarts[[i]]) == length(exonEnds[[i]]))))
-  
-  gr <- GRanges(
-    seqnames = Rle(
-      values = as.character(seqnames(refGenes)), 
-      lengths = sapply(exonStarts, length)),
-    ranges = IRanges(
-      start = as.numeric(unlist(exonStarts)),
-      end = as.numeric(unlist(exonEnds))),
-    strand = Rle(
-      values = as.character(strand(refGenes)),
-      length = sapply(exonStarts, length)),
-    seqinfo = seqinfo(refGenes))
-  
-  geneNames <- as.character(Rle(
-    values = geneNames,
-    lengths = sapply(exonStarts, length)))
-  exonNums <- unlist(mapply(function(strand, exSt){
-    if(strand == "+"){
-      return(seq_along(exSt))
-    }else{
-      return(rev(seq_along(exSt)))
-    }},
-    strand = as.character(strand(refGenes)),
-    exSt = exonStarts))
-  
-  geneNames <- paste0(geneNames, ":exon", sprintf("%03d", exonNums))
-  
-  gr$geneNames <- geneNames
-  gr
-}
 
 #' A Binary Ambiguous Nucleotide scoring Matrix (BAN Mat)
 #' 

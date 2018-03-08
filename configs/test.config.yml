@@ -23,9 +23,12 @@ R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # Guide RNA information, including PAM sequence with gRNA
 Guide_RNA_Sequences :
-    B2M : gagtagcgcgagcacagctangg
-    TRAC5 : tgtgctagacatgaggtctangg
-PAM_Sequence : ngg
+    B2M : "gagtagcgcgagcacagctangg"
+    TRAC5 : "tgtgctagacatgaggtctangg"
+PAM_Sequence : "ngg"
+On_Target_Sites :
+    B2M : "chr15:-:44711569"
+    TRAC5 : "chr14:+:22547664"
 
 # Specimen treatment
 # Data can be input here or refereced in sampleInfo by just putting 
@@ -34,7 +37,7 @@ PAM_Sequence : ngg
 # names. If placing data in sampleInfo, delimit multiple guideRNA names with a
 # semicolon ';'.
 Treatment :
-  testSeq : B2M, TRAC5
+  testSeq : "B2M", "TRAC5"
 
 # ------------------------------------------------------------------------------
 # iDSBseq configuration
@@ -45,8 +48,8 @@ Genomic_Reads : ["R1", "R2"]
 # Demultiplexing parameters
 barcode1Length : 8
 barcode2Length : 8
-barcode1 : I1
-barcode2 : I2
+barcode1 : "I1"
+barcode2 : "I2"
 bc1Mismatch : 0
 bc2Mismatch : 0
 demultiCores : 4
@@ -70,3 +73,17 @@ maxAlignStart : 5
 minPercentIdentity : 95
 minTempLength : 30
 maxTempLength : 2500
+
+# Post-processing
+refGenes : 
+  file : "refSeqComposite:refGene"
+  symbolCol : "name2"
+oncoGeneList : 
+  file : "http://bushmanlab.org/assets/doc/allOnco_Feb2017.tsv"
+  symbolCol : "symbol"
+specialGeneList : 
+  file : "http://bushmanlab.org/assets/doc/humanLymph.tsv"
+  symbolCol : "symbol"
+upstreamDist : 100
+downstreamDist : 30
+pileUpMin : 2

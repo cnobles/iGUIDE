@@ -13,7 +13,6 @@ panderOptions("table.style", "simple")
 panderOptions("table.split.table", Inf)
 
 # Set up and gather command line arguments -------------------------------------
-## Argument parser =============================================================
 parser <- ArgumentParser(
   description = "Post-processing script for iGUIDE.")
 parser$add_argument(
@@ -41,7 +40,6 @@ pandoc.table(data.frame(input_table, row.names = NULL),
              split.tables = Inf)
 
 # Load dependancies ------------------------------------------------------------
-#' Load all required dependencies / packages for analysis
 add_packs <- c(
   "stringr", "magrittr", "dplyr", "Matrix", "igraph", 
   "Biostrings", "GenomicRanges", "BSgenome", "hiAnnotator")
@@ -56,12 +54,20 @@ if(!all(add_packs_loaded)){
   stop("Check dependancies.")
 }
 
+# Source supporting functions --------------------------------------------------
+code_dir <- dirname(
+  sub("--file=", "", grep("--file=", 
+                          commandArgs(trailingOnly = FALSE), value = TRUE)))
+source(file.path(code_dir, "dev_postProcessSupport.R"))
+
+
 # Inputs and parameters --------------------------------------------------------
 config <- yaml::yaml.load_file(args$config)
 sampleInfo <- data.table::fread(
   file.path(config$Install_Directory, config$Sample_Info), data.table = FALSE)
+submat <- banmat()
 
-# Load reference genome
+## Load reference genome =======================================================
 if(grepl(".fa", config$RefGenome)){
   if(!file.exists(config$RefGenome)){
     stop("Specified reference genome file not found.")}
@@ -84,30 +90,18 @@ if(grepl(".fa", config$RefGenome)){
   refGenome <- get(genome)
 }
 
-algnmt_file <- args$uniqSites
-code_dir <- dirname(
-  sub("--file=", "", grep("--file=", 
-    commandArgs(trailingOnly = FALSE), value = TRUE)))
-source(file.path(code_dir, "dev_postProcessSupport.R"))
-submat <- banmat()
+## Load refGenes and gene lists for annotation =================================
+ref_genes <- load_ref_files(config$refGenes, type = "GRanges")
+onco_genes <- load_ref_files(config$oncoGeneList)
+bad_actors <- load_ref_files(config$specialGeneList)
 
-ref_genes <- readRDS(config$refGenes)
-ref_exons <- extract_exons(
-  ref_genes, ref_genes$exonStarts, ref_genes$exonEnds, ref_genes$name2)
-onco_genes_data <- read.delim(
-  config$oncoGeneList, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-onco_genes <- unique(onco_genes_data[,"symbol"])
-bad_actors <- read.delim(
-  config$specialGeneList, header = FALSE, sep = "\t", 
-  stringsAsFactors = FALSE)[,1]
-
+## Incorporation site parameters ===============================================
 upstream_dist <- config$upstreamDist
 downstream_dist <- config$downstreamDist
 pile_up_min <- config$pileUpMin
 on_target_sites <- config$On_Target_Sites 
 
-# Guide RNAs and sample metadata
-# Bring in guideRNA sequences through config yaml
+## Load Guide RNAs and sample metadata =========================================
 guide_rna_seqs <- lapply(config$Guide_RNA_Sequences, toupper)
 pam_seq <- lapply(config$PAM_Sequence, toupper)
 pam_mat <- sapply(pam_seq, function(pat){
@@ -134,9 +128,7 @@ pandoc.table(
   justify = "center",
   emphasize.rownames = FALSE)
 
-## log table for which samples were treated with which guides.
-## should be data for each sample / specimen, best in the sampleInfo sheet
-## if not in sampleInfo then yaml should have consistant treatment...
+## Load data related to how samples were processed =============================
 treatment <- config$Treatment
 if(any(grepl("sampleInfo:", treatment[1]))){
   info_col <- match(str_extract(treatment[1], "[\\w]+$"), names(sampleInfo))
@@ -170,8 +162,7 @@ pandoc.table(
 
 
 # Load input data --------------------------------------------------------------
-#' Load all read alignments 
-reads <- data.table::fread(algnmt_file, data.table = FALSE)
+reads <- data.table::fread(args$uniqSites, data.table = FALSE)
 
 # Print out stats during analysis.
 cat("Tabulation of aligned templates per specimen:")
@@ -260,7 +251,9 @@ algnmts$guideRNA.match <- filter_inappropriate_comparisons(
 
 # Fragment pileups, paired clustering, and guideRNA alignments have been used to
 # characterize the incorporation sites analyzed here. Each metric will be used 
-# to create a list of incorporation sites that may be CRISPR cut sites. 
+# to create a list of incorporation sites that may be CRISPR cut sites. The 
+# following identifies which alignments are associated with each of these 
+# criteria.
 tbl_clus_ori <- algnmts %>% 
   group_by(specimen, clus.ori) %>%
   filter(n() > pile_up_min) %>%
@@ -295,11 +288,8 @@ probable_algns$on.off.target <- ifelse(
 cat("On / Off target alignment counts.")
 print(table(probable_algns$on.off.target))
 
-# gRNA Matched ~before~ Paired ~before~ PileUps
-# organize output for these three types, try to narrow down the actuall sites.
-# Fine to just have three different sets of data that analyze it the different 
-# ways.
-
+# Create summary and output formated object related to each of the criteria for
+# edited site detection.
 matched_algns <- probable_algns[
   probable_algns$guideRNA.match != "No_valid_match",]
 
@@ -346,6 +336,9 @@ paired_regions <- paired_algns %>%
 pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),]
 
+# Output data composition ------------------------------------------------------
+# rds file that can be read into reports or loaded
+# into a data base with some additional scripting.
 data_comp <- list(
   "algnmts" = algnmts, 
   "probable_algns" = probable_algns,
@@ -356,10 +349,16 @@ data_comp <- list(
   "pile_up_algns" = pile_up_algns)
 
 saveRDS(data_comp, file = args$output)
+if(file.exists(args$output)){
+  message("Successfully completed script.")
+}else{
+  message("Check output, not detected at the end of post-processing script.")
+}
 q()
 
 
 
+# Previous code and development ------------------------------------------------
 
 edit_sites <- split(probable_sites, probable_sites$edit.site)
 mated_edit_sites <- edit_sites[
@@ -419,13 +418,13 @@ crispr_gr <- GRanges(
 
 crispr_gr <- doAnnotation(
   "within", crispr_gr, ref_genes, 
-  colnam = "inGene", feature.colnam = "name2")
+  colnam = "inGene", feature.colnam = "annot_sym")
 crispr_gr <- doAnnotation(
   "within", crispr_gr, ref_exons, 
   colnam = "inExon", feature.colnam = "geneNames")
 crispr_gr <- doAnnotation(
   "nearest", crispr_gr, ref_genes, 
-  colnam = "nearestGene", feature.colnam = "name2")
+  colnam = "nearestGene", feature.colnam = "annot_sym")
 crispr_gr <- doAnnotation(
   "within", crispr_gr, oregs, 
   colnam = "inReg", feature.colnam = "id")
@@ -445,8 +444,8 @@ crispr_gr <- doAnnotation(
   "nearest", crispr_gr, oregs[oregs$type == "Transcription Factor Binding Site"],
   colnam = "nearestTFbs", feature.colnam = "TFbs")
 crispr_gr <- doAnnotation(
-  "nearest", crispr_gr, ref_genes[ref_genes$name2 %in% onco_genes],
-  colnam = "nearestOnco", feature.colnam = "name2")
+  "nearest", crispr_gr, ref_genes[ref_genes$annot_sym %in% onco_genes],
+  colnam = "nearestOnco", feature.colnam = "annot_sym")
 
 crispr_sites <- bind_cols(
   crispr_sites, 
