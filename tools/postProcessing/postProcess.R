@@ -1,6 +1,6 @@
 # Global options ---------------------------------------------------------------
 #' Adjust environmental options
-options(stringsAsFactors = FALSE)
+options(stringsAsFactors = FALSE, scipen = 99)
 cores <- 6
 
 # Load dependancies ------------------------------------------------------------
@@ -105,7 +105,7 @@ oregs <- readRDS(file.path(ref_dir, "oreganno.hg38.2017-06-09.rds"))
 
 # Load input data --------------------------------------------------------------
 #' Load all read alignments 
-reads <- read.csv(algnmt_file)
+reads <- data.table::fread(algnmt_file, data.table = FALSE)
 
 # Print out stats during analysis.
 cat("Tabulation of aligned templates per specimen:")
@@ -113,10 +113,10 @@ temp_table <- table(str_extract(reads$sampleName, "[\\w]+"))
 pandoc.table(
   data.frame(
     "Specimen" = names(temp_table), 
-    "Aligned_Templates" = as.numeric(temp_table),
+    "Aligned_Templates" = format(as.numeric(temp_table), big.mark = ","),
     row.names = NULL),
   style = "simple",
-  justify = "left",
+  justify = "cr",
   emphasize.rownames = FALSE)
 rm(temp_table)
 

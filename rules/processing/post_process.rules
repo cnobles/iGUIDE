@@ -20,8 +20,7 @@ rule all_edit_sites:
     RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   shell:
     """
-    PROC_DIR="{RUN_DIR}/process/processedData"
-    TOOL="{ROOT_DIR}/tools/postProcessing/postProcess.R"
-    Rscript ${{TOOL}}
+    TOOL="{ROOT_DIR}/tools/postProcessing/dev_postProcess.R"
+    Rscript ${{TOOL}} {input} -o {output} -c {{CONFIG???}}
     """
 

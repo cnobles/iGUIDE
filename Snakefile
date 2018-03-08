@@ -12,8 +12,8 @@ from tools.pytools.defs import *
 
 if not config:
     raise SystemExit(
-        "No config file specified. Run `sunbeam_init` to generate a "
-        "config file, and specify with --configfile")
+        "No config file specified. Feel free to use the test config as a"
+        "template to generate a config file, and specify with --configfile")
 
 # Import sampleInfo
 if ".csv" in config["Sample_Info"]:

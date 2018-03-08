@@ -21,6 +21,21 @@ R1_Overreading_Trim : "GCTCGCGTTTAATTGAGTTG"
 R2_Leading_Trim : "ACATATGACAACTCAATTAAACGCGAGC"
 R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
+# Guide RNA information, including PAM sequence with gRNA
+Guide_RNA_Sequences :
+    B2M : gagtagcgcgagcacagctangg
+    TRAC5 : tgtgctagacatgaggtctangg
+PAM_Sequence : ngg
+
+# Specimen treatment
+# Data can be input here or refereced in sampleInfo by just putting 
+# 'sampleInfo:{column}'. For simplicity, if all samples were treated with the 
+# same gRNA(s), the sample can be named 'all' followed by the treated gRNA 
+# names. If placing data in sampleInfo, delimit multiple guideRNA names with a
+# semicolon ';'.
+Treatment :
+  testSeq : B2M, TRAC5
+
 # ------------------------------------------------------------------------------
 # iDSBseq configuration
 Install_Directory : "/home/nobles/dev/projects/iGUIDE"
