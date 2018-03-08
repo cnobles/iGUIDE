@@ -12,6 +12,7 @@ install_conda () {
     bash Miniconda3-latest-Linux-x86_64.sh -b -p ${PREFIX} >> ${OUTPUT}
     export PATH=${PATH}:${PREFIX}/bin
     command -v conda > /dev/null 2>&1 || { echo "Conda still is not on the path, try installing manually"; exit 1; }
+    conda update -n root conda --yes
     rm Miniconda3-latest-Linux-x86_64.sh
 }
 
