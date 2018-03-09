@@ -23,12 +23,12 @@ R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # Guide RNA information, including PAM sequence with gRNA
 Guide_RNA_Sequences :
-    B2M : "gagtagcgcgagcacagctangg"
-    TRAC5 : "tgtgctagacatgaggtctangg"
+  B2M : "gagtagcgcgagcacagctangg"
+  TRAC5 : "tgtgctagacatgaggtctangg"
 PAM_Sequence : "ngg"
 On_Target_Sites :
-    B2M : "chr15:-:44711569"
-    TRAC5 : "chr14:+:22547664"
+  B2M : "chr15:-:44711569"
+  TRAC5 : "chr14:+:22547664"
 
 # Specimen treatment
 # Data can be input here or refereced in sampleInfo by just putting 
