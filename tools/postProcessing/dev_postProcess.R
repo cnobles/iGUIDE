@@ -256,7 +256,7 @@ algnmts$guideRNA.match <- filter_inappropriate_comparisons(
 # criteria.
 tbl_clus_ori <- algnmts %>% 
   group_by(specimen, clus.ori) %>%
-  filter(n() > pile_up_min) %>%
+  filter(n() >= pile_up_min) %>%
   ungroup() %$%
   table(clus.ori)
 idx_clus_ori <- which(algnmts$clus.ori %in% names(tbl_clus_ori))
@@ -322,13 +322,19 @@ paired_regions <- paired_algns %>%
   summarise(
     seqnames = unique(seqnames),
     start = min(pos), end = max(pos), mid = start + (end-start)/2,
-    strand = "*", width = end - start, algns = n(), count = sum(count), 
-    guideRNA.match = paste(sort(unique(guideRNA.match)), collapse = ";"),
-    guideRNA.mismatch = paste(sort(unique(guideRNA.mismatch)), collapse = ";"),
-    edit.site = paste(sort(unique(edit.site)), collapse = ";"),
-    on.off.target = paste(sort(unique(on.off.target)), collapse = ";")) %>%
+    strand = "*", width = end - start, algns = n(), count = sum(count)) %>%
   ungroup() %>% as.data.frame() %>%
-  mutate(gene_id = assign_gene_id(
+  mutate(
+    on.off.target = ifelse(
+      seqnames == str_extract(
+        on_target_sites[unlist(treatment[specimen])], "[\\w]+"),
+      ifelse(
+        start <= as.numeric(
+          str_extract(on_target_sites[unlist(treatment[specimen])], "[\\w]+$")),
+        ifelse(end >= as.numeric(
+          str_extract(on_target_sites[unlist(treatment[specimen])], "[\\w]+$")),
+          "On-target", "Off-target"), "Off-target"), "Off-target"),
+    gene_id = assign_gene_id(
       seqnames, mid, reference = refGenome, 
       ref_genes = ref_genes, onco_genes = onco_genes, 
       bad_actors = bad_actors))

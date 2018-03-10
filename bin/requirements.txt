@@ -13,6 +13,7 @@ r-dplyr
 r-data.table
 r-matrix
 r-igraph
+r-rmarkdown
 r-knitr
 r-reshape2
 r-ggplot2
