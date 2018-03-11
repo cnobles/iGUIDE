@@ -150,6 +150,10 @@ if(any(grepl("sampleInfo:", treatment[1]))){
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
+}else{
+  treatment_df <- data.frame(
+    "specimen" = names(treatment), 
+    "treatment" = sapply(treatment, paste, collapse = ";"))
 }
 
 cat("Sample Treatment Table:")
