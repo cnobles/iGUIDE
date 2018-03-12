@@ -18,8 +18,8 @@ install_conda () {
 
 command -v conda > /dev/null 2>&1 || { echo "Conda not installed, installing now ..."; install_conda; }
 
-conda config --prepend channels 'conda-forge'
 conda config --prepend channels 'bushmanlab'
+conda config --prepend channels 'conda-forge'
 conda config --prepend channels 'r'
 conda config --prepend channels 'bioconda'
 

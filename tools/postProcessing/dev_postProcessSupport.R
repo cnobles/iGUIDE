@@ -160,6 +160,8 @@ load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
       bsession = ucsc_session)
     ref_set <- rtracklayer::track(
       ucsc_session, name = trackTable[1], table = trackTable[2])
+    stopifnot(all(ref_tbl$name == ref_set$name))
+    ref_set <- granges(ref_set)
     mcols(ref_set) <- ref_tbl
   }
   
@@ -319,7 +321,7 @@ compareGuideRNAs <- function(gr_with_sequences, seq_col,
     reverseComplement(seqs[rev_df$names]), 
     start = rev_df$start, 
     end = rev_df$end))
-  rev_df$guideRNA <- paste0(rev_df$guideRNA, " (rev)")
+  rev_df$guideRNA <- paste0(rev_df$guideRNA, rep(" (rev)", nrow(rev_df)))
   
   matched_seqs <- rbind(fwd_df, rev_df)
   matched_seqs <- matched_seqs[grepl(pam, matched_seqs$aln.seq),]
@@ -328,6 +330,7 @@ compareGuideRNAs <- function(gr_with_sequences, seq_col,
   
   if(length(good_alns) == 0){
     sites$guideRNA.match <- "No_valid_match"
+    sites$guideRNA.mismatch <- NA
     sites$guideRNA.score <- NA
     sites$aligned.sequence <- NA
     sites$edit.site <- NA
@@ -387,8 +390,8 @@ alnGuideRNAs <- function(seqs, guideRNASeqs, tolerance){
   df <- do.call(rbind, lapply(1:length(alns), function(i){
     do.call(rbind, lapply(1:length(alns[[i]]), function(j){
       d <- as.data.frame(alns[[i]][[j]])
-      d$guideRNA <- names(alns[[i]][j])
-      d$mismatches <- i-1
+      d$guideRNA <- rep(names(alns[[i]][j]), nrow(d))
+      d$mismatches <- rep(i-1, nrow(d))
       d
     }))
   }))
@@ -462,39 +465,44 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
                            onco_genes, bad_actors, annotations = TRUE){
   require(GenomicRanges)
   require(hiAnnotator)
+  stopifnot(length(seqnames) == length(positions))
   
   gr <- GRanges(
     seqnames = seqnames,
-    ranges = IRanges(start = positions, width = 1),
-    strand = "*",
+    ranges = IRanges(start = positions, width = rep(1, length(positions))),
+    strand = rep("*", length(positions)),
     seqinfo = seqinfo(reference))
   
-  # Annotate Sites with Gene names for within and nearest genes
-  gr <- getSitesInFeature(
-    gr, ref_genes, colnam = "in_gene", feature.colnam = "annot_sym")
-  gr <- getNearestFeature(
-    gr, ref_genes, colnam = "nearest_gene", feature.colnam = "annot_sym")
-  
-  ## Add gene marks ("*" for in_gene, "~" for onco gene, and "!" for bad_actors)
-  gr$gene_id_wo_annot <- ifelse(
-    gr$in_gene == "FALSE", gr$nearest_gene, gr$in_gene)
-  gr$gene_id_wo_annot <- sapply(strsplit(gr$gene_id_wo_annot, ","), "[[", 1)
-  
-  gr$gene_id <- ifelse(
-    gr$in_gene == "FALSE", 
-    paste0(gr$gene_id_wo_annot, " "), 
-    paste0(gr$gene_id_wo_annot, " *"))
-  
-  gr$gene_id <- ifelse(
-    gr$gene_id_wo_annot %in% onco_genes, paste0(gr$gene_id, "~"), gr$gene_id)
-  
-  gr$gene_id <- ifelse(
-    gr$gene_id_wo_annot %in% bad_actors, paste0(gr$gene_id, "!"), gr$gene_id)
-  
-  if(annotations){
-    return(gr$gene_id)
+  if(length(gr) == 0){
+    return(character())
   }else{
-    return(gr$gene_id_wo_annot)
+    # Annotate Sites with Gene names for within and nearest genes
+    gr <- getSitesInFeature(
+      gr, ref_genes, colnam = "in_gene", feature.colnam = "annot_sym")
+    gr <- getNearestFeature(
+      gr, ref_genes, colnam = "nearest_gene", feature.colnam = "annot_sym")
+  
+    ## Add gene marks ("*" for in_gene, "~" for onco gene, and "!" for bad_actors)
+    gr$gene_id_wo_annot <- ifelse(
+      gr$in_gene == "FALSE", gr$nearest_gene, gr$in_gene)
+    gr$gene_id_wo_annot <- sapply(strsplit(gr$gene_id_wo_annot, ","), "[[", 1)
+  
+    gr$gene_id <- ifelse(
+      gr$in_gene == "FALSE", 
+      paste0(gr$gene_id_wo_annot, " "), 
+      paste0(gr$gene_id_wo_annot, " *"))
+  
+    gr$gene_id <- ifelse(
+      gr$gene_id_wo_annot %in% onco_genes, paste0(gr$gene_id, "~"), gr$gene_id)
+  
+    gr$gene_id <- ifelse(
+      gr$gene_id_wo_annot %in% bad_actors, paste0(gr$gene_id, "!"), gr$gene_id)
+  
+    if(annotations){
+      return(gr$gene_id)
+    }else{
+      return(gr$gene_id_wo_annot)
+    }
   }
 }
 

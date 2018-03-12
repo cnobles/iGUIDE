@@ -63,7 +63,7 @@ source(file.path(code_dir, "dev_postProcessSupport.R"))
 
 # Inputs and parameters --------------------------------------------------------
 config <- yaml::yaml.load_file(args$config)
-sampleInfo <- data.table::fread(
+sample_info <- data.table::fread(
   file.path(config$Install_Directory, config$Sample_Info), data.table = FALSE)
 submat <- banmat()
 
@@ -71,8 +71,8 @@ submat <- banmat()
 if(grepl(".fa", config$RefGenome)){
   if(!file.exists(config$RefGenome)){
     stop("Specified reference genome file not found.")}
-  refFileType <- ifelse(grepl(".fastq", config$RefGenome), "fastq", "fasta")
-  refGenome <- readDNAStringSet(config$RefGenome, format = refFileType)
+  ref_file_type <- ifelse(grepl(".fastq", config$RefGenome), "fastq", "fasta")
+  ref_genome <- readDNAStringSet(config$RefGenome, format = ref_file_type)
 }else{
   genome <- grep(
     config$RefGenome, unique(BSgenome::installed.genomes()), value = TRUE)
@@ -87,13 +87,16 @@ if(grepl(".fa", config$RefGenome)){
       "Please be more specific about reference genome. Multiple matches to input.")
   }
   suppressMessages(library(genome, character.only = TRUE))
-  refGenome <- get(genome)
+  ref_genome <- get(genome)
 }
 
 ## Load refGenes and gene lists for annotation =================================
-ref_genes <- load_ref_files(config$refGenes, type = "GRanges")
-onco_genes <- load_ref_files(config$oncoGeneList)
-bad_actors <- load_ref_files(config$specialGeneList)
+ref_genes <- load_ref_files(
+  config$refGenes, type = "GRanges", freeze = config$RefGenome)
+onco_genes <- load_ref_files(
+  config$oncoGeneList, type = "gene.list", freeze = config$RefGenome)
+bad_actors <- load_ref_files(
+  config$specialGeneList, type = "gene.list", freeze = config$RefGenome)
 
 ## Incorporation site parameters ===============================================
 upstream_dist <- config$upstreamDist
@@ -131,20 +134,20 @@ pandoc.table(
 ## Load data related to how samples were processed =============================
 treatment <- config$Treatment
 if(any(grepl("sampleInfo:", treatment[1]))){
-  info_col <- match(str_extract(treatment[1], "[\\w]+$"), names(sampleInfo))
+  info_col <- match(str_extract(treatment[1], "[\\w]+$"), names(sample_info))
   if(length(info_col) != 1){
     stop("Cannot parse treatment data. Check config yaml and sampleInfo.")
   }
   treatment_df <- data.frame(
-    sampleName = sampleInfo$sampleName, 
-    treatment = sampleInfo[,info_col])
+    sampleName = sample_info$sampleName, 
+    treatment = sample_info[,info_col])
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
 }else if(any(grepl("all", names(treatment)))){
   treatment_df <- data.frame(
-    sampleName = sampleInfo$sampleName, 
+    sampleName = sample_info$sampleName, 
     treatment = treatment[1])
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
@@ -206,7 +209,7 @@ algnmts_gr <- GRanges(
   seqnames = algnmts$seqnames,
   ranges = IRanges(start = algnmts$start, end = algnmts$end),
   strand = algnmts$strand,
-  seqinfo = seqinfo(refGenome))
+  seqinfo = seqinfo(ref_genome))
 mcols(algnmts_gr) <- dplyr::select(algnmts, specimen, sampleName, count)
 
 # Analyze alignments -----------------------------------------------------------
@@ -226,12 +229,12 @@ algn_clusters <- GRanges(
   seqnames = split_clus_id[,1],
   ranges = IRanges(start = as.numeric(split_clus_id[,3]), width = 1),
   strand = split_clus_id[,2],
-  seqinfo = seqinfo(refGenome))
+  seqinfo = seqinfo(ref_genome))
 
 algn_clusters$clus.ori <- unique(algnmts_gr$clus.ori)
 algn_clusters$clus.seq <- getSiteSeqs(
   algn_clusters, upstream_flank = upstream_dist, 
-  downstream_flank = downstream_dist, ref_genome = refGenome)
+  downstream_flank = downstream_dist, ref_genome = ref_genome)
 
 # Identify which guideRNAs potentially bind near clusters
 algn_clusters <- compareGuideRNAs(
@@ -312,7 +315,7 @@ matched_summary <- matched_algns %>%
   mutate(gene_id = assign_gene_id( 
     seqnames = stringr::str_extract(edit.site, "[\\w]+"), 
     positions = as.numeric(stringr::str_extract(edit.site, "[\\w]+$")), 
-    reference = refGenome, 
+    reference = ref_genome, 
     ref_genes = ref_genes, onco_genes = onco_genes, 
     bad_actors = bad_actors))
 
@@ -339,7 +342,7 @@ paired_regions <- paired_algns %>%
           str_extract(on_target_sites[unlist(treatment[specimen])], "[\\w]+$")),
           "On-target", "Off-target"), "Off-target"), "Off-target"),
     gene_id = assign_gene_id(
-      seqnames, mid, reference = refGenome, 
+      seqnames, mid, reference = ref_genome, 
       ref_genes = ref_genes, onco_genes = onco_genes, 
       bad_actors = bad_actors))
 
@@ -404,7 +407,7 @@ crispr_sites <- GenomicRanges::as.data.frame(
 crispr_sites$gene_id <- assign_gene_id(
   crispr_sites$site.chr, 
   positions = crispr_sites$site.pos, 
-  reference = refGenome, 
+  reference = ref_genome, 
   ref_genes = ref_genes, 
   onco_genes = onco_genes, 
   bad_actors = bad_actors)
