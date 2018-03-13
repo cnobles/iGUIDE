@@ -42,19 +42,26 @@ options(
 
 knitr::opts_chunk$set(
   echo = FALSE,
-  fig.align = "center",
   comment = "",
   echo = FALSE,
   warning = FALSE,
   error = TRUE,
   message = FALSE,
   cache = FALSE,
+  results = "asis",
+  fig.align = "center",
   dpi = 300,
   dev = "png",
-  results = "asis",
   fig.pos = "H",
   fig.width = 7
 )
+
+if(args$figures != FALSE){
+knitr::opts_chunk$set(
+  fig.path = file.path(output_dir, stringr::str_replace(
+      output_file, ".pdf$", ".figures/")))
+}
+
 
 # Helpful functions
 pNums <- function(x, ...){
@@ -88,7 +95,7 @@ The following document summarizes the results of processing `r set_names` sequen
 \newpage
 # Specimen overview
 
-```{r spec_overview}
+```{r spec_summary}
 # Summarize components and append to specimen table
 tbl_algn_counts <- input_data$algnmts %>%
   group_by(specimen) %>%
@@ -262,6 +269,7 @@ Figure 1 shows the distribution of distances incorporation sites are observed fr
 
 
 # Off-target analysis
+## Specimen breakdown
 
 Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected for from the data in an unbiased manner. Table 4 shows a summary of the unique off-target locations (loci) observed in the data. For **All** and **Probable** alignments, the loci are based on overlapping alignments (pile up cluster), without a minimum number of fragments required to be classified as a pile up cluster. **Pile Ups** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. **Paired** flanking loci require at least two unique alignments with opposite orientation (strands). gRNA **Matched** loci require a match in the upstream sequence to a treated gRNA.
 
@@ -337,3 +345,12 @@ kable(
   kable_styling(latex_options = c("repeat_header"))
 ```
 
+## Genomic enrichment
+
+compare output off-targets for enrichment in onco-genes and special-genes against random sites. 
+
+Output table with counts and p-values as well as adjusted p-values for multiple comparisons (BH). Maybe output a karyogram of off targets, consider putting a cool looking karyogram on the first page to show on and off target distribution by specimen. 
+
+## Add functionality - 
+output figures to directory
+output analysis data (input_data, + tables to report_data directory)

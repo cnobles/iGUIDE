@@ -29,6 +29,13 @@ parser$add_argument(
 parser$add_argument(
   "-s", "--support", nargs = "+", type = "character",
   help = "Supplementary data input, csv or tsv format.")
+parser$add_argument(
+  "-f", "--figures", action = "store_true",
+  help = "Figures will be written to a directory with output.")
+parser$add_argument(
+  "-d", "--data", action = "store_true",
+  help = "Data to generate the report will be saved as an R image with output."
+)
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -41,8 +48,9 @@ input_table <- data.frame(
   "Values" = sapply(1:length(args), function(i){
     paste(args[[i]], collapse = ", ")}))
 input_table <- input_table[
-  match(c("input :", "output :", "config :", "support :"),
-        input_table$Variables),]
+  match(
+    c("input :", "output :", "config :", "support :", "figures :", "data :"),
+    input_table$Variables),]
 pandoc.title("iGUIDE Report Inputs:")
 pandoc.table(data.frame(input_table, row.names = NULL), 
              justify = c("left", "left"), 
@@ -183,6 +191,11 @@ output_file <- output_path[length(output_path)]
 
 if(!str_detect(output_file, ".pdf$")){
   output_file <- paste0(output_file, ".pdf")
+}
+
+if(args$data){
+  save.image(file = file.path(
+    output_dir, stringr::str_replace(output_file, ".pdf$", ".RData")))
 }
 
 rmarkdown::render(
