@@ -159,9 +159,9 @@ load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
     str(ucsc_session)
     ## Debug ---
     
-    stopifnot(
-      trackTable[2] %in% rtracklayer::tableNames(
-        rtracklayer::ucscTableQuery(ucsc_session)))
+    #stopifnot(
+    #  trackTable[2] %in% rtracklayer::tableNames(
+    #    rtracklayer::ucscTableQuery(ucsc_session)))
     
     ref_tbl <- getUCSCtable(
       tableName = trackTable[2], trackName = trackTable[1], 
