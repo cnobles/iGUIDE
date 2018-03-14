@@ -25,6 +25,6 @@ rule all_edit_sites:
   shell:
     """
     TOOL="{ROOT_DIR}/tools/postProcessing/dev_postProcess.R"
-    Rscript ${{TOOL}} {input} -o {output} -c {params} > {log} 2>&1
+    Rscript ${{TOOL}} {input} -o {output} -c {params} 2>&1 | tee {log}
     """
 
