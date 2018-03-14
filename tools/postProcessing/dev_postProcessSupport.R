@@ -153,13 +153,31 @@ load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
     stopifnot(grepl(":", ref$file))
     trackTable <- unlist(strsplit(ref$file, ":"))
     ucsc_session <- makeUCSCsession(freeze)
+    
+    ## Debug ---
+    print(4.1)
+    str(ucsc_session)
+    ## Debug ---
+    
     stopifnot(
       trackTable[2] %in% tableNames(ucscTableQuery(ucsc_session)))
     ref_tbl <- getUCSCtable(
       tableName = trackTable[2], trackName = trackTable[1], 
       bsession = ucsc_session)
+    
+    ## Debug ---
+    print(4.2)
+    head(ref_tbl)
+    ## ---
+    
     ref_set <- rtracklayer::track(
       ucsc_session, name = trackTable[1], table = trackTable[2])
+    
+    ## Debug ---
+    print(4.3)
+    head(ref_set)
+    ## ---
+    
     stopifnot(all(ref_tbl$name == ref_set$name))
     ref_set <- granges(ref_set)
     mcols(ref_set) <- ref_tbl
@@ -169,6 +187,11 @@ load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
     stop("Import of reference data failed. Check input parameters.")
   }
   
+    ## Debug ---
+    print(4.4)
+    head(ref_set)
+    ## ---
+    
   if(type == "GRanges"){
     if(class(ref_set) == "GRanges"){
       ref_set$annot_sym <- mcols(ref_set)[,ref$symbol]
