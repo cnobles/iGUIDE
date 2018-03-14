@@ -54,35 +54,17 @@ if(!all(add_packs_loaded)){
   stop("Check dependancies.")
 }
 
-## Debug ---
-print(1)
-pandoc.table(data.frame(
-    "R-Packages" = names(add_packs_loaded), 
-    "Loaded" = add_packs_loaded, 
-    row.names = NULL))
-## Debug ---
-
 # Source supporting functions --------------------------------------------------
 code_dir <- dirname(
   sub("--file=", "", grep("--file=", 
                           commandArgs(trailingOnly = FALSE), value = TRUE)))
 source(file.path(code_dir, "dev_postProcessSupport.R"))
 
-## Debug ---
-print(2)
-ls()
-## Debug ---
-
 # Inputs and parameters --------------------------------------------------------
 config <- yaml::yaml.load_file(args$config)
 sample_info <- data.table::fread(
   file.path(config$Install_Directory, config$Sample_Info), data.table = FALSE)
 submat <- banmat()
-
-## Debug ---
-print(3)
-head(sample_info)
-## Debug ---
 
 ## Load reference genome =======================================================
 if(grepl(".fa", config$RefGenome)){
@@ -107,11 +89,6 @@ if(grepl(".fa", config$RefGenome)){
   ref_genome <- get(genome)
 }
 
-## Debug ---
-print(4)
-ref_genome
-## Debug ---
-
 ## Load refGenes and gene lists for annotation =================================
 ref_genes <- load_ref_files(
   config$refGenes, type = "GRanges", freeze = config$RefGenome)
@@ -119,13 +96,6 @@ onco_genes <- load_ref_files(
   config$oncoGeneList, type = "gene.list", freeze = config$RefGenome)
 bad_actors <- load_ref_files(
   config$specialGeneList, type = "gene.list", freeze = config$RefGenome)
-
-## Debug ---
-print(5)
-head(ref_genes)
-head(onco_genes)
-head(bad_actors)
-## Debug ---
 
 ## Incorporation site parameters ===============================================
 upstream_dist <- config$upstreamDist
