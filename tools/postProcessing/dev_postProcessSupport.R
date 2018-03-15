@@ -174,11 +174,6 @@ load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
     stop("Import of reference data failed. Check input parameters.")
   }
   
-    ## Debug ---
-    print(4.4)
-    head(ref_set)
-    ## ---
-    
   if(type == "GRanges"){
     if(class(ref_set) == "GRanges"){
       ref_set$annot_sym <- mcols(ref_set)[,ref$symbol]
