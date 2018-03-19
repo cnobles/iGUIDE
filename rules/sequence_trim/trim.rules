@@ -42,5 +42,5 @@ rule seq_trim_R2:
     Rscript ${{TOOL}} {input} -o {output} \
       -l {params.lead} --leadMisMatch {params.leadMis} \
       -r {params.over} --overMisMatch {params.overMis} \
-      --overMaxLength {params.overLen} --compress > {log} 2>&1
+      --noFiltering --overMaxLength {params.overLen} --compress > {log} 2>&1
     """
