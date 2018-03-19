@@ -17,7 +17,7 @@ def import_sample_info(filePath, sampleColName, delim):
 
 def choose_sequence_data(config_input, sampleInfo):
     if "sampleInfo" in config_input:
-        colnam = config_input.split(".")[1]
+        colnam = config_input.split(":")[1]
         if not colnam in sampleInfo:
             raise SystemExit(print("Cannot find ", colnam, "in sampleInfo."))
         seq = sampleInfo[colnam]
