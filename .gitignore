@@ -16,3 +16,4 @@ tools/blatCoupleR
 tools/pytools/__pycache__
 analysis/*
 genomes/*
+sampleInfo/*
