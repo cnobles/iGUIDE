@@ -60,5 +60,5 @@ rule seq_trim_R2_odn:
     TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
     Rscript ${{TOOL}} {input} -o {output} \
       -l {params.lead} --leadMisMatch {params.leadMis} \
-      --noFiltering --compress > {log} 2>&1
+      --noFiltering --noQualTrimming --compress > {log} 2>&1
     """
