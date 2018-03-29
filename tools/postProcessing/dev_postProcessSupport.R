@@ -71,7 +71,7 @@ groupPileups <- function(gr, strand, maxgap = maxgap){
   gr
 }  
 
-identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
+identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL, maxovlp = 10L){
   if(!is.null(grouping)){
     group_vec <- mcols(gr)[,match(grouping, names(mcols(gr)))]
   }else{
@@ -98,7 +98,7 @@ identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
         queryHits != subjectHits, 
         qStrand != sStrand,
         qStrand == "+",
-        qStart >= sStart) 
+        qStart - sStart >= -maxovlp)
     
     if(nrow(hits) == 0){
       return(rep(NA, length(gs)))
@@ -132,7 +132,8 @@ identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
   pairs[order(un_grl$ori.order)]
 }
 
-assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, grouping = NULL){
+assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, 
+                         maxovlp = 10L, grouping = NULL){
   if(!is.null(grouping)){
     group_vec <- mcols(gr)[,match(grouping, names(mcols(gr)))]
   }else{
@@ -141,40 +142,30 @@ assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, grouping = NULL){
   gr <- granges(gr)
   gr$grouping <- group_vec
   gr$ori.order <- seq_along(gr)
+  gr$pile.id <- pileupCluster(
+    gr, maxgap = pilegap, grouping = "grouping", return = "simple")
+  gr$pair.id <- identifyPairedAlgnmts(
+    gr, maxgap = pairgap, maxovlp = maxovlp, grouping = "grouping")
+  gr$pair.id[is.na(gr$pair.id)] <- paste0("NA.", 1:sum(is.na(gr$pair.id)))
+  
   grl <- split(gr, group_vec)
   gr_mod <- unlist(GenomicRanges::GRangesList(lapply(grl, function(gs){
-    red <- reduce(gs, min.gapwidth = pilegap, with.revmap = TRUE)
-  
-    red$pile.id <- pileupCluster(red, maxgap = pilegap, return = "simple")
-  
-    red$pair.id <- identifyPairedAlgnmts(red, maxgap = pairgap)
-    red$pair.id[is.na(red$pair.id)] <- paste0("NA.", 1:sum(is.na(red$pair.id)))
-  
-    # Construct edgelist for pileup clusters
-    pile_gr <- GenomicRanges::GRanges(
+    #red <- reduce(gs, min.gapwidth = pilegap, with.revmap = TRUE)
+    pp <- as.data.frame(gs) %>% 
+      distinct(pile.id, pair.id)
+    pp_gr <- GenomicRanges::GRanges(
       seqnames = "mock", 
       ranges = IRanges::IRanges(
-        start = as.integer(factor(red$pile.id)), width = 1),
+        start = as.integer(factor(pp$pair.id)), width = 1),
       strand = "+")
-    pile_gr$ori.order <- seq_along(pile_gr)
-    pile_ovlps <- as.matrix(GenomicRanges::findOverlaps(pile_gr, maxgap = 0L))
+    pp_grl <- split(pp_gr, pp$pile.id)
+    pp_el <- as.matrix(GenomicRanges::findOverlaps(pp_grl))
+    pp_el <- matrix(names(pp_grl)[pp_el], ncol = 2)
 
-    # Construct edgelist for paired clusters
-    pair_gr <- GenomicRanges::GRanges(
-      seqnames = "mock",
-      ranges = IRanges::IRanges(
-        start = as.integer(factor(red$pair.id)), width = 1),
-      strand = "+")
-    pair_gr$ori.order <- seq_along(pair_gr)
-    pair_ovlps <- as.matrix(GenomicRanges::findOverlaps(pair_gr, maxgap = 0L))
-
-    # Combine the two edgelists, construct graph, and identify clusters.
-    el <- rbind(pile_ovlps, pair_ovlps)
-    g <- igraph::simplify(igraph::graph_from_edgelist(el, directed = FALSE))
-    red$mem <- as.vector(igraph::membership(igraph::clusters(g)))
-    gs <- gs[unlist(red$revmap)]
-    gs$mem <- as.vector(S4Vectors::Rle(
-      values = red$mem, lengths = lengths(red$revmap)))
+    # Construct graph and identify clusters.
+    g <- igraph::simplify(igraph::graph_from_edgelist(pp_el, directed = FALSE))
+    mem <- igraph::membership(igraph::clusters(g))
+    gs$mem <- mem[gs$pile.id]
     gs
   })))
   
