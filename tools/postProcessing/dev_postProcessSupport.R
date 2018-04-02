@@ -17,7 +17,7 @@ pileupCluster <- function(gr, grouping = NULL,
   
   # Process each group individually to keep clustering separate
   gr$grouping <- group_vec
-  gr$order <- 1:length(gr)
+  gr$order <- seq_along(gr)
   grl <- split(gr, gr$grouping)
   gr <- unname(unlist(GRangesList(lapply(grl, function(g){
     g_pos <- g[strand(g) == "+"]
@@ -30,6 +30,7 @@ pileupCluster <- function(gr, grouping = NULL,
     g_ret
   }))))
   
+  if(length(gr) == 0){ gr$grouping <- gr$order <- seq_along(gr) }
   gr$clusID <- as.integer(factor(gr$clus.ori))
   gr <- gr[order(gr$order)]
   gr$order <- gr$grouping <- NULL
@@ -63,13 +64,14 @@ groupPileups <- function(gr, strand, maxgap = maxgap){
     pile_starts <- unlist(pile_starts)[end(pile_starts@partitioning)]
   }
   gr <- gr[order(gr$clusID)]
-  gr$clus.ori <- paste0(
+  clus.ori <- paste0(
     seqnames(gr), ":", strand(gr), ":", unlist(
       Rle(values = pile_starts, lengths = pile_ups$csize)))
+  gr$clus.ori <- clus.ori[seq_along(gr)]
   gr
 }  
 
-identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
+identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL, maxovlp = 10L){
   if(!is.null(grouping)){
     group_vec <- mcols(gr)[,match(grouping, names(mcols(gr)))]
   }else{
@@ -96,7 +98,7 @@ identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
         queryHits != subjectHits, 
         qStrand != sStrand,
         qStrand == "+",
-        qStart >= sStart) 
+        qStart - sStart >= -maxovlp)
     
     if(nrow(hits) == 0){
       return(rep(NA, length(gs)))
@@ -128,6 +130,48 @@ identifyPairedAlgnmts <- function(gr, maxgap, grouping = NULL){
   
   un_grl <- unlist(grl)
   pairs[order(un_grl$ori.order)]
+}
+
+assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, 
+                         maxovlp = 10L, grouping = NULL){
+  if(!is.null(grouping)){
+    group_vec <- mcols(gr)[,match(grouping, names(mcols(gr)))]
+  }else{
+    group_vec <- rep(1, length(gr))
+  }
+  gr <- granges(gr)
+  gr$grouping <- group_vec
+  gr$ori.order <- seq_along(gr)
+  gr$pile.id <- pileupCluster(
+    gr, maxgap = pilegap, grouping = "grouping", return = "simple")
+  gr$pair.id <- identifyPairedAlgnmts(
+    gr, maxgap = pairgap, maxovlp = maxovlp, grouping = "grouping")
+  gr$pair.id[is.na(gr$pair.id)] <- paste0("NA.", 1:sum(is.na(gr$pair.id)))
+  
+  grl <- split(gr, group_vec)
+  gr_mod <- unlist(GenomicRanges::GRangesList(lapply(grl, function(gs){
+    #red <- reduce(gs, min.gapwidth = pilegap, with.revmap = TRUE)
+    pp <- as.data.frame(gs) %>% 
+      distinct(pile.id, pair.id)
+    pp_gr <- GenomicRanges::GRanges(
+      seqnames = "mock", 
+      ranges = IRanges::IRanges(
+        start = as.integer(factor(pp$pair.id)), width = 1),
+      strand = "+")
+    pp_grl <- split(pp_gr, pp$pile.id)
+    pp_el <- as.matrix(GenomicRanges::findOverlaps(pp_grl))
+    pp_el <- matrix(names(pp_grl)[pp_el], ncol = 2)
+
+    # Construct graph and identify clusters.
+    g <- igraph::simplify(igraph::graph_from_edgelist(pp_el, directed = FALSE))
+    mem <- igraph::membership(igraph::clusters(g))
+    gs$mem <- mem[gs$pile.id]
+    gs
+  })))
+  
+  gr_mod$mem <- as.integer(factor(paste0(gr$grouping, ":", gr_mod$mem)))
+  gr_mod <- gr_mod[order(gr_mod$ori.order)]
+  return(gr_mod$mem)
 }
 
 # Format number in tables with big.marks conveinently
@@ -511,6 +555,115 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
   }
 }
 
+calc_coverage <- function(gr, resolution){ ###!!!!!!!!Add option for counting coverage by reads or uniq frags
+  #Set up coverage gr
+  strandless <- gr
+  strand(strandless) <- "*"
+  gr_ranges <- range(strandless)
+  
+  window_seqs <- lapply(gr_ranges, function(chr, res){
+    seq(start(chr), end(chr), res)
+  }, res = resolution)
+  
+  coverage_grl <- GRangesList(lapply(
+    1:length(gr_ranges), function(i, gr_ranges, window_seqs){
+      seqname <- seqnames(gr_ranges[i])
+      window <- window_seqs[[i]]
+      GRanges(
+        seqnames = rep(seqname, length(window)),
+        ranges = IRanges(
+          start = window, width = rep(resolution, length(window))),
+        strand = rep("*", length(window)))
+    }, gr_ranges = gr_ranges, window_seqs = window_seqs))
+  
+  coverage_pos <- coverage_grl
+  coverage_pos <- GRangesList(lapply(coverage_pos, function(x){
+    strand(x) <- rep("+", length(x))
+    x}))
+  coverage_neg <- coverage_grl
+  coverage_neg <- GRangesList(lapply(coverage_pos, function(x){
+    strand(x) <- rep("-", length(x))
+    x}))
+  
+  bind_rows(lapply(1:length(coverage_grl), function(i, gr){
+    as.data.frame(coverage_grl[[i]], row.names = NULL) %>%
+      select(seqnames, start, end, width) %>%
+      mutate(
+        readCountsPos = countOverlaps(coverage_pos[[i]], gr),
+        readCountsNeg = countOverlaps(coverage_neg[[i]], gr)) %>%
+      arrange(seqnames)
+  }, gr = gr))
+}
+
+plot_coverage <- function(gr, resolution = 10L){
+  df <- calc_coverage(gr, resolution)
+  ggplot(df, aes(x = start)) + 
+    geom_bar(
+      aes(y = readCountsPos), 
+      stat = "identity", fill = "blue", width = resolution) +
+    geom_bar(
+      aes(y = -readCountsNeg), 
+      stat = "identity", fill = "red", width = resolution) +
+    facet_grid(. ~ seqnames, scales = "free") +
+    geom_abline(slope = 0, intercept = 0, color = "grey") +
+    labs(x = "Genomic Loci Position", y = "Read Counts") +
+    theme_bw() +
+    theme(
+      legend.position = "None",
+      strip.background = element_rect(fill = "white"),
+      panel.border = element_rect(color = "white"),
+      panel.grid.major = element_line(color = "white"),
+      panel.grid.minor = element_line(color = "white"),
+      axis.text = element_text(color = "black"),
+      axis.line.x = element_line(color = "black"),
+      axis.line.y = element_line(color = "black"))
+}
+
+plot_edit_sites <- function(gr, sampleName = NULL, resolution = 10L){
+  stopifnot(length(unique(gr$edit.site)) == 1)
+  if(!is.null(sampleName)){  
+    isThere <- match(sampleName, names(mcols(gr)))
+    if(length(isThere) == 0) stop("SampleName column not found.")
+    sample <- unique(as.character(mcols(gr)[,isThere]))
+  }else{
+    sample <- "Unspecified"
+  }
+  guide <- unique(str_extract(gr$guideRNA.match, "[\\w\\-\\.]+"))
+  edit_site <- as.character(unique(gr$edit.site))
+  edit_site <- unlist(strsplit(edit_site, ":"))
+  edit_pos <- as.numeric(edit_site[3])
+  edit_site[3] <- format(edit_pos, big.mark = ",", scientific = FALSE)
+  df <- calc_coverage(gr, resolution)
+  df$edit.site <- paste0(
+    "Sample: ", sample, 
+    "\nGuide: ", guide,
+    "\nEdit Site: ", paste(edit_site, collapse = ":"))
+  ggplot(df, aes(x = start)) + 
+    geom_bar(
+      aes(y = readCountsPos), 
+      stat = "identity", fill = "blue", width = resolution) +
+    geom_bar(
+      aes(y = -readCountsNeg), 
+      stat = "identity", fill = "red", width = resolution) +
+    facet_grid(. ~ edit.site, scales = "free") +
+    geom_abline(slope = 0, intercept = 0, color = "black") +
+    geom_vline(xintercept = edit_pos, color = "black") +
+    labs(x = "Genomic Loci Position", y = "Template Counts") +
+    theme_bw() +
+    theme(
+      legend.position = "None",
+      strip.background = element_rect(fill = NA, linetype = 0),
+      strip.text = element_text(size = 14, lineheight = 1.1),
+      panel.border = element_rect(color = "white"),
+      plot.background = element_rect(color = "white"),
+      panel.grid.major = element_line(color = "white"),
+      panel.grid.minor = element_line(color = "white"),
+      axis.title = element_text(color = "black", size = 14),
+      axis.text = element_text(color = "black", size = 12),
+      axis.line.x = element_line(color = "black"),
+      axis.line.y = element_line(color = "black"))
+}
+
 
 #' A Binary Ambiguous Nucleotide scoring Matrix (BAN Mat)
 #' 
@@ -548,4 +701,9 @@ banmat <- function(){
         "K", "M", "B", "V", "H", "D", "N", "?"),
       c("A", "T", "G", "C", "S", "W", "R", "Y", 
         "K", "M", "B", "V", "H", "D", "N", "?")))
+}
+
+make_square <- function(p, dims, fudge=1) {
+  dims <- heatmap_dims(p)
+  p + ggplot2::theme(aspect.ratio = (dims$nrows/dims$ncols)*fudge)
 }
