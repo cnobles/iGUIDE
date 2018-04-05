@@ -52,7 +52,7 @@ rule seq_trim_R2_odn:
     temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz")
   params:
     lead=lambda wildcards: R2_LEAD_ODN[wildcards.sample],
-    leadMis=1
+    leadMis=config["R2leadMismatch"]
   log:
     RUN_DIR + "/logs/{sample}.R2.odn.trim.log"
   shell:
@@ -60,5 +60,5 @@ rule seq_trim_R2_odn:
     TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
     Rscript ${{TOOL}} {input} -o {output} \
       -l {params.lead} --leadMisMatch {params.leadMis} \
-      --noFiltering --noQualTrimming --compress > {log} 2>&1
+      --noQualTrimming --compress > {log} 2>&1
     """
