@@ -7,11 +7,12 @@ rule consolidate:
   output:
     consol=temp(RUN_DIR + "/processData/{sample}.{read}.consol.fasta"),
     key=temp(RUN_DIR + "/processData/{sample}.{read}.key.csv")
+  params:
+    tool=ROOT_DIR + "/tools/seqConsolidateR/seqConsolidate.R"
   log:
     RUN_DIR + "/logs/{sample}.{read}.consol.log"
   shell:
     """
-    TOOL="{ROOT_DIR}/tools/seqConsolidateR/seqConsolidate.R"
-    Rscript ${{TOOL}} {input} -o {output.consol} -k {output.key} > {log} 2>&1
+    Rscript {params.tool} {input} -o {output.consol} -k {output.key} > {log} 2>&1
     """
 

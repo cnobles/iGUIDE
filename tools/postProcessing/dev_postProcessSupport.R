@@ -707,3 +707,21 @@ make_square <- function(p, dims, fudge=1) {
   dims <- heatmap_dims(p)
   p + ggplot2::theme(aspect.ratio = (dims$nrows/dims$ncols)*fudge)
 }
+
+#' Combine a list of ShortRead objects
+#' 
+#' @param split.seqs list of ShortRead objects
+#' @author Christopher Nobles, Ph.D.
+serial_append_S4 <- function(split.seqs){
+  require("ShortRead")
+  stopifnot(class(split.seqs) == "list")
+  
+  app_env <- new.env()
+  app_env$seqs <- split.seqs[[1]]
+  
+  null <- lapply(2:(length(split.seqs)), function(i){
+    app_env$seqs <- append(app_env$seqs, split.seqs[[i]])
+  })
+  
+  return(app_env$seqs)
+}

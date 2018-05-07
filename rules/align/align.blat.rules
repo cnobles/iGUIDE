@@ -3,8 +3,8 @@
 
 rule align:
   input:
-    seq=RUN_DIR + "/processData/{sample}.{read}.consol.fasta",
-    genome=ROOT_DIR + "/" + config["RefGenomePath"]
+    seq = RUN_DIR + "/processData/{sample}.{read}.consol.fasta",
+    genome = ancient(ROOT_DIR + "/" + config["RefGenomePath"])
   output:
     temp(RUN_DIR + "/processData/{sample}.{read}.psl")
   params: 

@@ -9,11 +9,11 @@ rule seq_filter:
     R1=temp(RUN_DIR + "/processData/{sample}.R1.filt.fastq.gz"),
     R2=temp(RUN_DIR + "/processData/{sample}.R2.filt.fastq.gz")
   params:
+    tool=ROOT_DIR + "/tools/seqFiltR/seqFilt.R"
   log:
     RUN_DIR + "/logs/{sample}.filt.log"
   shell:
     """
-    TOOL="{ROOT_DIR}/tools/seqFiltR/seqFilt.R"
-    Rscript ${{TOOL}} {input.R1} {input.R2} -o {output.R1} {output.R2} \
+    Rscript {params.tool} {input.R1} {input.R2} -o {output.R1} {output.R2} \
       --compress > {log} 2>&1
     """

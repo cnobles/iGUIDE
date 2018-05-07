@@ -5,17 +5,17 @@ rule collect_umitags:
   input:
     RUN_DIR + "/processData/{sample}.I2.fastq.gz"
   output:
-    seq=temp(RUN_DIR + "/processData/{sample}.I2.fastq.gz"),
-    umi=RUN_DIR + "/processData/{sample}.umitags.fastq.gz"
+    seq=temp(RUN_DIR + "/processData/{sample}.I2.trim.fastq.gz"),
+    umi=temp(RUN_DIR + "/processData/{sample}.umitags.fasta.gz")
   params:
+    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
     seq=lambda wildcards: UMIseqs[wildcards.sample],
     mis=config["bc2Mismatch"]
   log:
     RUN_DIR + "/logs/{sample}.umitag.log"
   shell:
     """
-    TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
-    Rscript ${{TOOL}} {input} -o {output.seq} \
-      -l {params.seq} --leadMisMatch {params.mis} \
-      --collectRandomIDs {output.umi} --compress > {log} 2>&1
+    Rscript {params.tool} {input} -o {output.seq} \
+      -l {params.seq} --leadMisMatch {params.mis} --noQualTrimming \
+      --minSeqLength 0 --collectRandomIDs {output.umi} --compress > {log} 2>&1
     """
