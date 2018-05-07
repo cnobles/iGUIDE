@@ -150,7 +150,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
 }else if(any(grepl("all", names(treatment)))){
   treatment_df <- data.frame(
     sampleName = sample_info$sampleName, 
-    treatment = treatment[1])
+    treatment = unique(unlist(treatment)))
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
   treatment <- strsplit(treatment_df$treatment, ";")

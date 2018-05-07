@@ -46,5 +46,6 @@ rule run_report:
   params: 
     tool = ROOT_DIR + "/tools/postProcessing/generate_iGUIDE_report.R",
     config = RUN_DIR + "/" + "config.yml"
+  log: RUN_DIR + "/logs/" + RUN + ".report.log"
   shell:
-    "Rscript {params.tool} {input} -o {output} -c {params.config}"
+    "Rscript {params.tool} {input} -o {output} -c {params.config} > {log} 2>&1"
