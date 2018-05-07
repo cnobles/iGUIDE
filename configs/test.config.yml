@@ -41,7 +41,7 @@ Treatment :
 
 
 # ------------------------------------------------------------------------------
-# iDSBseq configuration
+# iGUIDE configuration
 Install_Directory : "/home/nobles/dev/projects/iGUIDE"
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
