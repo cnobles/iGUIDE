@@ -31,13 +31,13 @@ On_Target_Sites :
     TRAC5 : "chr14:+:22547664"
 
 # Specimen treatment
-# Data can be input here or refereced in sampleInfo by just putting 
+# Data can be input here or referenced in sampleInfo by just putting 
 # 'sampleInfo:{column}'. For simplicity, if all samples were treated with the 
 # same gRNA(s), the sample can be named 'all' followed by the treated gRNA 
 # names. If placing data in sampleInfo, delimit multiple guideRNA names with a
 # semicolon ';'.
 Treatment :
-    testSeq : ["B2M", "TRAC5"]
+    all : ["B2M;TRAC5"]
 
 
 # ------------------------------------------------------------------------------
@@ -76,8 +76,8 @@ minTempLength : 30
 maxTempLength : 2500
 
 # Post-processing
-refGenes : 
-    file : "refSeqComposite:refGene"
+refGenes :
+    file : "genomes/hg38.refSeq.rds"
     symbolCol : "name2"
 oncoGeneList : 
     file : "http://bushmanlab.org/assets/doc/allOnco_Feb2017.tsv"

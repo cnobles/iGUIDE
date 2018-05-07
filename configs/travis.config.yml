@@ -37,7 +37,7 @@ On_Target_Sites :
 # names. If placing data in sampleInfo, delimit multiple guideRNA names with a
 # semicolon ';'.
 Treatment :
-    testSeq : ["B2M", "TRAC5"]
+    all : ["B2M;TRAC5"]
 
 
 # ------------------------------------------------------------------------------

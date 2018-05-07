@@ -156,6 +156,10 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
     arrange(specimen)
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
+}else{
+  stop(
+    "Treatment information not accurately parsed from config(s).\n", 
+    "Check config(s) formating.")
 }
 
 ## Load in supporting information ==============================================
