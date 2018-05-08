@@ -15,7 +15,6 @@ r-matrix
 r-igraph
 r-rmarkdown
 r-knitr
-r-kableextra
 r-reshape2
 r-scales
 r-rcolorbrewer
