@@ -37,11 +37,11 @@ On_Target_Sites :
 # names. If placing data in sampleInfo, delimit multiple guideRNA names with a
 # semicolon ';'.
 Treatment :
-    testSeq : ["B2M", "TRAC5"]
+    all : ["B2M;TRAC5"]
 
 
 # ------------------------------------------------------------------------------
-# iDSBseq configuration
+# iGUIDE configuration
 Install_Directory : "/home/travis/build/cnobles/iGUIDE"
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]

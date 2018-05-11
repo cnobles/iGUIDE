@@ -24,6 +24,9 @@ parser$add_argument(
 parser$add_argument(
   "-c", "--config", nargs = 1, type = "character",
   help = "Run specific config file in yaml format.")
+parser$add_argument(
+  "-u", "--umitags", nargs = "+", type = "character", default = FALSE,
+  help = "Path(s) to associated fasta files containing read specific random captured sequences. Multiple file paths can be separated by a space.")
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -32,7 +35,7 @@ input_table <- data.frame(
   "Values" = sapply(1:length(args), function(i){
     paste(args[[i]], collapse = ", ")}))
 input_table <- input_table[
-  match(c("uniqSites :", "output :", "config :"),
+  match(c("uniqSites :", "output :", "config :", "umitags :"),
         input_table$Variables),]
 pandoc.title("Post-processing Inputs")
 pandoc.table(data.frame(input_table, row.names = NULL), 
@@ -41,7 +44,7 @@ pandoc.table(data.frame(input_table, row.names = NULL),
 
 # Load dependancies ------------------------------------------------------------
 add_packs <- c(
-  "stringr", "magrittr", "dplyr", "Matrix", "igraph", 
+  "stringr", "magrittr", "dplyr", "Matrix", "igraph", "ShortRead",
   "Biostrings", "GenomicRanges", "BSgenome", "hiAnnotator")
 
 add_packs_loaded <- suppressMessages(
@@ -147,7 +150,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
 }else if(any(grepl("all", names(treatment)))){
   treatment_df <- data.frame(
     sampleName = sample_info$sampleName, 
-    treatment = treatment[1])
+    treatment = unique(unlist(treatment)))
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
   treatment <- strsplit(treatment_df$treatment, ";")
@@ -168,6 +171,7 @@ pandoc.table(
 
 
 # Load input data --------------------------------------------------------------
+## Unique sites ================================================================
 reads <- data.table::fread(args$uniqSites, data.table = FALSE)
 
 # Print out stats during analysis.
@@ -183,14 +187,36 @@ pandoc.table(
   emphasize.rownames = FALSE)
 rm(temp_table)
 
+## Umitags or captured random sequences ========================================
+if(all(args$umitags != FALSE)){
+  umitags <- lapply(args$umitags, ShortRead::readFasta)
+  umitags <- serial_append_S4(umitags)
+  reads$umitag <- as.character(ShortRead::sread(umitags))[
+    match(reads$ID, as.character(ShortRead::id(umitags)))]
+}
+
 # Process input data -----------------------------------------------------------
 ## Format input alignments =====================================================
-algnmts <- mutate(reads, specimen = str_extract(sampleName, "[\\w]+")) %>%
-  group_by(seqnames, start, end, strand, specimen, sampleName) %>%
-  summarize(count = n()) %>%
-  ungroup() %>%
-  select(seqnames, start, end, strand, specimen, sampleName, count) %>%
-  as.data.frame()
+algnmts <- mutate(reads, specimen = str_extract(sampleName, "[\\w]+"))
+
+if(config$UMItags){
+  algnmts <- group_by(
+      algnmts, seqnames, start, end, strand, specimen, sampleName, umitag) %>%
+    summarise(count = n()) %>%
+    group_by(seqnames, start, end, strand, specimen, sampleName) %>%
+    summarise(count = sum(count), umitag = n_distinct(umitag)) %>%
+    ungroup() %>%
+    select(
+      seqnames, start, end, strand, specimen, sampleName, umitag, count) %>%
+    as.data.frame()
+}else{
+  algnmts <- group_by(
+      algnmts, seqnames, start, end, strand, specimen, sampleName) %>%
+    summarize(count = n()) %>%
+    ungroup() %>%
+    select(seqnames, start, end, strand, specimen, sampleName, count) %>%
+    as.data.frame()
+}
 
 sample_index <- ifelse(nrow(algnmts) > 10, 10, nrow(algnmts))
 sample_index <- sample(1:nrow(algnmts), sample_index, replace = FALSE)
@@ -209,7 +235,14 @@ algnmts_gr <- GRanges(
   ranges = IRanges(start = algnmts$start, end = algnmts$end),
   strand = algnmts$strand,
   seqinfo = seqinfo(ref_genome))
-mcols(algnmts_gr) <- dplyr::select(algnmts, specimen, sampleName, count)
+
+if(config$UMItags){
+  mcols(algnmts_gr) <- dplyr::select(
+    algnmts, specimen, sampleName, umitag, count)
+}else{
+  mcols(algnmts_gr) <- dplyr::select(
+    algnmts, specimen, sampleName, count)
+}
 
 # Analyze alignments -----------------------------------------------------------
 # Identify groups of alignments or pileups of aligned fragments
@@ -303,14 +336,29 @@ matched_summary <- matched_algns %>%
   mutate(guideRNA.match = stringr::str_extract(guideRNA.match, "[\\w]+")) %>%
   group_by(
     specimen, edit.site, aligned.sequence, 
-    guideRNA.match, guideRNA.mismatch) %>%
-  summarise(
+    guideRNA.match, guideRNA.mismatch)
+
+if(config$UMItags){
+  matched_summary <- summarise(
+    matched_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    umitag = sum(umitag),
+    count = sum(count), 
+    algns = n(),
+    orient = paste(sort(unique(as.character(strand))), collapse = ";"))
+}else{
+  matched_summary <- summarise(
+    matched_summary,
     on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
     paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
     count = sum(count), 
     algns = n(),
-    orient = paste(sort(unique(as.character(strand))), collapse = ";")) %>%
-  ungroup() %>% as.data.frame() %>%
+    orient = paste(sort(unique(as.character(strand))), collapse = ";"))
+}
+
+matched_summary <- ungroup(matched_summary) %>% 
+  as.data.frame() %>%
   mutate(gene_id = assign_gene_id( 
     seqnames = stringr::str_extract(edit.site, "[\\w]+"), 
     positions = as.numeric(stringr::str_extract(edit.site, "[\\w]+$")), 
@@ -324,12 +372,26 @@ paired_algns <- probable_algns[
 paired_regions <- paired_algns %>%
   group_by(specimen, paired.algn, strand) %>%
   mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
-  ungroup() %>% group_by(specimen, paired.algn) %>%
-  summarise(
+  ungroup() %>% group_by(specimen, paired.algn)
+
+if(config$UMItags){
+  paired_regions <- summarise(
+    paired_regions,
     seqnames = unique(seqnames),
     start = min(pos), end = max(pos), mid = start + (end-start)/2,
-    strand = "*", width = end - start, algns = n(), count = sum(count)) %>%
-  ungroup() %>% as.data.frame() %>%
+    strand = "*", width = end - start, algns = n(), umitag = sum(umitag), 
+    count = sum(count))
+  
+}else{
+  paired_regions <- summarise(
+    paired_regions,
+    seqnames = unique(seqnames),
+    start = min(pos), end = max(pos), mid = start + (end-start)/2,
+    strand = "*", width = end - start, algns = n(), count = sum(count))
+}
+
+paired_regions <- ungroup(paired_regions) %>% 
+  as.data.frame() %>%
   mutate(
     on.off.target = ifelse(
       seqnames == str_extract(

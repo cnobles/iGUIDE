@@ -7,6 +7,7 @@ rule seq_trim_R1:
   output:
     temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz")
   params:
+    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
     lead=lambda wildcards: R1_LEAD[wildcards.sample],
     over=lambda wildcards: R1_OVER[wildcards.sample],
     leadMis=config["R1leadMismatch"],
@@ -16,8 +17,7 @@ rule seq_trim_R1:
     RUN_DIR + "/logs/{sample}.R1.trim.log"
   shell:
     """
-    TOOL="{ROOT_DIR}/tools/seqTrimR/seqTrim.R"
-    Rscript ${{TOOL}} {input} -o {output} \
+    Rscript {params.tool} {input} -o {output} \
       -l {params.lead} --leadMisMatch {params.leadMis} \
       -r {params.over} --overMisMatch {params.overMis} \
       --overMaxLength {params.overLen} --compress > {log} 2>&1

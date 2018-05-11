@@ -90,16 +90,22 @@ theme_set(custom_theme)
 
 # Summary
 
-The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data. The dynamic range of this method can be increased by processing samples in technical replicates, specimens in these data were processed with up to `r group_by(sample_info, specimen) %>% summarize(cnt = n()) %$% max(cnt)` technical replicates each.
+The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data. The dynamic range of this method can be increased by processing samples in technical replicates, specimens in these data were processed with up to `r group_by(sample_info, specimen) %>% summarize(cnt = n()) %$% max(cnt)` technical replicates each. Alternatively, unique molecular index tags (umitags) can be used to quantify incorporations, see [**Tsai et al. 2015**](https://www.ncbi.nlm.nih.gov/pubmed/25513782).
 
 \newpage
 # Specimen overview
 
 ```{r spec_summary}
 # Summarize components and append to specimen table
-tbl_algn_counts <- input_data$algnmts %>%
-  group_by(specimen) %>%
-  summarise(reads = sum(count), fragments = n())
+tbl_algn_counts <- input_data$algnmts %>% group_by(specimen)
+
+if(umitag_option){
+  tbl_algn_counts <- summarise(
+    tbl_algn_counts, reads = sum(count), umitags = sum(umitag), fragments = n())
+}else{
+  tbl_algn_counts <- summarise(
+    tbl_algn_counts, reads = sum(count), fragments = n())
+}
 
 if(nrow(supp_data) > 0){
   spec_overview <- supp_data
@@ -110,9 +116,13 @@ if(nrow(supp_data) > 0){
 spec_overview <- left_join(spec_overview, tbl_algn_counts, by = "specimen") %>%
   mutate(reads = pNums(reads), fragments = pNums(fragments))
 
+if(umitag_option){
+  spec_overview <- mutate(spec_overview, umitags = pNums(umitags)) 
+}
+
 kable(
-    spec_overview, format = "latex", booktabs = TRUE, caption = "Specimen summary.", 
-    align = "c", digits = 1, longtable = TRUE, 
+    spec_overview, format = "latex", booktabs = TRUE, 
+    caption = "Specimen summary.", align = "c", digits = 1, longtable = TRUE, 
     format.args = list(big.mark = ",")) %>%
   kable_styling(latex_options = c("repeat_header"))
 ```

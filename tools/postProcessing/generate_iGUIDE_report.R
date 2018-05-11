@@ -34,8 +34,8 @@ parser$add_argument(
   help = "Figures will be written to a directory with output.")
 parser$add_argument(
   "-d", "--data", action = "store_true",
-  help = "Data to generate the report will be saved as an R image with output."
-)
+  help = "Data to generate the report will be saved as an R image with output.")
+
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -81,6 +81,8 @@ code_dir <- dirname(sub(
 ## Load config files
 configs <- lapply(args$config, yaml.load_file)
 names(configs) <- sapply(configs, "[[", "Run_Name")
+
+umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 
 ## Combine sampleInfo files
 sample_info <- bind_rows(lapply(
@@ -154,6 +156,10 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
     arrange(specimen)
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
+}else{
+  stop(
+    "Treatment information not accurately parsed from config(s).\n", 
+    "Check config(s) formating.")
 }
 
 ## Load in supporting information ==============================================

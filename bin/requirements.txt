@@ -8,15 +8,14 @@ r-base
 r-argparse
 r-pander
 r-yaml
-r-stringr
-r-dplyr
+r-tidyverse
+r-magrittr
 r-data.table
 r-matrix
 r-igraph
 r-rmarkdown
 r-knitr
 r-reshape2
-r-ggplot2
 r-scales
 r-rcolorbrewer
 bioconductor-biocgenerics
