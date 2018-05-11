@@ -9,19 +9,40 @@ import sys
 import re
 import yaml
 import configparser
-import rpy2
-from snakemake.utils import R
 from tools.pytools.defs import *
 
+# Working paths
+RUN = config["Run_Name"]
+ROOT_DIR = config["Install_Directory"]
+RUN_DIR = config["Install_Directory"] + "/analysis/" + RUN
+
+# Import sampleInfo
+if ".csv" in config["Sample_Info"]:
+    delim = ","
+elif ".tsv" in config["Sample_Info"]:
+    delim = "\t"
+else:
+    raise SystemExit("Sample Info file needs to contain extention '.csv' or '.tsv'.")
+
+sampleInfo = import_sample_info(
+    config["Sample_Info"], config["Sample_Name_Column"], delim)
+
 # Configuration
-ROOT_DIR = "/home/nobles/dev/projects/iGUIDE"
+ROOT_DIR = "/home/cnobles/iGUIDE"
 SAMPLE_PATH = ROOT_DIR + "/analysis/iGUIDE_Set0/processData/GSSP0004-neg"
 SPECIMEN = "GSSP0004-neg"
 REPS = [1, 2, 3, 4]
-SAMPLES = [SPECIMEN + "-" + str(rep) for rep in REPS]
-
-NUM_CHUNKS = 20
+NUM_CHUNKS = 50
 CHUNKS = ["chunk%02d" % i for i in range(1,NUM_CHUNKS+1)]
+
+SAMPLES=sampleInfo[config["Sample_Name_Column"]]
+TYPES=config["Read_Types"]
+READS=config["Genomic_Reads"]
+R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
+R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
+R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
+R2_LEAD_ODN=choose_sequence_data(config["R2_Leading_Trim_ODN"], sampleInfo)
+R2_OVER=choose_sequence_data(config["R2_Overreading_Trim"], sampleInfo)
 
 READ_TYPES = ["R1", "R2"]
 REF_GENOME = "hg38"
@@ -31,23 +52,38 @@ wildcard_constraints:
   sample="GSSP\d{4}-\w{3}-\d",
   read="R\d",
   chunk="chunk\d{2}"
-
+  
 # Target Rule
 rule all:
-  input: expand(SAMPLE_PATH + "/{sample}.uniq.csv", sample = SAMPLES)
+  input:
+    sites=expand(RUN_DIR + "/output/uniqSites/GSSP0004-neg-{rep}.uniq.csv", rep = ["1", "2", "3", "4"]),
+    umis=expand(RUN_DIR + "/processData/GSSP0004-neg-{rep}.umitags.fasta.gz", rep = ["1", "2", "3", "4"])
 
 # Workflow Rules
+include: "rules/demultiplex/demulti.rules"
+include: "rules/sequence_trim/trim.rules"
+if (config["UMItags"]):
+    include: "rules/sequence_trim/umitag.rules"
+    UMIseqs = sampleInfo["barcode2"]
+include: "rules/filter/filt.rules"
+
+rule make_chunk_dir:
+  input: "configs/" + RUN + ".config.yml"
+  output: SAMPLE_PATH
+  shell: "mkdir {output}"
 
 rule chunk_seqs:
-  input: SAMPLE_PATH + "/{sample}.{read}.filt.fastq.gz"
+  input: RUN_DIR + "/processData/{sample}.{read}.filt.fastq.gz"
   output: temp(expand(SAMPLE_PATH + "/{{sample}}.{{read}}.{chunk}.fastq.gz", chunk = CHUNKS))
-  params: NUM_CHUNKS
-  script:
-    "tools/rtools/parse_input_seqs.R"
+  params:
+    chunks=NUM_CHUNKS,
+    outpath=SAMPLE_PATH
+  shell:
+    "Rscript tools/rtools/parse_input_seqs.R {input} {params.outpath} {params.chunks}"
 
 rule consol:
   input: SAMPLE_PATH + "/{sample}.{read}.{chunk}.fastq.gz"
-  output: 
+  output:
     consol=temp(SAMPLE_PATH + "/{sample}.{read}.{chunk}.consol.fasta"),
     key=temp(SAMPLE_PATH + "/{sample}.{read}.{chunk}.key.csv")
   shell:
