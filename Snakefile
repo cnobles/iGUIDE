@@ -33,6 +33,7 @@ READS=config["Genomic_Reads"]
 R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
 R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
 R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
+R2_LEAD_ODN=choose_sequence_data(config["R2_Leading_Trim_ODN"], sampleInfo)
 R2_OVER=choose_sequence_data(config["R2_Overreading_Trim"], sampleInfo)
 
 # Working paths
