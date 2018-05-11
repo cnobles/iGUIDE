@@ -19,6 +19,7 @@ Sample_Name_Column : "sampleName"
 R1_Leading_Trim : "."
 R1_Overreading_Trim : "GCTCGCGTTTAATTGAGTTG"
 R2_Leading_Trim : "ACATATGACAACTCAATTAAACGCGAGC"
+R2_Leading_Trim_ODN : "."
 R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # Guide RNA information, including PAM sequence with gRNA
