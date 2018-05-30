@@ -20,7 +20,7 @@ rule compress_align:
   shell: "gzip {input}"
 
 rule generate_2bit:
-  input: "configs/" + RUN + ".config.yml"
+  input: ancient("configs/" + RUN + ".config.yml")
   output: ROOT_DIR + "/" + config["RefGenomePath"]
   params: config["RefGenome"]
   shell: 

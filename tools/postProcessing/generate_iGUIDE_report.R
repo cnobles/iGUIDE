@@ -107,8 +107,9 @@ gRNAs <- split(gRNAs, stringr::str_extract(names(gRNAs), "[\\w\\-\\_]+"))
 pams <- split(pams, stringr::str_extract(names(pams), "[\\w\\-\\_]+"))
 
 gRNAs <- bind_rows(mapply(function(seqs, pam){
-    pam_mat <- sapply(pam, function(pat){
-      stringr::str_detect(seqs, paste0(pat,"$")) })
+    pam_mat <- matrix(unlist(lapply(pam, function(pat){
+        stringr::str_detect(seqs, paste0(pat,"$")) })), 
+      ncol = length(pam))
     if(any(rowSums(pam_mat) > 1)){ 
       stop("Multiple PAM sequences detected on a single guide RNA.") }
     rownames(pam_mat) <- str_extract(names(seqs), "[\\w\\-\\_]+$")

@@ -109,8 +109,9 @@ on_target_sites <- config$On_Target_Sites
 ## Load Guide RNAs and sample metadata =========================================
 guide_rna_seqs <- lapply(config$Guide_RNA_Sequences, toupper)
 pam_seq <- lapply(config$PAM_Sequence, toupper)
-pam_mat <- sapply(pam_seq, function(pat){
-  stringr::str_detect(guide_rna_seqs, paste0(pat,"$")) })
+pam_mat <- matrix(unlist(lapply(pam_seq, function(pat){
+    stringr::str_detect(guide_rna_seqs, paste0(pat,"$")) })), 
+  ncol = length(pam_seq))
 if(any(rowSums(pam_mat) > 1)){ 
   stop("Multiple PAM sequences detected on a single guide RNA.") }
 rownames(pam_mat) <- names(guide_rna_seqs)

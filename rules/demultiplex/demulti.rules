@@ -3,7 +3,7 @@
 
 rule demultiplex:
   input:
-    configFile="configs/" + RUN + ".config.yml",
+    configFile=ancient("configs/" + RUN + ".config.yml"),
     sampleInfo=config["Sample_Info"],
     R1=RUN_DIR + "/input_data/" + config["R1"],
     R2=RUN_DIR + "/input_data/" + config["R2"],
