@@ -47,7 +47,7 @@ if not os.path.isdir(ROOT_DIR):
 
 # Target Rules
 rule all:
-    input: RUN_DIR + "/output/edited_sites." + RUN + ".rds"
+    input: RUN_DIR + "/reports/report." + RUN + ".pdf"
 
 # Architecture Rules
 include: "rules/workflow_misc/arch.rules"

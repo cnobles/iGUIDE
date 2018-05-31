@@ -22,8 +22,7 @@ geometry: margin=0.75in
 ```{r setup, include=FALSE}
 packs <- c(
   "stringr", "magrittr", "dplyr", "data.table", "Biostrings", "GenomicRanges",
-  "knitr", "markdown", "kableExtra", "ggplot2", "scales", "RColorBrewer", 
-  "tidyr")
+  "knitr", "markdown", "ggplot2", "scales", "RColorBrewer", "tidyr", "pander")
 
 packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
 if(!all(packs_loaded)){
@@ -90,7 +89,7 @@ theme_set(custom_theme)
 
 # Summary
 
-The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data. The dynamic range of this method can be increased by processing samples in technical replicates, specimens in these data were processed with up to `r group_by(sample_info, specimen) %>% summarize(cnt = n()) %$% max(cnt)` technical replicates each. Alternatively, unique molecular index tags (umitags) can be used to quantify incorporations, see [**Tsai et al. 2015**](https://www.ncbi.nlm.nih.gov/pubmed/25513782).
+The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA or the inferred cells sampled. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data. The dynamic range of this method can be increased by processing samples in technical replicates. Specimens in these data were processed with up to `r group_by(sample_info, specimen) %>% summarize(cnt = n()) %$% max(cnt)` technical replicates each. Alternatively, unique molecular index tags (UMItags) can be used to quantify incorporations, see [**Tsai et al. 2015**](https://www.ncbi.nlm.nih.gov/pubmed/25513782).
 
 \newpage
 # Specimen overview
@@ -101,10 +100,11 @@ tbl_algn_counts <- input_data$algnmts %>% group_by(specimen)
 
 if(umitag_option){
   tbl_algn_counts <- summarise(
-    tbl_algn_counts, reads = sum(count), umitags = sum(umitag), fragments = n())
+    tbl_algn_counts, 
+    Reads = sum(count), UMItags = sum(umitag), Alignments = n())
 }else{
   tbl_algn_counts <- summarise(
-    tbl_algn_counts, reads = sum(count), fragments = n())
+    tbl_algn_counts, Reads = sum(count), Alignments = n())
 }
 
 if(nrow(supp_data) > 0){
@@ -113,57 +113,62 @@ if(nrow(supp_data) > 0){
   spec_overview <- treatment_df
 }
 
-spec_overview <- left_join(spec_overview, tbl_algn_counts, by = "specimen") %>%
-  mutate(reads = pNums(reads), fragments = pNums(fragments))
+spec_overview <- left_join(spec_overview, tbl_algn_counts, by = "specimen") 
 
-if(umitag_option){
-  spec_overview <- mutate(spec_overview, umitags = pNums(umitags)) 
-}
+pandoc.table(
+  spec_overview, caption = "Specimen summary.", 
+  justify = ifelse(sapply(seq_along(spec_overview), function(i){
+    is.numeric(spec_overview[,i]) }), "right", "center"),
+  big.mark = ",", style = "multiline")
 
-kable(
-    spec_overview, format = "latex", booktabs = TRUE, 
-    caption = "Specimen summary.", align = "c", digits = 1, longtable = TRUE, 
-    format.args = list(big.mark = ",")) %>%
-  kable_styling(latex_options = c("repeat_header"))
+#kable(
+#    spec_overview, format = "latex", booktabs = TRUE, 
+#    caption = "Specimen summary.", align = "c", digits = 1, longtable = TRUE, 
+#    format.args = list(big.mark = ",")) %>%
+#  kableExtra::kable_styling(latex_options = c("scale_down"))
 ```
 
-Each specimen started in the iGUIDE pipeline as genomic DNA. The DNA was then randomly sheared through ultrasonication and ligated with barcoded DNA linkers. A nested-PCR amplified from incorporated dsODN sequences to the linker sequence with barcoded and linker specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were then sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
+Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. A nested-PCR amplified from incorporated dsODN sequences to the linker sequence with barcoded and linker specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
 
-DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in Table 1, along with the number of unique DNA fragments they represent. Multiple reads may represent a singular fragment of genomic DNA, inherent to sequence analysis of amplified DNA. These fragments of DNA indicate individual events of dsODN incorporation and clonal expansion.
+DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in Table 1, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
 
 
 \newpage
 # On-target analysis
 
-Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided in for these analyses and their On-target locations (loci) are shown in Table 2. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
+Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in Table 2. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
 ```{r gRNA_tbl}
 gRNAs$`Edit Loci` <- on_targets[gRNAs$Guide]
+emphasize.verbatim.cols(c(2,3))
+pandoc.table(
+  gRNAs, caption = "Guide RNAs and associated information.", 
+  justify = "center")
 
-kable(
-    gRNAs, format = "latex", booktabs = TRUE, 
-    caption = "Guide RNAs and associated information.", 
-    align = "c", digits = 1) %>%
-  column_spec(2, monospace = TRUE) %>%
-  column_spec(3, monospace = TRUE) %>%
-  kable_styling(latex_options = c("hold_position"))
+#kable(
+#    gRNAs, format = "latex", booktabs = TRUE, 
+#    caption = "Guide RNAs and associated information.", 
+#    align = "c", digits = 1) %>%
+#  column_spec(2, monospace = TRUE) %>%
+#  column_spec(3, monospace = TRUE) %>%
+#  kable_styling(latex_options = c("hold_position"))
 
 ```
 
 Analysis of On-target associated incorporation sites produces several notable features that are helpful in identifying non-specific or Off-target sites. These include the following:
 
-* Alignment **Pile Ups**: alignments of unique fragments of DNA will overlap with each other or "pile up", suggesting a nearby location may be directly targeted for a double strand break (DSB). For this analyses, any group of `r unique(sapply(configs, "[[", "pileUpMin"))` or more DNA fragments were considered as a pile up cluster.
+* Alignment **Pileups**: unique alignments that overlap with each other or "pileup", suggesting a nearby location may be directly targeted for a double strand break (DSB). For this analyses, any group of `r unique(sapply(configs, "[[", "pileUpMin"))` or more unique alignments were considered as a pileup cluster.
 
-* **Paired** flanking alignments: alignments can be found on either side of a DSB, and therefore identifying flanking alignments suggests a DSB could be found between the paired alignments. Flanking alignments were searched for in these data up to `r 2*unique(sapply(configs, "[[", "upstreamDist"))` bp from each other.
+* Flanking **Paired** alignments: alignments can be found on either side of a DSB, and therefore identifying flanking alignments suggests a DSB could be found between the paired alignments. Flanking alignments were searched for in these data up to `r 2*unique(sapply(configs, "[[", "upstreamDist"))` bp from each other.
 
 * gRNA **Matched** alignments: searching for the guide RNA sequence upstream of the incorporation site can be a strong indicator of guided nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching treated gRNA sequences were searched for up to `r unique(sapply(configs, "[[", "upstreamDist"))` bp upstream of the incorporation sites.
 
-In subsequent data analyses, these criteria are used to identify **Probable** RNA-guided nuclease edit sites. Any alignment that fit into the above criteria was considered to be a **Probable** loci for RNA-guided nuclease activity. Specimen specific tables with data relating to these criteria are found in Table 3 and Table 4.
+Specimen specific tables with data relating to these criteria are found in Table 3 for percent On-target editing and Table 4 for identified Off-target loci.
 
 \newpage
 ## Specimen breakdown
 
-Table 3 displays the percent of DNA fragments that were associated with On-target loci for **All** and **Probable** alignments. Further the percentages for **Pile Ups**, **Paired**, and **Matched** criteria are broken down in the following columns. 
+Table 3 displays the percent of cells sampled that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
 
 ```{r on_target_summary}
 # Algnmts
@@ -233,20 +238,28 @@ ot_tbl_summary <- mutate(treatment_df, specimen = factor(
 
 ot_tbl_summary <- Reduce(
   function(x,y){ left_join(x, y, by = "specimen") },
-  list(tbl_ot_algn[,c(1,3)], tbl_ot_prob[,c(1,3)], tbl_ot_pile[,c(1,3)],
+  list(tbl_ot_algn[,c(1,3)], tbl_ot_pile[,c(1,3)],
        tbl_ot_pair[,c(1,3)], tbl_ot_match[,c(1,3)]),
   init = ot_tbl_summary)
 
 names(ot_tbl_summary) <- c(
-  "Specimen", "Treatment", "All", "Probable", "Pile Ups", "Paired", "Matched")
+  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
+  "Flanking\nPairs", "gRNA\nMatched")
 
-kable(
-    ot_tbl_summary, format = "latex", booktabs = TRUE, 
-    caption = "On-target overview.", align = "c", digits = 1, longtable = TRUE, 
-    format.args = list(big.mark = ",")) %>%
-  add_header_above(c(rep(" ", 2), " " = 2, "Criteria" = 3)) %>%
-  add_header_above(c(rep(" ", 2), "Percent On-target" = 5)) %>%
-  kable_styling(latex_options = c("repeat_header"))
+pandoc.table(
+  ot_tbl_summary, caption = "Percent On-target.", 
+  digits = 4, style = "multiline",
+  justify = ifelse(sapply(seq_along(ot_tbl_summary), function(i){
+    is.numeric(ot_tbl_summary[,i]) }), "right", "center"),
+  keep.line.breaks = TRUE)
+
+#kable(
+#    ot_tbl_summary, format = "latex", booktabs = TRUE, 
+#    caption = "On-target overview.", align = "c", digits = 1, longtable = TRUE, 
+#    format.args = list(big.mark = ",")) %>%
+#  add_header_above(c(rep(" ", 2), " " = 2, "Criteria" = 3)) %>%
+#  add_header_above(c(rep(" ", 2), "Percent On-target" = 5)) %>%
+#  kable_styling(latex_options = c("repeat_header"))
   
 ```
 
@@ -275,13 +288,13 @@ ggplot(on_tar_dists, aes(x = edit.site.dist)) +
     y = "Alignment Count")
 ```
 
-Figure 1 shows the distribution of distances incorporation sites are observed from On-target loci. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which tunes the distance upstream of incorporation sites to search for nuclease edited sites.
+Figure 1 shows the distance distribution of observed incorporation sites from On-target loci. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which tunes the distance upstream of incorporation sites to search for nuclease edited sites.
 
 
 # Off-target analysis
 ## Specimen breakdown
 
-Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected for from the data in an unbiased manner. Table 4 shows a summary of the unique off-target locations (loci) observed in the data. For **All** and **Probable** alignments, the loci are based on overlapping alignments (pile up cluster), without a minimum number of fragments required to be classified as a pile up cluster. **Pile Ups** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. **Paired** flanking loci require at least two unique alignments with opposite orientation (strands). gRNA **Matched** loci require a match in the upstream sequence to a treated gRNA.
+Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. Table 4 shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). gRNA **Matched** loci require a match in the upstream sequence to a treated gRNA.
 
 ```{r off_target_summary}
 # All alignments
@@ -290,7 +303,7 @@ tbl_ft_algn <- input_data$algnmts %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   filter(!edit.site %in% on_targets) %>%
   group_by(specimen) %>%
-  summarise(ft_algns = pNums(n_distinct(clus.ori))) %>%
+  summarise(ft_algns = n_distinct(clus.ori)) %>%
   complete(specimen, fill = list(ft_algns = 0)) %>% 
   ungroup() %>% as.data.frame()
 
@@ -300,7 +313,7 @@ tbl_ft_prob <- input_data$probable_algns %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
-  summarise(ft_prob = pNums(n_distinct(clus.ori))) %>%
+  summarise(ft_prob = n_distinct(clus.ori)) %>%
   complete(specimen, fill = list(ft_prob = 0)) %>% 
   ungroup() %>% as.data.frame()
 
@@ -310,7 +323,7 @@ tbl_ft_pile <- input_data$pile_up_algns %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
-  summarise(ft_pile = pNums(n_distinct(clus.ori))) %>%
+  summarise(ft_pile = n_distinct(clus.ori)) %>%
   complete(specimen, fill = list(ft_pile = 0)) %>% 
   ungroup() %>% as.data.frame()
 
@@ -320,7 +333,7 @@ tbl_ft_pair <- input_data$paired_regions %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
-  summarise(ft_pair = pNums(n())) %>%
+  summarise(ft_pair = n()) %>%
   complete(specimen, fill = list(ft_pair = 0)) %>% 
   ungroup() %>% as.data.frame()
 
@@ -330,7 +343,7 @@ tbl_ft_match <- input_data$matched_summary %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
-  summarise(ft_match = pNums(n())) %>%
+  summarise(ft_match = n()) %>%
   complete(specimen, fill = list(ft_match = 0)) %>% 
   ungroup() %>% as.data.frame()
 
@@ -340,19 +353,27 @@ ft_tbl_summary <- mutate(treatment_df, specimen = factor(
 
 ft_tbl_summary <- Reduce(
   function(x,y){ left_join(x, y, by = "specimen") },
-  list(tbl_ft_algn, tbl_ft_prob, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
+  list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
   init = ft_tbl_summary)
 
 names(ft_tbl_summary) <- c(
-  "Specimen", "Treatment", "All", "Probable", "Pile Ups", "Paired", "Matched")
+  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
+  "Flanking\nPairs", "gRNA\nMatched")
 
-kable(
-    ft_tbl_summary, format = "latex", booktabs = TRUE, 
-    caption = "Off-target overview.", align = "c", digits = 1, longtable = TRUE, 
-    format.args = list(big.mark = ",")) %>%
-  add_header_above(c(rep(" ", 2), " " = 2, "Criteria" = 3)) %>%
-  add_header_above(c(rep(" ", 2), "Unique Off-target Loci" = 5)) %>%
-  kable_styling(latex_options = c("repeat_header"))
+pandoc.table(
+  ft_tbl_summary, caption = "Off-target Loci.",
+  digits = 1, big.mark = ",", 
+  justify = ifelse(sapply(seq_along(ft_tbl_summary), function(i){
+    is.numeric(ft_tbl_summary[,i]) }), "right", "center"),
+  keep.line.breaks = TRUE, style = "multiline")
+
+#kable(
+#    ft_tbl_summary, format = "latex", booktabs = TRUE, 
+#    caption = "Off-target overview.", align = "c", digits = 1, 
+#    longtable = TRUE, format.args = list(big.mark = ",")) %>%
+#  add_header_above(c(rep(" ", 2), " " = 2, "Criteria" = 3)) %>%
+#  add_header_above(c(rep(" ", 2), "Unique Off-target Loci" = 5)) %>%
+#  kable_styling(latex_options = c("repeat_header"))
 ```
 
 ## Genomic enrichment
