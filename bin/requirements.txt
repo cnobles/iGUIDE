@@ -1,5 +1,4 @@
 gcc
-unzip
 sed
 pkg-config
 snakemake
