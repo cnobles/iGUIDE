@@ -84,6 +84,15 @@ names(configs) <- sapply(configs, "[[", "Run_Name")
 
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 
+upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
+downstream_dist <- unique(sapply(configs, function(x) x$downstreamDist))
+if(length(upstream_dist) > 1 | length(downstream_dist) > 1){
+  stop(
+    "Inconsistant upstream or downstream distances between config files.\n",
+    "Comparisons between groups with different run specific criteria\n", 
+    "is not recommended.")
+}
+
 ## Combine sampleInfo files
 sample_info <- bind_rows(lapply(
     paste0(

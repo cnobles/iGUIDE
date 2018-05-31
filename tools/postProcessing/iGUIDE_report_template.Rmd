@@ -274,11 +274,26 @@ on_tar_dists <- input_data$matched_algns %>%
     edit.site.dist = ifelse(strand == "+", start - pos, pos - end)) %>%
   select(run.set, specimen, gRNA, edit.site, edit.site.dist, strand)
 
+sites_included <- on_tar_dists %>%
+  group_by(gRNA) %>%
+  summarise(
+    prop = 100 * sum(
+      edit.site.dist <= upstream_dist & edit.site.dist >= -downstream_dist) / 
+      n(),
+    x_pos = upstream_dist,
+    y_pos = max(table(edit.site.dist))) %>%
+  ungroup() %>%
+  mutate(prop = paste0(pNums(prop, digits = 4), "%"))
+
 ggplot(on_tar_dists, aes(x = edit.site.dist)) +
   geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
   geom_histogram(aes(fill = factor(gRNA)), binwidth = 1, color = "black") +
+  geom_text(
+    data = sites_included, 
+    aes(x = x_pos, y = y_pos, label = prop), 
+    hjust = 1, fontface = "bold", size = 5) +
   facet_wrap(~ gRNA, ncol = 2, scales = "free") +
-  lims(x = c(-10, 100)) +
+  lims(x = c(-downstream_dist, upstream_dist)) +
   scale_y_continuous(
     tran = "log10", breaks = log_breaks(), labels = pNums) +
   scale_fill_brewer(type = "qual", palette = "Set1") + 
