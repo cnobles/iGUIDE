@@ -27,6 +27,7 @@ conda config --prepend channels 'bioconda'
 conda env list | grep -Fxq ${IGUIDE_ENV_NAME} || {
     conda create --name=${IGUIDE_ENV_NAME} --file=bin/requirements.txt --yes >> ${OUTPUT}
     source activate ${IGUIDE_ENV_NAME}
+    Rscript bin/setup.R >> ${OUTPUT}
     cd tools
     git clone https://github.com/cnobles/dualDemultiplexR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/seqTrimR.git >> ${OUTPUT}
@@ -34,11 +35,12 @@ conda env list | grep -Fxq ${IGUIDE_ENV_NAME} || {
     git clone https://github.com/cnobles/seqConsolidateR.git >> ${OUTPUT}
     git clone https://github.com/cnobles/blatCoupleR.git >> ${OUTPUT}
     cd ../
-#    Rscript bin/setup_bioconductor.R >> ${OUTPUT}
-    echo "iGUIDE successfully installed.";
+    echo -e "iGUIDE successfully installed.\n" ;
 }
 
-echo "To get started, ensure ${PREFIX}/bin is in your path and run 'source activate ${IGUIDE_ENV_NAME}'"
-echo "To ensure ${PREFIX}/bin is in your path each time you long in, append the following to your .bashrc or .bash_profile:"
-echo "# Append miniconda3/bin to path"
-echo "export PATH='~/miniconda3/bin:${PATH}'"
+echo -e "To get started, ensure ${PREFIX}/bin is in your path and\n" \
+  "run 'source activate ${IGUIDE_ENV_NAME}'\n\n" \
+  "To ensure ${PREFIX}/bin is in your path each time you long in,\n" \
+  "append the following to your .bashrc or .bash_profile:\n\n" \
+  "# Append miniconda3/bin to path\n" \
+  "export PATH='~/miniconda3/bin:${PATH}'\n"
