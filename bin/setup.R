@@ -2,7 +2,7 @@
 r_libs <- c(
   "argparse", "data.table", "devtools", "igraph", "knitr", "magrittr", "Matrix", 
   "pander", "RColorBrewer", "reshape2", "rmarkdown", "scales", "tidyverse", 
-  "XML", "yaml")
+  "yaml")
 get_r_libs <- r_libs[!r_libs %in% row.names(installed.packages())]
 if(length(get_r_libs) > 0){
   install.packages(
