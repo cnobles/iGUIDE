@@ -1,5 +1,5 @@
 # -*- mode: Snakemake -*-
-# Post-Alignment Processing: BLAT
+# Final Processing Rules
 
 rule all_uniq_sites:
   input:
@@ -29,7 +29,7 @@ rule all_edit_sites:
     RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   params:
     config = RUN_DIR + "/" + "config.yml",
-    tool = ROOT_DIR + "/tools/postProcessing/dev_postProcess.R"
+    tool = ROOT_DIR + "/tools/processing/post_process.R"
   log:
     RUN_DIR + "/logs/" + RUN + ".postproc.log"
   run:
@@ -44,7 +44,7 @@ rule run_report:
   input: RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   output: RUN_DIR + "/reports/report." + RUN + ".pdf"
   params: 
-    tool = ROOT_DIR + "/tools/postProcessing/generate_iGUIDE_report.R",
+    tool = ROOT_DIR + "/tools/processing/generate_iGUIDE_report.R",
     config = RUN_DIR + "/" + "config.yml"
   log: RUN_DIR + "/logs/" + RUN + ".report.log"
   shell:

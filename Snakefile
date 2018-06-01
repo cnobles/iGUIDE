@@ -50,23 +50,23 @@ rule all:
     input: RUN_DIR + "/reports/report." + RUN + ".pdf"
 
 # Architecture Rules
-include: "rules/workflow_misc/arch.rules"
+include: "rules/arch.rules"
 
 # Processing Rules
-include: "rules/demultiplex/demulti.rules"
-include: "rules/sequence_trim/trim.rules"
+include: "rules/demulti.rules"
+include: "rules/trim.rules"
 if (config["UMItags"]):
-    include: "rules/sequence_trim/umitag.rules"
+    include: "rules/umitag.rules"
     UMIseqs = sampleInfo["barcode2"]
-include: "rules/filter/filt.rules"
-include: "rules/consolidate/consol.rules"
+include: "rules/filt.rules"
+include: "rules/consol.rules"
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
-    include: "rules/align/align.blat.rules"
-    include: "rules/post_align/post_align.blat.rules"
+    include: "rules/align.blat.rules"
+    include: "rules/quality.blat.rules"
 elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
     raise SystemExit("BWA aligner not supported yet.")
 else:
     "Aligner: " + config["Aligner"] + " not supported."
     "Please choose a supported option: BLAT or BWA."
-include: "rules/processing/post_process.rules"
+include: "rules/process.rules"
 

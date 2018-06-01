@@ -61,7 +61,7 @@ if(!all(add_packs_loaded)){
 code_dir <- dirname(
   sub("--file=", "", grep("--file=", 
                           commandArgs(trailingOnly = FALSE), value = TRUE)))
-source(file.path(code_dir, "dev_postProcessSupport.R"))
+source(file.path(code_dir, "post_process_support.R"))
 
 # Inputs and parameters --------------------------------------------------------
 config <- yaml::yaml.load_file(args$config)
