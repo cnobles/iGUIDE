@@ -1,5 +1,4 @@
 gcc
-unzip
 sed
 pkg-config
 snakemake
@@ -11,3 +10,4 @@ samtools
 r=3.4.1=r3.4.1_0
 r-xml
 pandoc
+texlive-core
