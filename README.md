@@ -11,18 +11,24 @@ To install iGUIDE, simply clone the repository to the desired destination:
 git clone https://github.com/cnobles/iGUIDE.git
 ```
 
-Then initiate the install using the install script. If you would like the installed environment to be named something other than 'iguide', the new conda environment name can be provided to the 'install.sh' script as provided below. 
+Then initiate the install using the install script. If you would like the installed environment to be named something other than 'iguide', the new conda environment name can be provided to the 'install.sh' script as provided below.
 ```
-cd iGUIDE
+cd path/to/iGUIDE
 bash bin/install.sh
 
 # Or
 
-cd iGUIDE
+cd path/to/iGUIDE
 bash bin/install.sh {env_name}
 ```
 
 ### Usage
+
+#### Configuration Files - Configs
+Configuration files, or configs for short, contain both run-related and pipeline-related information. This is by design, for reproducibility it is easiest to have what was processed and how it was processed in the same location. There should be one config file for each sequencing run to be processed. Below is a brief summary of how to 'configure' your config file to your specific run.
+
+##### Layout
+
 
 #### General
 
@@ -51,4 +57,35 @@ snakemake --configfile configs/test.config.yml -np
 snakemake --configfile configs/test.config.yml --dag | dot -Tsvg > test.dag.svg
 snakemake --configfile configs/test.config.yml --latency-wait 30
 cat analysis/test/output/unique_sites.test.csv
+```
+### Uninstall
+To uninstall iGUIDE, the user will need to remove the environment and the directory.
+
+To remove the environment and channels used with conda:
+```
+cd path/to/iGUIDE
+bash bin/uninstall.sh
+
+# Or
+
+cd path/to/iGUIDE
+bash bin/uninstall.sh {env_name}
+```
+
+If the user would rather remove the environment created for iGUIDE, it is recommended directly use conda. This will leave the channels within the conda config for use with other conda configurations.
+```
+conda env remove -n iguide
+
+# Or
+
+conda env remove -n {env_name}
+```
+
+To remove the iGUIDE directory and conda, the following two commands can be used:
+```
+# Remove iGUIDE directory and software
+rm -r path/to/iGUIDE
+
+# Remove conda
+rm -r path/to/miniconda3
 ```
