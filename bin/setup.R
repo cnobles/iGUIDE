@@ -21,7 +21,11 @@ if(length(get_bioc_libs) > 0){
 
 # Install developmental based packages from github
 options(unzip = "internal")
-devtools::install_github("cnobles/gintools")
+devtools::install_github(
+  "cnobles/gintools", 
+  repos = "https://mran.microsoft.com/snapshot/2018-05-01/",
+  upgrade_dependencies = FALSE,
+  dependencies = c("Depends", "Imports"))
 
 # Check for installed packages
 all_required <- c(r_libs, bioc_libs, "gintools")
