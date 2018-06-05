@@ -1,0 +1,91 @@
+# Run configuration
+Run_Name : "default"
+Sample_Info : "sampleInfo/default.sampleInfo.csv"
+RefGenome : "hg38"
+RefGenomePath : "genomes/hg38.2bit"
+Aligner : "blat"
+UMItags : TRUE
+
+# Sequence files
+R1: "Undetermined_S0_L001_R1_001.fastq.gz"
+R2: "Undetermined_S0_L001_R2_001.fastq.gz"
+I1: "Undetermined_S0_L001_I1_001.fastq.gz"
+I2: "Undetermined_S0_L001_I2_001.fastq.gz"
+
+# SampleInfo formating
+Sample_Name_Column : "sampleName"
+
+# Sequence information
+R1_Leading_Trim : "."
+R1_Overreading_Trim : "GCTCGCGTTTAATTGAGTTG"
+R2_Leading_Trim : "ACATATGACAACTCAATTAAACGCGAGC"
+R2_Leading_Trim_ODN : "."
+R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
+
+# Guide RNA information, including PAM sequence with gRNA
+Guide_RNA_Sequences :
+    B2M : "gagtagcgcgagcacagctangg"
+    TRAC5 : "tgtgctagacatgaggtctangg"
+PAM_Sequence : "ngg"
+On_Target_Sites :
+    B2M : "chr15:-:44711569"
+    TRAC5 : "chr14:+:22547664"
+
+# Specimen treatment
+# Data can be input here or referenced in sampleInfo by just putting 
+# 'sampleInfo:{column}'. For simplicity, if all samples were treated with the 
+# same gRNA(s), the sample can be named 'all' followed by the treated gRNA 
+# names. If placing data in sampleInfo, delimit multiple guideRNA names with a
+# semicolon ';'.
+Treatment :
+    all : ["B2M;TRAC5"]
+
+
+# ------------------------------------------------------------------------------
+# iGUIDE configuration
+Install_Directory : "/home/nobles/iGUIDE"
+Read_Types : ["R1", "R2", "I1", "I2"]
+Genomic_Reads : ["R1", "R2"]
+
+# Demultiplexing parameters
+barcode1Length : 8
+barcode2Length : 8
+barcode1 : "I1"
+barcode2 : "I2"
+bc1Mismatch : 0
+bc2Mismatch : 0
+demultiCores : 4
+
+# Sequence trimming
+## R1 sequence
+R1leadMismatch : 0
+R1overMismatch : 4
+R1overMaxLength : 20
+## R2 sequence
+R2leadMismatch : 3
+R2overMismatch : 4
+R2overMaxLength : 20
+
+# Reference Alignment
+BLATparams : "-tileSize=11 -stepSize=9 -minIdentity=85 -maxIntron=5 -minScore=27 -dots=1000 -out=psl -noHead"
+BWAparams : ""
+
+# Post-alignment filtering
+maxAlignStart : 5
+minPercentIdentity : 95
+minTempLength : 30
+maxTempLength : 2500
+
+# Post-processing
+refGenes :
+    file : "genomes/hg38.refSeq.rds"
+    symbolCol : "name2"
+oncoGeneList : 
+    file : "http://bushmanlab.org/assets/doc/allOnco_Feb2017.tsv"
+    symbolCol : "symbol"
+specialGeneList : 
+    file : "http://bushmanlab.org/assets/doc/humanLymph.tsv"
+    symbolCol : "symbol"
+upstreamDist : 100
+downstreamDist : 30
+pileUpMin : 3

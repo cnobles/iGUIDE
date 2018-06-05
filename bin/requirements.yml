@@ -20,8 +20,8 @@ dependencies:
   - r-data.table
   - r-matrix
   - r-igraph
-  - r-rmarkdown >= 1.8
-  - r-knitr
+  - r-rmarkdown >= 1.9
+  - r-knitr >= 1.20
   - r-reshape2
   - r-scales
   - r-rcolorbrewer
