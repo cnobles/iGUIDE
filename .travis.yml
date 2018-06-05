@@ -1,8 +1,8 @@
 language: ruby
-latex: true
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install xdotool
+  - sudo apt-get install texlive-latex-extra
 install:
   - bash bin/install.sh
 script: source tests/test.sh  
