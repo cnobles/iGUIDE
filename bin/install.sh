@@ -25,7 +25,7 @@ conda config --prepend channels 'bioconda'
 
 # Create enviroment if it does not exist
 conda env list | grep -Fxq ${IGUIDE_ENV_NAME} || {
-    conda env create --name ${IGUIDE_ENV_NAME} --file bin/requirements.v0.yml >> ${OUTPUT}
+    conda env create --name ${IGUIDE_ENV_NAME} --file bin/requirements.yml >> ${OUTPUT}
     source activate ${IGUIDE_ENV_NAME}
     Rscript bin/setup.R >> ${OUTPUT}
     cd tools
