@@ -1,8 +1,12 @@
+# Options
+options(stringsAsFactors = FALSE)
+.libPaths(new = grep("miniconda3/env/", .libPaths(), value = TRUE))
+
 # Install required R-packages, downloaded from CRAN Mirror snapshot
 r_libs <- c(
   "argparse", "data.table", "devtools", "igraph", "knitr", "magrittr", "Matrix",
   "pander", "RColorBrewer", "reshape2", "rmarkdown", "scales", "tidyverse", 
-  "yaml", "kableExtra")
+  "yaml", "kableExtra", "reldist")
 get_r_libs <- r_libs[!r_libs %in% row.names(installed.packages())]
 if(length(get_r_libs) > 0){
   install.packages(
@@ -11,7 +15,7 @@ if(length(get_r_libs) > 0){
     dependencies = c("Depends", "Imports")) }
 
 # Install BioConductoR-based packages
-source("https://bioconductor.org/biocLite.R")
+suppressMessages(source("https://bioconductor.org/biocLite.R"))
 bioc_libs <- c(
   "BiocGenerics", "Biostrings", "BSgenome", "BSgenome.Hsapiens.UCSC.hg38",
   "GenomicRanges", "hiAnnotator", "IRanges", "Rsamtools", "ShortRead")
@@ -34,14 +38,16 @@ devtools::install_github(
 all_required <- c(r_libs, bioc_libs, "gintools")
 is_installed <- suppressMessages(
   sapply(all_required, require, character.only = TRUE))
+
+print(data.frame(
+  "Loaded" = is_installed,
+  "R-Package" = names(is_installed)),
+  right = FALSE, row.names = FALSE)
+
 if(!all(is_installed)){
-  print(data.frame(
-    "R-Packages" = names(is_installed), 
-    "Loaded" = is_installed, 
-    row.names = NULL))
   stop("Not all required R-packages have been installed. Check dependencies.")
 }else{
-  message("All required packages installed.")
+  message("\nAll required packages installed.")
 }
 
 q()
