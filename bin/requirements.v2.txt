@@ -1,6 +1,0 @@
-snakemake
-rpy2
-graphviz
-blat
-r=3.4.1
-rstudio
