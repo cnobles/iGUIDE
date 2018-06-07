@@ -42,7 +42,7 @@ rule all_edit_sites:
         
 rule run_report:
   input: RUN_DIR + "/output/edited_sites." + RUN + ".rds"
-  output: RUN_DIR + "/reports/report." + RUN + ".pdf"
+  output: RUN_DIR + "/reports/report." + RUN + ".html"
   params: 
     tool = ROOT_DIR + "/tools/processing/generate_iGUIDE_report.R",
     config = RUN_DIR + "/" + "config.yml"
