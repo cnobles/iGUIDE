@@ -3,7 +3,6 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install xdotool
   - sudo apt-get install texlive-latex-extra
-  - tlmgr install ifxetex
 install:
   - bash bin/install.sh
 script: source tests/test.sh  
