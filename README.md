@@ -44,12 +44,12 @@ For sample specific information, input is more easily placed in a sampleInfo fil
 
 The path to the iGUIDE software will need to be included in the config file. Therefore, if processing may be done on multiple machines or platforms, make sure to update the file path of the install.
 
-##### Config File Layout
+#### Config File Layout
 Config files are in a yaml format, but are broken into two parts. The first contains run specific information that should be filled out by an individual familiar with the sequence data used in the laboratory bench-side protocol. The second part (below the divide) should be filled out by an individual familiar with the bioinformatic processing. Explanations of the different portions can be found below.
 
-##### Config - Run Specific Information
+#### Config - Run Specific Information
 
-##### Config - Processing Information
+#### Config - Processing Information
 
 #### Sample Information Files
 Sample information files (or sampleInfo files) contain information that may change from specimen to specimen. They need to contain at lease 3 columns of information: sample names, barcode 1, and barcode 2 sequences. Additionally, other parameters defined in the config file can be defined in the sampleinfo file if they change from specimen to specimen. 
@@ -108,6 +108,7 @@ snakemake --configfile configs/{RunName}.config.yml
 
 Snakemake offers a great number of resources for managing the processing through the pipeline. I recommend familiarizing yourself with the utility (XXX). Some helpful flags:
 
+* [--configfile X] associate a specific configuration for processing
 * [--cores X] multicored processing, specified cores to use by X
 * [--nolock] process multiple runs a the same time, from different sessions
 * [--notemp] keep all temporary files, otherwise removed

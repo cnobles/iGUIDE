@@ -10,6 +10,7 @@ dependencies:
   - bwa
   - samtools
   - graphviz
+  - pandoc < 2.0
   - r=3.4.1
   - r-base
   - r-argparse
@@ -20,8 +21,8 @@ dependencies:
   - r-data.table
   - r-matrix
   - r-igraph
-  - r-rmarkdown >= 1.9
-  - r-knitr >= 1.20
+  - r-rmarkdown < 1.9
+  - r-knitr < 1.18
   - r-reshape2
   - r-scales
   - r-rcolorbrewer

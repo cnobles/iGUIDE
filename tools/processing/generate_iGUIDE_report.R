@@ -35,7 +35,9 @@ parser$add_argument(
 parser$add_argument(
   "-d", "--data", action = "store_true",
   help = "Data to generate the report will be saved as an R image with output.")
-
+parser$add_argument(
+  "-t", "--format", nargs = 1, type = "character", default = "html",
+  help = "Output format for report. Either 'pdf' or 'html' (default).")
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -43,13 +45,21 @@ if(length(args$input) != length(args$config)){
   stop("Must supply one config file for each input.")
 }
 
+report_formats <- c("html" = "html_document", "pdf" = "pdf_document")
+if(!args$format %in% names(report_formats)){
+  stop("Please input either 'html' or 'pdf' for format.\n",
+       "Other formats not supported.")
+}
+output_format <- report_formats[args$format]
+
 input_table <- data.frame(
   "Variables" = paste0(names(args), " :"), 
   "Values" = sapply(1:length(args), function(i){
     paste(args[[i]], collapse = ", ")}))
 input_table <- input_table[
   match(
-    c("input :", "output :", "config :", "support :", "figures :", "data :"),
+    c("input :", "output :", "config :", "support :", 
+      "figures :", "data :", "format :"),
     input_table$Variables),]
 pandoc.title("iGUIDE Report Inputs:")
 pandoc.table(data.frame(input_table, row.names = NULL), 
@@ -60,7 +70,7 @@ pandoc.table(data.frame(input_table, row.names = NULL),
 # Load dependancies ------------------------------------------------------------
 add_packs <- c(
   "stringr", "magrittr", "dplyr", "data.table", "Biostrings", "GenomicRanges",
-  "knitr", "markdown")
+  "knitr")
 
 add_packs_loaded <- suppressMessages(
   sapply(add_packs, require, character.only = TRUE))
@@ -205,19 +215,29 @@ output_path <- unlist(strsplit(args$output, "/"))
 output_dir <- paste(output_path[1:(length(output_path)-1)], collapse = "/")
 output_file <- output_path[length(output_path)]
 
-if(!str_detect(output_file, ".pdf$")){
+if(args$format == "html" & !str_detect(output_file, ".html$")){
+  output_file <- paste0(output_file, ".html")
+}
+
+if(args$format == "pdf" & !str_detect(output_file, ".pdf$")){
   output_file <- paste0(output_file, ".pdf")
 }
 
 if(args$data){
+  if(args$format == "html"){
+    save.image(file = file.path(
+      output_dir, stringr::str_replace(output_file, ".html$", ".RData"))) 
+  }else if(args$format == "pdf"){
   save.image(file = file.path(
-    output_dir, stringr::str_replace(output_file, ".pdf$", ".RData")))
+    output_dir, stringr::str_replace(output_file, ".pdf$", ".RData"))) 
+  }
 }
 
 rmarkdown::render(
   input = file.path(code_dir, "iGUIDE_report_template.Rmd"),
-  output_format = "all", 
+  output_format = output_format, 
   output_file = output_file,
-  output_dir = output_dir)
+  output_dir = output_dir,
+  params = list("css" = file.path(code_dir, "iguide.css")))
 
 q()

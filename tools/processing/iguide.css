@@ -1,0 +1,27 @@
+caption {
+  display: table-caption;
+  text-align: left;
+  color: #555;
+  font-weight: bold;
+}
+
+p.caption {
+  display: figure-caption;
+  text-align: left;
+  color: #555;
+  font-weight: bold;
+}  
+
+th.msa {
+  text-align: center;
+  padding: 6px;
+  border-bottom: 2px solid #ddd;
+}
+
+td.msa {
+  font-family: "Courier New", courier, monospace;
+  text-align: center;
+  padding: 8px;
+}
+
+

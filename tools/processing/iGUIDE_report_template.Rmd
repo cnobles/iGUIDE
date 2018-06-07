@@ -1,13 +1,22 @@
 ---
-title: "iGUIDE Summary Report: `r set_names`"
+title: |
+    | iGUIDE Summary Report: 
+    | `r set_names`
 date: "report generated : `r Sys.Date()`"
 output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: true
+    theme: cerulean 
+    highlight: tango
+    smart: false
   pdf_document:
     toc: true
     toc_depth: 2
     number_sections: true
     fig_caption: true
-    df_print: default
 header-includes: 
   - \usepackage{float}
   - \usepackage{indentfirst}
@@ -22,7 +31,7 @@ geometry: margin=0.75in
 ```{r setup, include=FALSE}
 packs <- c(
   "stringr", "magrittr", "dplyr", "data.table", "Biostrings", "GenomicRanges",
-  "knitr", "markdown", "ggplot2", "scales", "RColorBrewer", "tidyr", "pander")
+  "knitr", "ggplot2", "scales", "RColorBrewer", "tidyr", "pander")
 
 packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
 if(!all(packs_loaded)){
