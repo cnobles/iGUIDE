@@ -48,4 +48,6 @@ rule run_report:
     config = RUN_DIR + "/" + "config.yml"
   log: RUN_DIR + "/logs/" + RUN + ".report.log"
   shell:
-    "Rscript {params.tool} {input} -o {output} -c {params.config} > {log} 2>&1"
+    """
+    Rscript {params.tool} {input} -o {output} -c {params.config} -f > {log} 2>&1
+    """

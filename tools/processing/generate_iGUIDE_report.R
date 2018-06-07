@@ -22,7 +22,7 @@ parser$add_argument(
   help = "Post-processing output .rds file(s).")
 parser$add_argument(
   "-o", "--output", nargs = 1, type = "character", 
-  help = "Output report file, pdf format.")
+  help = "Output report file, extension not required.")
 parser$add_argument(
   "-c", "--config", nargs = "+", type = "character",
   help = "Run specific config file(s) in yaml format.")
@@ -31,7 +31,7 @@ parser$add_argument(
   help = "Supplementary data input, csv or tsv format.")
 parser$add_argument(
   "-f", "--figures", action = "store_true",
-  help = "Figures will be written to a directory with output.")
+  help = "Generate figures along with output report (pdf and png formats).")
 parser$add_argument(
   "-d", "--data", action = "store_true",
   help = "Data to generate the report will be saved as an R image with output.")
