@@ -11,6 +11,7 @@ output
 *.yaml
 tools/dualDemultiplexR
 tools/seqTrimR
+tools/seqFiltR
 tools/seqConsolidateR
 tools/blatCoupleR
 tools/pytools/__pycache__
