@@ -68,9 +68,10 @@ pandoc.table(data.frame(input_table, row.names = NULL),
 
 
 # Load dependancies ------------------------------------------------------------
+message("Loading dependencies.")
 add_packs <- c(
-  "stringr", "magrittr", "dplyr", "data.table", "Biostrings", "GenomicRanges",
-  "knitr")
+  "stringr", "magrittr", "tidyverse", "data.table", "Biostrings", 
+  "GenomicRanges", "knitr")
 
 add_packs_loaded <- suppressMessages(
   sapply(add_packs, require, character.only = TRUE))
@@ -86,11 +87,298 @@ code_dir <- dirname(sub(
   "--file=", "", 
   grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)))
 
+source(file.path(code_dir, "post_process_support.R"))
+
+## Supporting functions
+generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
+  if(class(ref) == "BSgenome") ref <- GenomicRanges::seqinfo(ref)
+  if(drop.alt.chr){
+    ref <- ref[names(ref)[which(!stringr::str_detect(names(ref), "_"))]]
+  }
+  
+  ref_len <- GenomeInfoDb::seqlengths(ref)
+  
+  unlist(GenomicRanges::GRangesList(lapply(seq_along(ref_len), function(i){
+    seq <- names(ref_len)[i]
+    starts <- seq(1, ref_len[seq], res)
+    if(res > ref_len[seq]){
+      ends <- ref_len[seq]
+    }else{
+      ends <- seq(res, ref_len[seq], res)
+    }
+    if(length(starts) - length(ends) == 1) ends <- c(ends, ref_len[seq])
+    GenomicRanges::GRanges(
+      seqnames = seq, 
+      ranges = IRanges(start = starts, end = ends), 
+      strand = "*",
+      seqinfo = ref)
+  })))
+}
+
+genomic_density <- function(gr, res, cutoff = 2, drop.alt.chr = TRUE){
+  stopifnot(class(gr) == "GRanges")
+  if(is.na(sum(is.numeric(
+    GenomeInfoDb::seqlengths(GenomicRanges::seqinfo(gr)))))){
+    stop("SeqInfo should be present for input GRanges.")
+  }
+  
+  ref_regions <- generate_genomic_regions(
+    GenomicRanges::seqinfo(gr), res, drop.alt.chr = drop.alt.chr)
+  ref_regions$count <- GenomicRanges::countOverlaps(ref_regions, gr)
+  ref_regions$log.count <- log(ref_regions$count, base = 10)
+  ref_regions$norm.log.count <- ref_regions$log.count/max(ref_regions$log.count)
+  ref_regions <- ref_regions[ref_regions$count >= cutoff]
+  ref_regions
+}
+
+vcollapse <- function(d, sep, fill = "NA"){
+  if(is.vector(d)){
+    stop("Function vcollapse() is not used on vectors, use paste(collapse = ...).")
+  }
+  if(class(d) != "matrix") d <- as.matrix(d)
+  mat <- d
+  if(!is.null(fill)) mat <- ifelse(is.na(mat), fill, mat)
+  mat <- do.call(
+    cbind, 
+    lapply(seq_len(ncol(mat)), function(i){
+      if(i < ncol(mat)){
+        cbind(mat[,i], rep(sep, nrow(mat)))
+      }else{
+        mat[,i]
+      } 
+    }))
+  mat <- cbind(mat, rep(">|<", nrow(mat)))
+  div_str <- stringr::str_c(t(mat), collapse = "")
+  unlist(strsplit(div_str, split = ">\\|<"))
+}
+
+plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2, 
+                                 drop.alt.chr = TRUE, clean = FALSE){
+  if(class(grl) == "GRanges") grl <- GenomicRanges::GRangesList(grl)
+  if(!is.null(grp.col)){
+    stopifnot(all(unlist(lapply(grl, function(x){
+      grp.col %in% names(GenomicRanges::mcols(x)) }))))
+  }
+  
+  ref_len <- GenomeInfoDb::seqlengths(GenomicRanges::seqinfo(grl))
+  ref_cum_len <- structure(
+    c(0, cumsum(as.numeric(ref_len))), names = c("start", names(ref_len)))
+  
+  gen_densities <- lapply(grl, function(x){
+    if(is.null(grp.col)){
+      x <- list(x)
+    }else{
+      x <- split(x, vcollapse(
+        GenomicRanges::mcols(x)[,grp.col, drop = FALSE], sep = " - "))
+    }
+      
+    dplyr::bind_rows(lapply(x, function(y){
+      y <- genomic_density(
+        y, res = res, cutoff = cutoff, drop.alt.chr = drop.alt.chr)
+      df <- as.data.frame(y, row.names = NULL) 
+      cum_adj_pos <- ref_cum_len[match(df$seqnames, names(ref_cum_len)) - 1]
+      df$adj.start <- cum_adj_pos + df$start
+      df$adj.end <- cum_adj_pos + df$end
+      df
+    }), .id = "cond")
+  })
+  
+  gen_den <- dplyr::bind_rows(gen_densities, .id = "grp")
+  if(!is.null(names(grl))){
+    gen_den$type <- factor(names(grl)[
+      match(gen_den$grp, names(grl))], levels = names(grl))
+  }else{
+    gen_den$type <- factor(" ")
+  }
+  
+  gen_den$score <- as.numeric(gen_den$type) + gen_den$norm.log.count
+  
+  # Grid layout
+  x_breaks <- ref_cum_len[
+    1:max(match(unique(gen_den$seqnames), names(ref_cum_len)))]
+  x_lab_pos <- structure(
+    sapply(2:length(x_breaks), function(i){
+      mean(c(x_breaks[i-1], x_breaks[i])) }),
+    names = names(x_breaks)[2:length(x_breaks)])
+  
+  y_breaks <- seq_along(grl)
+  
+  p <- ggplot(gen_den) 
+  
+  if(!clean){
+    p <- p +
+      geom_hline(yintercept = y_breaks, color = "grey90") +
+      geom_vline(xintercept = x_breaks, color = "grey90") +
+      scale_x_continuous(
+        breaks = x_lab_pos,
+        labels = stringr::str_remove(names(x_lab_pos), "chr"))
+  }else{
+    p <- p + scale_x_continuous(labels = NULL)
+  }
+  
+  p <- p + 
+    geom_rect(
+      aes(
+        xmin = adj.start, xmax = adj.end, 
+        ymin = as.integer(type), ymax = score, 
+        fill = type)) +
+    scale_y_continuous(
+      limits = c(0, length(grl)+1), breaks = seq_along(grl), labels = NULL) +
+    scale_fill_brewer(type = "qual", palette = "Set1", direction = -1) +
+    labs(x = "Chromosome", fill = "Levels") + 
+    coord_polar() +
+    theme_bw() +
+    theme(
+      panel.background = element_rect(color = "white"),
+      panel.border = element_rect(color = "white"),
+      panel.grid = element_blank(),
+      axis.line.x = element_blank(),
+      axis.ticks = element_blank())
+  
+  if(clean){
+    p + theme(legend.position = "none", axis.title = element_blank())
+  }else{
+    p
+  }
+}
+
+div_seq <- function(seqs, ref, match.chr = "."){
+  seqs <- as.character(seqs)
+  ref <- as.character(ref)
+  
+  stopifnot(all(nchar(seqs) == nchar(ref)))
+  
+  seq_mat <- stringr::str_split(seqs, pattern = "", simplify = TRUE)
+  ref_splt <- unlist(stringr::str_split(ref, pattern = ""))
+  div_mat <- sapply(seq_along(ref_splt), function(i){
+    ifelse(seq_mat[,i] == ref_splt[i], match.chr, seq_mat[,i]) })
+  div_str <- stringr::str_c(t(div_mat), collapse = "")
+  unlist(strsplit(
+    div_str, split = paste0("(?<=.{", nchar(ref), "})"), perl = TRUE))
+}
+
+seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4, 
+                             text.size = 2, convert.seq = TRUE, 
+                             force.sq = FALSE, font.family = "Courier",
+                             font.face = "bold"){
+  if(is.null(nuc.col)){ nuc.col <- names(df)[1] }
+  seqs <- dplyr::pull(df, var = match(nuc.col, names(df)))
+  stopifnot(all(nchar(as.character(seqs)) == nchar(ref)))
+  nuc_len <- nchar(ref)
+  
+  # Convert seqs
+  if(convert.seq) seqs <- div_seq(seqs, ref)
+  
+  # Nucleotide color
+  nucleotide_levels <- c("A", "T", "G", "C", ".", "N")
+  nucleotide_colors <- RColorBrewer::brewer.pal(6, "Set1")
+  nucleotide_colors <- c(nucleotide_colors[c(1,3,6,2)], "#FFFFFF", "#DCDCDC")
+  names(nucleotide_colors) <- nucleotide_levels
+  
+  # Sequence matrix
+  nuc_melt <- stringr::str_split(
+    c(ref, paste(rep(" ", nuc_len), collapse = ""), seqs), 
+    pattern = "", simplify = TRUE) %>%
+    as.data.frame() %>%
+    mutate(pos.y = -(1:n())) %>%
+    melt(id.vars = "pos.y") %>%
+    mutate(
+      pos.x = as.numeric(stringr::str_extract(variable, "[0-9]+$")),
+      color = nucleotide_colors[value],
+      color = ifelse(is.na(color), "#FFFFFF", color)) %>%
+    select(pos.x, pos.y, value, color)
+  
+  # Format remaining cols of input
+  sup_df <- df[,-match(nuc.col, names(df))] %>%
+    mutate_all(format, big.mark = ",", justify = "centre")
+  
+  sup_names <- names(sup_df)
+  
+  sup_df <- bind_rows(
+    as.data.frame(
+      t(matrix(
+        c(names(sup_df), rep(" ", ncol(sup_df))), 
+        ncol = 2, dimnames = list(names(sup_df))))),
+    sup_df) %>%
+    mutate_all(format, justify = "centre") %>%
+    mutate(pos.y = -(1:n()))
+  
+  sup_melt <- melt(sup_df, id.vars = "pos.y") %>%
+    mutate(
+      pos.x = nuc_len + (match(variable, names(sup_df))) * padding,
+      color = "#FFFFFF") %>%
+    select(pos.x, pos.y, value, color)
+  
+  plot_melt <- bind_rows(nuc_melt, sup_melt)
+  
+  plot_colors <- structure(
+    plot_melt$color[match(unique(plot_melt$value), plot_melt$value)],
+    names = unique(plot_melt$value))
+  
+  p <- ggplot(plot_melt, aes(x = pos.x, y = pos.y)) +
+    geom_tile(aes(fill = value)) +
+    geom_text(
+      aes(label = value), size = text.size, 
+      family = font.family, fontface = font.face) +
+    scale_fill_manual(values = plot_colors) +
+    theme(
+      axis.line = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      axis.title = element_blank(),
+      legend.position = "none")
+  
+  if(force.sq){
+    p <- p + theme(aspect.ratio = with(plot_melt, max(abs(pos.y))/max(pos.x)))
+  }
+  
+  p
+}
+
 
 # Import metadata and consolidate into report objects --------------------------
+message("Importing experimental data and configurations.")
 ## Load config files
 configs <- lapply(args$config, yaml.load_file)
 names(configs) <- sapply(configs, "[[", "Run_Name")
+
+## Load reference genome 
+if(grepl(".fa", unique(sapply(configs, "[[", "RefGenome")))){
+  if(!file.exists(config$RefGenome)){
+    stop("Specified reference genome file not found.")}
+  ref_file_type <- ifelse(
+    grepl(".fastq", unique(sapply(configs, "[[", "RefGenome"))), 
+    "fastq", "fasta")
+  ref_genome <- readDNAStringSet(
+    unique(sapply(configs, "[[", "RefGenome")), format = ref_file_type)
+}else{
+  RefGenome <- unique(sapply(configs, "[[", "RefGenome"))
+  genome <- grep(
+    RefGenome, unique(BSgenome::installed.genomes()), value = TRUE)
+  if(length(genome) == 0){
+    pandoc.strong("Installed genomes include")
+    pandoc.list(unique(BSgenome::installed.genomes()))
+    stop("Selected reference genome not in list.")
+  }else if(length(genome) > 1){
+    pandoc.strong("Installed genomes include")
+    pandoc.list(unique(BSgenome::installed.genomes()))
+    stop(
+      "Please be more specific about reference genome. Multiple matches to input.")
+  }
+  suppressMessages(library(genome, character.only = TRUE))
+  ref_genome <- get(genome)
+}
+
+## Load reference files
+ref_genes <- load_ref_files(
+  configs[[1]]$refGenes, 
+  type = "GRanges", freeze = configs[[1]]$RefGenome)
+onco_genes <- load_ref_files(
+  configs[[1]]$oncoGeneList, 
+  type = "gene.list", freeze = configs[[1]]$RefGenome)
+bad_actors <- load_ref_files(
+  configs[[1]]$specialGeneList, 
+  type = "gene.list", freeze = config[[1]]$RefGenome)
 
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 
@@ -144,7 +432,6 @@ gRNAs <- bind_rows(mapply(function(seqs, pam){
   }, seqs = gRNAs, pam = pams, SIMPLIFY = FALSE), .id = "run.set") %>%
   distinct(Guide, gRNA, PAM)
 
-
 ## Identify on-target edit sites from config files
 on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites"))
 names(on_targets) <- stringr::str_extract(names(on_targets), "[\\w\\_\\-]+$")
@@ -190,7 +477,21 @@ if(length(args$support) > 0){
   supp_data <- data.frame()
 }
 
-# Read in experimental data and contatenate different sets ---------------------
+
+## Consolidate supplementary data ==============================================
+if(is.null(args$support)){
+  spec_overview <- treatment_df
+}else{
+  spec_overview <- supp_data
+}
+
+cond_overview <- spec_overview %>%
+  mutate(condition = vcollapse(
+    select(spec_overview, -specimen), " - ", fill = "NA")) %>%
+  select(specimen, condition)
+
+
+## Read in experimental data and contatenate different sets ====================
 input_data <- lapply(args$input, readRDS)
 names(input_data) <- names(configs)
 data_type_names <- names(input_data[[1]])
@@ -198,6 +499,315 @@ input_data <- lapply(1:length(input_data[[1]]), function(i){
   bind_rows(lapply(input_data, "[[", i), .id = "run.set")
 })
 names(input_data) <- data_type_names
+
+
+message("Starting analysis.")
+# Opening graphic --------------------------------------------------------------
+graphic_order <- c("algnmts", "pile_up_algns", "paired_algns", "matched_algns")
+graphic_data <- input_data[graphic_order]
+graphic_grl <- GRangesList(lapply(
+  graphic_data, 
+  makeGRangesFromDataFrame, 
+  seqinfo = seqinfo(ref_genome)))
+
+
+# Specimen summary -------------------------------------------------------------
+# Summarize components and append to specimen table
+tbl_algn_counts <- input_data$algnmts %>% group_by(specimen)
+
+if(umitag_option){
+  tbl_algn_counts <- summarise(
+    tbl_algn_counts, 
+    Reads = sum(count), UMItags = sum(umitag), Alignments = n())
+}else{
+  tbl_algn_counts <- summarise(
+    tbl_algn_counts, Reads = sum(count), Alignments = n())
+}
+
+spec_overview_join <- left_join(spec_overview, tbl_algn_counts, by = "specimen") 
+
+
+# On-target summary ------------------------------------------------------------
+# Algnmts
+tbl_ot_algn <- input_data$algnmts %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  group_by(specimen) %>%
+  summarise(
+    ot_algns = pNums(sum(as.integer(edit.site %in% on_targets))),
+    ot_algns_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
+  complete(specimen, fill = list(ot_algns = 0, ot_algns_pct = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Probable edited sites
+tbl_ot_prob <- input_data$probable_algns %>% 
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  group_by(specimen) %>%
+  summarise(
+    ot_prob = pNums(sum(as.integer(edit.site %in% on_targets))),
+    ot_prob_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
+  complete(specimen, fill = list(ot_prob = 0, ot_prob_pct = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Pile ups of read alignments
+tbl_ot_pile <- input_data$pile_up_algns %>% 
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  group_by(specimen) %>%
+  summarise(
+    ot_pile = pNums(sum(as.integer(edit.site %in% on_targets))),
+    ot_pile_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
+  complete(specimen, fill = list(ot_pile = 0, ot_pile_pct = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Paired or flanking algnments
+tbl_ot_pair <- input_data$paired_regions %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  group_by(specimen, on.off.target) %>%
+  summarise(cnt = sum(algns)) %>%
+  ungroup() %>% group_by(specimen) %>%
+  summarise(
+    ot_pair = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
+    ot_pair_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
+      sum(cnt)) %>%
+  complete(specimen, fill = list(ot_pair = 0, ot_pair_pct = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Guide RNA matched within 6 mismatches
+tbl_ot_match <- input_data$matched_summary %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  group_by(specimen, on.off.target) %>%
+  summarise(cnt = sum(algns)) %>%
+  ungroup() %>% group_by(specimen) %>%
+  summarise(
+    ot_match = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
+    ot_match_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
+      sum(cnt)) %>%
+  complete(specimen, fill = list(ot_match = 0, ot_match_pct = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Summary table
+ot_tbl_summary <- mutate(treatment_df, specimen = factor(
+  specimen, levels = sort(unique(sample_info$specimen))))
+
+ot_tbl_summary <- Reduce(
+  function(x,y){ left_join(x, y, by = "specimen") },
+  list(tbl_ot_algn[,c(1,3)], tbl_ot_pile[,c(1,3)],
+       tbl_ot_pair[,c(1,3)], tbl_ot_match[,c(1,3)]),
+  init = ot_tbl_summary)
+
+names(ot_tbl_summary) <- c(
+  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
+  "Flanking\nPairs", "gRNA\nMatched")
+
+
+# On-target incorporation distribution -----------------------------------------
+on_tar_dists <- input_data$matched_algns %>%
+  filter(on.off.target == "On-target") %>%
+  mutate(
+    gRNA = str_extract(guideRNA.match, "[\\w]+"),
+    pos = as.numeric(str_extract(edit.site, "[0-9]+$")),
+    edit.site.dist = ifelse(strand == "+", start - pos, end - pos)) %>%
+  left_join(cond_overview, by = "specimen") %>%
+  select(
+    run.set, specimen, gRNA, condition, edit.site, edit.site.dist, strand) %>%
+  group_by(condition, gRNA, edit.site.dist, strand) %>%
+  summarise(cnt = n()) %>%
+  ungroup() %>%
+  mutate(
+    strand.cnt = ifelse(
+      strand == "+", log(cnt, base = 10), -log(cnt, base = 10)))
+
+if(length(unique(on_tar_dists$condition)) == 1){
+  on_tar_dists$condition <- " "
+}
+
+sites_included <- on_tar_dists %>%
+  group_by(condition, gRNA) %>%
+  summarise(
+    prop = 100 * sum(cnt[
+      abs(edit.site.dist) <= upstream_dist & 
+        abs(edit.site.dist) >= -downstream_dist]) / 
+      sum(cnt),
+    x_pos = upstream_dist,
+    y_pos = 0.8 * min(strand.cnt[
+      abs(edit.site.dist) <= upstream_dist & 
+        abs(edit.site.dist) >= -downstream_dist])) %>%
+  ungroup() %>%
+  mutate(prop = paste0(pNums(prop, digits = 4), "%"))
+
+
+# Off-target summary -----------------------------------------------------------
+# All alignments
+tbl_ft_algn <- input_data$algnmts %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  filter(!edit.site %in% on_targets) %>%
+  group_by(specimen) %>%
+  summarise(ft_algns = n_distinct(clus.ori)) %>%
+  complete(specimen, fill = list(ft_algns = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Probable edit sites
+tbl_ft_prob <- input_data$probable_algns %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  filter(on.off.target == "Off-target") %>%
+  group_by(specimen) %>%
+  summarise(ft_prob = n_distinct(clus.ori)) %>%
+  complete(specimen, fill = list(ft_prob = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Pile ups
+tbl_ft_pile <- input_data$pile_up_algns %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  filter(on.off.target == "Off-target") %>%
+  group_by(specimen) %>%
+  summarise(ft_pile = n_distinct(clus.ori)) %>%
+  complete(specimen, fill = list(ft_pile = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Paired or flanked alignments
+tbl_ft_pair <- input_data$paired_regions %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  filter(on.off.target == "Off-target") %>%
+  group_by(specimen) %>%
+  summarise(ft_pair = n()) %>%
+  complete(specimen, fill = list(ft_pair = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# gRNA sequence matched
+tbl_ft_match <- input_data$matched_summary %>%
+  mutate(specimen = factor(
+    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  filter(on.off.target == "Off-target") %>%
+  group_by(specimen) %>%
+  summarise(ft_match = n()) %>%
+  complete(specimen, fill = list(ft_match = 0)) %>% 
+  ungroup() %>% as.data.frame()
+
+# Summary table
+ft_tbl_summary <- mutate(treatment_df, specimen = factor(
+  specimen, levels = sort(unique(sample_info$specimen))))
+
+ft_tbl_summary <- Reduce(
+  function(x,y){ left_join(x, y, by = "specimen") },
+  list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
+  init = ft_tbl_summary)
+
+names(ft_tbl_summary) <- c(
+  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
+  "Flanking\nPairs", "gRNA\nMatched")
+
+
+# Onco-gene enrichment analysis ------------------------------------------------
+rand_sites <- selectRandomSites(
+  num = nrow(input_data$paired_regions) + nrow(input_data$matched_summary), 
+  refGenome = ref_genome, drop_extra_seqs = TRUE, setSeed = 714)
+
+rand_sites$gene_id <- suppressMessages(assign_gene_id(
+  seqnames(rand_sites), start(rand_sites), 
+  reference = ref_genome, ref_genes = ref_genes, 
+  onco_genes = onco_genes, bad_actors = bad_actors))
+
+rand_df <- data.frame(
+  condition = "Random Sites", 
+  "total" = length(rand_sites), 
+  "onco" = sum(stringr::str_detect(rand_sites$gene_id, "~")), 
+  "bad.actors" = sum(stringr::str_detect(rand_sites$gene_id, "!")))
+
+paired_list <- split(
+  input_data$paired_regions, 
+  cond_overview$condition[
+    match(input_data$paired_regions$specimen, cond_overview$specimen)])
+
+paired_df <- bind_rows(lapply(paired_list, function(df){
+  data.frame(
+    "total" = nrow(df), 
+    "onco" = sum(stringr::str_detect(df$gene_id, "~")), 
+    "bad.actors" = sum(stringr::str_detect(df$gene_id, "!")))
+}), .id = "condition")
+
+matched_list <- split(
+  input_data$matched_summary, 
+  cond_overview$condition[
+    match(input_data$matched_summary$specimen, cond_overview$specimen)])
+
+matched_df <- bind_rows(lapply(matched_list, function(df){
+  data.frame(
+    "total" = nrow(df), 
+    "onco" = sum(stringr::str_detect(df$gene_id, "~")), 
+    "bad.actors" = sum(stringr::str_detect(df$gene_id, "!")))
+}), .id = "condition")
+
+enrich_df <- bind_rows(list(
+  "Reference" = rand_df, 
+  "Flanking Pairs" = paired_df, 
+  "gRNA Matched" = matched_df), .id = "origin")
+
+enrich_df$onco.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
+  ref <- enrich_df[1, c("total", "onco")]
+  query <- enrich_df[i, c("total", "onco")]
+  ref$diff <- abs(diff(as.numeric(ref)))
+  query$diff <- abs(diff(as.numeric(query)))
+  fisher.test(as.matrix(rbind(
+    ref[,c("diff", "onco")], query[,c("diff", "onco")])))$p.value
+}), method = "BH")
+
+enrich_df$bad.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
+  ref <- enrich_df[1, c("total", "bad.actors")]
+  query <- enrich_df[i, c("total", "bad.actors")]
+  ref$diff <- abs(diff(as.numeric(ref)))
+  query$diff <- abs(diff(as.numeric(query)))
+  fisher.test(as.matrix(rbind(
+    ref[,c("diff", "bad.actors")], query[,c("diff", "bad.actors")])))$p.value
+}), method = "BH")
+
+names(enrich_df) <- c(
+  "Origin", "Condition", "Total", "Onco-Rel.", 
+  "Bad-Actors", "Onco Enrich.", "Actor Enrich.")
+
+
+# Genomic Distribution of edited sites -----------------------------------------
+genomic_grl <- GRangesList(lapply(graphic_data, function(x){
+  y <- makeGRangesFromDataFrame(x, seqinfo = seqinfo(ref_genome))
+  mcols(y) <- cond_overview[
+    match(x$specimen, cond_overview$specimen), "condition", drop = FALSE]
+  y
+}))
+
+num_conds <- max(length(unique(cond_overview$condition)), 1)
+
+names(genomic_grl) <- c(
+  "All Align.", "Pileup Align.", "Flanking Pairs", "gRNA Matched")
+
+
+# Off-target sequence analysis -------------------------------------------------
+ot_seqs <- input_data$matched_summary %>%
+  select(
+    specimen, aligned.sequence, guideRNA.match, edit.site,
+    guideRNA.mismatch, on.off.target, algns, gene_id) %>% 
+  left_join(cond_overview, by = "specimen") %>% 
+  group_by(
+    condition, edit.site, aligned.sequence, guideRNA.match,
+    guideRNA.mismatch, on.off.target, gene_id) %>%
+  summarise(algns = sum(algns)) %>%
+  group_by(condition, guideRNA.match) %>%
+  arrange(desc(algns), guideRNA.mismatch) %>%
+  ungroup() %>%
+  mutate(on.off.target = stringr::str_extract(on.off.target, "[\\w]+")) %>%
+  rename(
+    on.off.target = "target", 
+    guideRNA.mismatch = "mismatch", 
+    guideRNA.match = "gRNA")
+
+ot_seqs_list <- split(ot_seqs, paste0(ot_seqs$condition, " - ", ot_seqs$gRNA))
+message("Analysis complete. Starting report generation.")
 
 # Data passed to Rmd for report generation -------------------------------------
 set_names <- ifelse(
@@ -233,11 +843,19 @@ if(args$data){
   }
 }
 
-rmarkdown::render(
-  input = file.path(code_dir, "iGUIDE_report_template.Rmd"),
-  output_format = output_format, 
-  output_file = output_file,
-  output_dir = output_dir,
-  params = list("css" = file.path(code_dir, "iguide.css")))
+if(args$format == "html"){
+  rmarkdown::render(
+    input = file.path(code_dir, "iGUIDE_report_template.Rmd"),
+    output_format = output_format, 
+    output_file = output_file,
+    output_dir = output_dir,
+    output_options = list("css" = file.path(code_dir, "iguide.css")))
+}else{
+  rmarkdown::render(
+    input = file.path(code_dir, "iGUIDE_report_template.Rmd"),
+    output_format = output_format, 
+    output_file = output_file,
+    output_dir = output_dir)
+}
 
 q()

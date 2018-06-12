@@ -7,7 +7,9 @@ output:
   html_document:
     toc: true
     toc_depth: 2
-    number_sections: true
+    toc_float: 
+      collapsed: false
+    number_sections: false
     fig_caption: true
     theme: cerulean 
     highlight: tango
@@ -15,7 +17,7 @@ output:
   pdf_document:
     toc: true
     toc_depth: 2
-    number_sections: true
+    number_sections: false
     fig_caption: true
 header-includes: 
   - \usepackage{float}
@@ -25,13 +27,13 @@ header-includes:
   - \setlength{\defaultaddspace}{0em}
   - \setlength{\parindent}{2em}
 fontsize: 12pt
-geometry: margin=0.75in
+geometry: margin=0.5in
 ---
 
 ```{r setup, include=FALSE}
 packs <- c(
-  "stringr", "magrittr", "dplyr", "data.table", "Biostrings", "GenomicRanges",
-  "knitr", "ggplot2", "scales", "RColorBrewer", "tidyr", "pander")
+  "magrittr", "data.table", "Biostrings", "GenomicRanges",
+  "knitr", "scales", "RColorBrewer", "tidyverse", "pander")
 
 packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
 if(!all(packs_loaded)){
@@ -51,7 +53,6 @@ options(
 knitr::opts_chunk$set(
   echo = FALSE,
   comment = "",
-  echo = FALSE,
   warning = FALSE,
   error = TRUE,
   message = FALSE,
@@ -59,7 +60,7 @@ knitr::opts_chunk$set(
   results = "asis",
   fig.align = "center",
   dpi = 300,
-  dev = "png",
+  dev = c("png", "pdf"),
   fig.pos = "H",
   fig.width = 7
 )
@@ -84,7 +85,7 @@ custom_theme <- theme_bw() +
     axis.line = element_blank(),
     axis.ticks = element_line(color = "black"),
     axis.text = element_text(color = "black"),
-    axis.text.x = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold", angle = 0),
     axis.title = element_text(color = "black", face = "bold"),
     strip.background = element_rect(color = "black", fill = "white"),
     strip.text = element_text(face = "bold"),
@@ -92,57 +93,78 @@ custom_theme <- theme_bw() +
     legend.key = element_rect(fill = "white"),
     title = element_text(face = "bold"))
 
-theme_set(custom_theme)
+blank_theme <- theme_bw() +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold"),
+    panel.grid = element_blank(),
+    legend.position = "none",
+    title = element_text(face = "bold"))
+  
 
+# Captions
+tbl_caps <- c(
+  "Specimen summary.",
+  "Guide RNAs and associated information.",
+  "Percent On-target.",
+  "Off-target Loci.",
+  "Cancer-associated Gene editing enrichment.")
+
+fig_caps <- c(
+  "Distance distribution of observed incorporation sites from On-target loci.",
+  "Genomic distribution of incorporation sites by bioinformatic characteristics.",
+  "Sequence similarity between off-target sites and targeting gRNA(s).")
+
+if(args$format == "html"){
+  tbl_caps <- paste0("Table ", 1:5, ". ", tbl_caps)
+  fig_caps <- paste0("Figure ", 1:3, ". ", fig_caps)
+}
+```
+
+***
+
+```{r title_graphic, fig.width=6, fig.height=6}
+plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)
+```
+
+***
+
+```{r, include = FALSE} 
+if(args$format == "pdf") cat("\\newpage") 
 ```
 
 # Summary
 
 The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA or the inferred cells sampled. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data. The dynamic range of this method can be increased by processing samples in technical replicates. Specimens in these data were processed with up to `r group_by(sample_info, specimen) %>% summarize(cnt = n()) %$% max(cnt)` technical replicates each. Alternatively, unique molecular index tags (UMItags) can be used to quantify incorporations, see [**Tsai et al. 2015**](https://www.ncbi.nlm.nih.gov/pubmed/25513782).
 
-\newpage
+```{r, include = FALSE} 
+if(args$format == "pdf") cat("\\newpage") 
+```
+
 # Specimen overview
 
 ```{r spec_summary}
-# Summarize components and append to specimen table
-tbl_algn_counts <- input_data$algnmts %>% group_by(specimen)
-
-if(umitag_option){
-  tbl_algn_counts <- summarise(
-    tbl_algn_counts, 
-    Reads = sum(count), UMItags = sum(umitag), Alignments = n())
-}else{
-  tbl_algn_counts <- summarise(
-    tbl_algn_counts, Reads = sum(count), Alignments = n())
-}
-
-if(nrow(supp_data) > 0){
-  spec_overview <- supp_data
-}else{
-  spec_overview <- treatment_df
-}
-
-spec_overview <- left_join(spec_overview, tbl_algn_counts, by = "specimen") 
-
-pandoc.table(
-  spec_overview, caption = "Specimen summary.", 
-  justify = ifelse(sapply(seq_along(spec_overview), function(i){
-    is.numeric(spec_overview[,i]) }), "right", "center"),
-  big.mark = ",", style = "multiline")
-
-#kable(
-#    spec_overview, format = "latex", booktabs = TRUE, 
-#    caption = "Specimen summary.", align = "c", digits = 1, longtable = TRUE, 
-#    format.args = list(big.mark = ",")) %>%
-#  kableExtra::kable_styling(latex_options = c("scale_down"))
+pander(
+  spec_overview_join, caption = tbl_caps[1], 
+  justify = ifelse(sapply(seq_along(spec_overview_join), function(i){
+    is.numeric(spec_overview_join[,i]) }), "right", "center"),
+  big.mark = ",", style = "simple", missing = 0)
 ```
 
 Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. A nested-PCR amplified from incorporated dsODN sequences to the linker sequence with barcoded and linker specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
 
 DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in Table 1, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
 
+```{r, include = FALSE} 
+if(args$format == "pdf") cat("\\newpage") 
+```
 
-\newpage
 # On-target analysis
 
 Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in Table 2. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
@@ -150,18 +172,9 @@ Incorporation sites, or locations in the genome where the dsODN was detected, ar
 ```{r gRNA_tbl}
 gRNAs$`Edit Loci` <- on_targets[gRNAs$Guide]
 emphasize.verbatim.cols(c(2,3))
-pandoc.table(
-  gRNAs, caption = "Guide RNAs and associated information.", 
+pander(
+  gRNAs, caption = tbl_caps[2], 
   justify = "center")
-
-#kable(
-#    gRNAs, format = "latex", booktabs = TRUE, 
-#    caption = "Guide RNAs and associated information.", 
-#    align = "c", digits = 1) %>%
-#  column_spec(2, monospace = TRUE) %>%
-#  column_spec(3, monospace = TRUE) %>%
-#  kable_styling(latex_options = c("hold_position"))
-
 ```
 
 Analysis of On-target associated incorporation sites produces several notable features that are helpful in identifying non-specific or Off-target sites. These include the following:
@@ -174,145 +187,52 @@ Analysis of On-target associated incorporation sites produces several notable fe
 
 Specimen specific tables with data relating to these criteria are found in Table 3 for percent On-target editing and Table 4 for identified Off-target loci.
 
-\newpage
+```{r, include = FALSE} 
+if(args$format == "pdf") cat("\\newpage") 
+```
+
 ## Specimen breakdown
 
 Table 3 displays the percent of cells sampled that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
 
 ```{r on_target_summary}
-# Algnmts
-tbl_ot_algn <- input_data$algnmts %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  group_by(specimen) %>%
-  summarise(
-    ot_algns = pNums(sum(as.integer(edit.site %in% on_targets))),
-    ot_algns_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
-  complete(specimen, fill = list(ot_algns = 0, ot_algns_pct = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Probable edited sites
-tbl_ot_prob <- input_data$probable_algns %>% 
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  group_by(specimen) %>%
-  summarise(
-    ot_prob = pNums(sum(as.integer(edit.site %in% on_targets))),
-    ot_prob_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
-  complete(specimen, fill = list(ot_prob = 0, ot_prob_pct = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Pile ups of read alignments
-tbl_ot_pile <- input_data$pile_up_algns %>% 
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  group_by(specimen) %>%
-  summarise(
-    ot_pile = pNums(sum(as.integer(edit.site %in% on_targets))),
-    ot_pile_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
-  complete(specimen, fill = list(ot_pile = 0, ot_pile_pct = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Paired or flanking algnments
-tbl_ot_pair <- input_data$paired_regions %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  group_by(specimen, on.off.target) %>%
-  summarise(cnt = sum(algns)) %>%
-  ungroup() %>% group_by(specimen) %>%
-  summarise(
-    ot_pair = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
-    ot_pair_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
-      sum(cnt)) %>%
-  complete(specimen, fill = list(ot_pair = 0, ot_pair_pct = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Guide RNA matched within 6 mismatches
-tbl_ot_match <- input_data$matched_summary %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  group_by(specimen, on.off.target) %>%
-  summarise(cnt = sum(algns)) %>%
-  ungroup() %>% group_by(specimen) %>%
-  summarise(
-    ot_match = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
-    ot_match_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
-      sum(cnt)) %>%
-  complete(specimen, fill = list(ot_match = 0, ot_match_pct = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Summary table
-ot_tbl_summary <- mutate(treatment_df, specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen))))
-
-ot_tbl_summary <- Reduce(
-  function(x,y){ left_join(x, y, by = "specimen") },
-  list(tbl_ot_algn[,c(1,3)], tbl_ot_pile[,c(1,3)],
-       tbl_ot_pair[,c(1,3)], tbl_ot_match[,c(1,3)]),
-  init = ot_tbl_summary)
-
-names(ot_tbl_summary) <- c(
-  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
-  "Flanking\nPairs", "gRNA\nMatched")
-
-pandoc.table(
-  ot_tbl_summary, caption = "Percent On-target.", 
+pander(
+  ot_tbl_summary, caption = tbl_caps[3], 
   digits = 4, style = "multiline",
   justify = ifelse(sapply(seq_along(ot_tbl_summary), function(i){
     is.numeric(ot_tbl_summary[,i]) }), "right", "center"),
   keep.line.breaks = TRUE)
-
-#kable(
-#    ot_tbl_summary, format = "latex", booktabs = TRUE, 
-#    caption = "On-target overview.", align = "c", digits = 1, longtable = TRUE, 
-#    format.args = list(big.mark = ",")) %>%
-#  add_header_above(c(rep(" ", 2), " " = 2, "Criteria" = 3)) %>%
-#  add_header_above(c(rep(" ", 2), "Percent On-target" = 5)) %>%
-#  kable_styling(latex_options = c("repeat_header"))
-  
 ```
 
 ## Editing near known genomic sites
 
-```{r incorp_dist, fig.width=ifelse(nrow(gRNAs) > 1, 7, 3.5), fig.height=4*(ceiling(nrow(gRNAs)/2))}
-on_tar_dists <- input_data$matched_algns %>%
-  filter(on.off.target == "On-target") %>%
-  mutate(
-    gRNA = str_extract(guideRNA.match, "[\\w]+"),
-    pos = as.numeric(str_extract(edit.site, "[0-9]+$")),
-    edit.site.dist = ifelse(strand == "+", start - pos, pos - end)) %>%
-  select(run.set, specimen, gRNA, edit.site, edit.site.dist, strand)
-
-sites_included <- on_tar_dists %>%
-  group_by(gRNA) %>%
-  summarise(
-    prop = 100 * sum(
-      edit.site.dist <= upstream_dist & edit.site.dist >= -downstream_dist) / 
-      n(),
-    x_pos = upstream_dist,
-    y_pos = max(table(edit.site.dist))) %>%
-  ungroup() %>%
-  mutate(prop = paste0(pNums(prop, digits = 4), "%"))
-
-ggplot(on_tar_dists, aes(x = edit.site.dist)) +
+```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=2.5*(ceiling(nrow(sites_included) * nrow(gRNAs) / 2))}
+incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
   geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
-  geom_histogram(aes(fill = factor(gRNA)), binwidth = 1, color = "black") +
+  geom_col(aes(fill = factor(strand)), width = 1) +
   geom_text(
     data = sites_included, 
     aes(x = x_pos, y = y_pos, label = prop), 
     hjust = 1, fontface = "bold", size = 5) +
-  facet_wrap(~ gRNA, ncol = 2, scales = "free") +
-  lims(x = c(-downstream_dist, upstream_dist)) +
-  scale_y_continuous(
-    tran = "log10", breaks = log_breaks(), labels = pNums) +
+  coord_cartesian(xlim = c(-upstream_dist, upstream_dist)) +
+  scale_y_continuous(breaks = pretty_breaks(), labels = pNums) +
   scale_fill_brewer(type = "qual", palette = "Set1") + 
   guides(fill = FALSE) +
   labs(
     x = "Distance to Edit Site (bp, res = 1)", 
-    y = "Alignment Count")
+    y = "Log Alignment Count") +
+  custom_theme +
+  theme(strip.text.y = element_text(angle = 0))
+
+if(!is.null(args$support)){
+  incorp_plot + facet_wrap(condition ~ gRNA, ncol = 2, scales = "free")
+}else{
+  incorp_plot + facet_wrap(~ gRNA, ncol = 2, scales = "free")
+}
+
 ```
 
-Figure 1 shows the distance distribution of observed incorporation sites from On-target loci. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which tunes the distance upstream of incorporation sites to search for nuclease edited sites.
+These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which tunes the distance upstream of incorporation sites to search for nuclease edited sites.
 
 
 # Off-target analysis
@@ -321,91 +241,86 @@ Figure 1 shows the distance distribution of observed incorporation sites from On
 Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. Table 4 shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). gRNA **Matched** loci require a match in the upstream sequence to a treated gRNA.
 
 ```{r off_target_summary}
-# All alignments
-tbl_ft_algn <- input_data$algnmts %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  filter(!edit.site %in% on_targets) %>%
-  group_by(specimen) %>%
-  summarise(ft_algns = n_distinct(clus.ori)) %>%
-  complete(specimen, fill = list(ft_algns = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Probable edit sites
-tbl_ft_prob <- input_data$probable_algns %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  filter(on.off.target == "Off-target") %>%
-  group_by(specimen) %>%
-  summarise(ft_prob = n_distinct(clus.ori)) %>%
-  complete(specimen, fill = list(ft_prob = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Pile ups
-tbl_ft_pile <- input_data$pile_up_algns %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  filter(on.off.target == "Off-target") %>%
-  group_by(specimen) %>%
-  summarise(ft_pile = n_distinct(clus.ori)) %>%
-  complete(specimen, fill = list(ft_pile = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Paired or flanked alignments
-tbl_ft_pair <- input_data$paired_regions %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  filter(on.off.target == "Off-target") %>%
-  group_by(specimen) %>%
-  summarise(ft_pair = n()) %>%
-  complete(specimen, fill = list(ft_pair = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# gRNA sequence matched
-tbl_ft_match <- input_data$matched_summary %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
-  filter(on.off.target == "Off-target") %>%
-  group_by(specimen) %>%
-  summarise(ft_match = n()) %>%
-  complete(specimen, fill = list(ft_match = 0)) %>% 
-  ungroup() %>% as.data.frame()
-
-# Summary table
-ft_tbl_summary <- mutate(treatment_df, specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen))))
-
-ft_tbl_summary <- Reduce(
-  function(x,y){ left_join(x, y, by = "specimen") },
-  list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
-  init = ft_tbl_summary)
-
-names(ft_tbl_summary) <- c(
-  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
-  "Flanking\nPairs", "gRNA\nMatched")
-
-pandoc.table(
-  ft_tbl_summary, caption = "Off-target Loci.",
+pander(
+  ft_tbl_summary, caption = tbl_caps[4],
   digits = 1, big.mark = ",", 
   justify = ifelse(sapply(seq_along(ft_tbl_summary), function(i){
     is.numeric(ft_tbl_summary[,i]) }), "right", "center"),
   keep.line.breaks = TRUE, style = "multiline")
-
-#kable(
-#    ft_tbl_summary, format = "latex", booktabs = TRUE, 
-#    caption = "Off-target overview.", align = "c", digits = 1, 
-#    longtable = TRUE, format.args = list(big.mark = ",")) %>%
-#  add_header_above(c(rep(" ", 2), " " = 2, "Criteria" = 3)) %>%
-#  add_header_above(c(rep(" ", 2), "Unique Off-target Loci" = 5)) %>%
-#  kable_styling(latex_options = c("repeat_header"))
 ```
 
-## Genomic enrichment
+```{r, include = FALSE} 
+if(args$format == "pdf") cat("\\newpage") 
+```
 
-compare output off-targets for enrichment in onco-genes and special-genes against random sites. 
+## Off-target enrichment in cancer-associated genes
 
-Output table with counts and p-values as well as adjusted p-values for multiple comparisons (BH). Maybe output a karyogram of off targets, consider putting a cool looking karyogram on the first page to show on and off target distribution by specimen. 
+Flanking **Paired** loci and gRNA **Matched** loci are tested for enrichment in cancer-associated genes in Table 5. This is done using a Fisher's Exact test and adjusting the p-value for multiple comparisons using a Benjamani-Hochberg correction.
 
-## Add functionality - 
-output figures to directory
-output analysis data (input_data, + tables to report_data directory)
+```{r onco_enrichment}
+enriched_idx <- which(enrich_df <= 0.05, arr.ind = TRUE)
+enriched_idx <- enriched_idx[enriched_idx[,2] >= 6, , drop = FALSE]
+enrich_df[,6] <- pNums(round(enrich_df[,6], digits = 3))
+enrich_df[,7] <- pNums(round(enrich_df[,7], digits = 3))
+if(nrow(enriched_idx) > 0) emphasize.strong.cells(enriched_idx)
+pander(enrich_df, caption = tbl_caps[5],
+  digits = 4, style = "multiline",
+  justify = ifelse(sapply(seq_along(enrich_df), function(i){
+    is.numeric(enrich_df[,i]) }), "right", "center"),
+  keep.line.breaks = TRUE)
+```
+
+```{r, include = FALSE} 
+if(args$format == "pdf") cat("\\newpage") 
+```
+
+## Genomic distribution of incorporation sites
+
+The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent ring plot the alignments associated with Pileups, Flanking Pairs, and gRNA Matched groups. The length of the bar within it's associated ring is directly correlated to the number of incorporations identified within the **10 Mb window**.
+
+```{r genomic_distribution, fig.cap=fig_caps[2], fig.width=7.5, fig.height=ifelse(num_conds < 2, 5, 3.75*ceiling(num_conds/2))}
+if(is.null(args$support)){
+  plot_genomic_density(genomic_grl, res = 1E7) + 
+    custom_theme +
+    theme(
+      panel.background = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks = element_blank(), 
+      legend.position = "top")
+}else{
+  plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
+    facet_wrap(~ cond, ncol = 2) +
+    custom_theme +
+    theme(
+      panel.background = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks = element_blank(), 
+      legend.position = "top")
+}
+```
+
+## Off-target gRNA sequence comparison
+
+Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the gRNA matched sites are displayed below in Figure 3 along with the number of mismatches to the gRNA sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), and an identifier denoted by the nearest gene (`gene_id`). The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate `*`) that the site is within the transcription unit of the gene, `~`) the gene appears on the cancer-association list, `!`) and that the gene appears on the special gene list.
+
+```{r off-target_seqs, fig.cap=fig_caps[3], fig.width=8, fig.height=2.5*length(ot_seqs_list)}
+ot_seq_plots <- lapply(ot_seqs_list, function(x){
+  ref_gRNA <- paste0(gRNAs$gRNA, gRNAs$PAM)[match(unique(x$gRNA), gRNAs$Guide)]
+  if(!is.null(args$support)){
+    title <- paste0(unique(x$condition), "\ngRNA: ", unique(x$gRNA))
+  }else{
+    title <- paste0("gRNA: ", unique(x$gRNA))
+  }
+  select(
+      head(x, n = 10), aligned.sequence, mismatch, target, algns, gene_id) %>%
+    seq_diverge_plot(
+      ref = ref_gRNA, padding = 7, text.size = 4, 
+      font.family = "Courier", font.face = "plain") +
+    labs(title = title) +
+    blank_theme +
+    theme(title = element_text(size = 9, face = "bold"))
+})
+
+gridExtra::grid.arrange(grobs = ot_seq_plots, ncol = 1)
+```
+
