@@ -199,7 +199,7 @@ Table 3 displays the percent of cells sampled that were associated with On-targe
 ```{r on_target_summary}
 pander(
   ot_tbl_summary, caption = tbl_caps[3], 
-  digits = 4, style = "multiline",
+  digits = 4, style = "multiline", missing = 0,
   justify = ifelse(sapply(seq_along(ot_tbl_summary), function(i){
     is.numeric(ot_tbl_summary[,i]) }), "right", "center"),
   keep.line.breaks = TRUE)
@@ -244,7 +244,7 @@ Using the criteria discussed previously based on characterizing features of nucl
 ```{r off_target_summary}
 pander(
   ft_tbl_summary, caption = tbl_caps[4],
-  digits = 1, big.mark = ",", 
+  digits = 1, big.mark = ",", missing = 0,
   justify = ifelse(sapply(seq_along(ft_tbl_summary), function(i){
     is.numeric(ft_tbl_summary[,i]) }), "right", "center"),
   keep.line.breaks = TRUE, style = "multiline")
@@ -304,8 +304,8 @@ if(is.null(args$support)){
 
 Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the gRNA matched sites are displayed below in Figure 3 along with the number of mismatches to the gRNA sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), and an identifier denoted by the nearest gene (`gene_id`). The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate `*`) that the site is within the transcription unit of the gene, `~`) the gene appears on the cancer-association list, `!`) and that the gene appears on the special gene list.
 
-```{r off-target_seqs, fig.cap=fig_caps[3], fig.width=8, fig.height=2.5*length(ot_seqs_list)}
-ot_seq_plots <- lapply(ot_seqs_list, function(x){
+```{r off-target_seqs, fig.cap=fig_caps[3], fig.width=8, fig.height=2.5*length(ft_seqs_list)}
+ft_seq_plots <- lapply(ft_seqs_list, function(x){
   ref_gRNA <- paste0(gRNAs$gRNA, gRNAs$PAM)[match(unique(x$gRNA), gRNAs$Guide)]
   if(!is.null(args$support)){
     title <- paste0(unique(x$condition), "\ngRNA: ", unique(x$gRNA))
@@ -322,6 +322,6 @@ ot_seq_plots <- lapply(ot_seqs_list, function(x){
     theme(title = element_text(size = 9, face = "bold"))
 })
 
-gridExtra::grid.arrange(grobs = ot_seq_plots, ncol = 1)
+gridExtra::grid.arrange(grobs = ft_seq_plots, ncol = 1)
 ```
 

@@ -524,7 +524,8 @@ if(umitag_option){
     tbl_algn_counts, Reads = sum(count), Alignments = n())
 }
 
-spec_overview_join <- left_join(spec_overview, tbl_algn_counts, by = "specimen") 
+spec_overview_join <- dplyr::left_join(
+  spec_overview, tbl_algn_counts, by = "specimen") 
 
 
 # On-target summary ------------------------------------------------------------
@@ -536,7 +537,6 @@ tbl_ot_algn <- input_data$algnmts %>%
   summarise(
     ot_algns = pNums(sum(as.integer(edit.site %in% on_targets))),
     ot_algns_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
-  complete(specimen, fill = list(ot_algns = 0, ot_algns_pct = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Probable edited sites
@@ -547,7 +547,6 @@ tbl_ot_prob <- input_data$probable_algns %>%
   summarise(
     ot_prob = pNums(sum(as.integer(edit.site %in% on_targets))),
     ot_prob_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
-  complete(specimen, fill = list(ot_prob = 0, ot_prob_pct = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Pile ups of read alignments
@@ -558,21 +557,22 @@ tbl_ot_pile <- input_data$pile_up_algns %>%
   summarise(
     ot_pile = pNums(sum(as.integer(edit.site %in% on_targets))),
     ot_pile_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
-  complete(specimen, fill = list(ot_pile = 0, ot_pile_pct = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Paired or flanking algnments
 tbl_ot_pair <- input_data$paired_regions %>%
-  mutate(specimen = factor(
-    specimen, levels = sort(unique(sample_info$specimen)))) %>%
+  mutate(
+    specimen = factor(
+      specimen, levels = sort(unique(sample_info$specimen))),
+    on.off.target = factor(
+      on.off.target, levels = c("On-target", "Off-target"))) %>%
   group_by(specimen, on.off.target) %>%
   summarise(cnt = sum(algns)) %>%
-  ungroup() %>% group_by(specimen) %>%
+  group_by(specimen) %>%
   summarise(
     ot_pair = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
     ot_pair_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
       sum(cnt)) %>%
-  complete(specimen, fill = list(ot_pair = 0, ot_pair_pct = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Guide RNA matched within 6 mismatches
@@ -586,7 +586,6 @@ tbl_ot_match <- input_data$matched_summary %>%
     ot_match = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
     ot_match_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
       sum(cnt)) %>%
-  complete(specimen, fill = list(ot_match = 0, ot_match_pct = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Summary table
@@ -594,7 +593,7 @@ ot_tbl_summary <- mutate(treatment_df, specimen = factor(
   specimen, levels = sort(unique(sample_info$specimen))))
 
 ot_tbl_summary <- Reduce(
-  function(x,y){ left_join(x, y, by = "specimen") },
+  function(x,y){ dplyr::left_join(x, y, by = "specimen") },
   list(tbl_ot_algn[,c(1,3)], tbl_ot_pile[,c(1,3)],
        tbl_ot_pair[,c(1,3)], tbl_ot_match[,c(1,3)]),
   init = ot_tbl_summary)
@@ -611,7 +610,7 @@ on_tar_dists <- input_data$matched_algns %>%
     gRNA = str_extract(guideRNA.match, "[\\w]+"),
     pos = as.numeric(str_extract(edit.site, "[0-9]+$")),
     edit.site.dist = ifelse(strand == "+", start - pos, end - pos)) %>%
-  left_join(cond_overview, by = "specimen") %>%
+  dplyr::left_join(cond_overview, by = "specimen") %>%
   select(
     run.set, specimen, gRNA, condition, edit.site, edit.site.dist, strand) %>%
   group_by(condition, gRNA, edit.site.dist, strand) %>%
@@ -648,7 +647,6 @@ tbl_ft_algn <- input_data$algnmts %>%
   filter(!edit.site %in% on_targets) %>%
   group_by(specimen) %>%
   summarise(ft_algns = n_distinct(clus.ori)) %>%
-  complete(specimen, fill = list(ft_algns = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Probable edit sites
@@ -658,7 +656,6 @@ tbl_ft_prob <- input_data$probable_algns %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
   summarise(ft_prob = n_distinct(clus.ori)) %>%
-  complete(specimen, fill = list(ft_prob = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Pile ups
@@ -668,7 +665,6 @@ tbl_ft_pile <- input_data$pile_up_algns %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
   summarise(ft_pile = n_distinct(clus.ori)) %>%
-  complete(specimen, fill = list(ft_pile = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Paired or flanked alignments
@@ -678,7 +674,6 @@ tbl_ft_pair <- input_data$paired_regions %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
   summarise(ft_pair = n()) %>%
-  complete(specimen, fill = list(ft_pair = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # gRNA sequence matched
@@ -688,7 +683,6 @@ tbl_ft_match <- input_data$matched_summary %>%
   filter(on.off.target == "Off-target") %>%
   group_by(specimen) %>%
   summarise(ft_match = n()) %>%
-  complete(specimen, fill = list(ft_match = 0)) %>% 
   ungroup() %>% as.data.frame()
 
 # Summary table
@@ -696,7 +690,7 @@ ft_tbl_summary <- mutate(treatment_df, specimen = factor(
   specimen, levels = sort(unique(sample_info$specimen))))
 
 ft_tbl_summary <- Reduce(
-  function(x,y){ left_join(x, y, by = "specimen") },
+  function(x,y){ dplyr::left_join(x, y, by = "specimen") },
   list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
   init = ft_tbl_summary)
 
@@ -788,11 +782,11 @@ names(genomic_grl) <- c(
 
 
 # Off-target sequence analysis -------------------------------------------------
-ot_seqs <- input_data$matched_summary %>%
+ft_seqs <- input_data$matched_summary %>%
   select(
     specimen, aligned.sequence, guideRNA.match, edit.site,
     guideRNA.mismatch, on.off.target, algns, gene_id) %>% 
-  left_join(cond_overview, by = "specimen") %>% 
+  dplyr::left_join(cond_overview, by = "specimen") %>% 
   group_by(
     condition, edit.site, aligned.sequence, guideRNA.match,
     guideRNA.mismatch, on.off.target, gene_id) %>%
@@ -806,7 +800,7 @@ ot_seqs <- input_data$matched_summary %>%
     guideRNA.mismatch = "mismatch", 
     guideRNA.match = "gRNA")
 
-ot_seqs_list <- split(ot_seqs, paste0(ot_seqs$condition, " - ", ot_seqs$gRNA))
+ft_seqs_list <- split(ft_seqs, paste0(ft_seqs$condition, " - ", ft_seqs$gRNA))
 message("Analysis complete. Starting report generation.")
 
 # Data passed to Rmd for report generation -------------------------------------
