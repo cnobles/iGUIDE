@@ -68,8 +68,7 @@ knitr::opts_chunk$set(
 if(args$figures != FALSE){
   knitr::opts_chunk$set(
     fig.path = file.path(
-      output_dir, 
-      paste0(stringr::str_remove(output_file, "[\\w]+$"), "figures/")))
+      output_dir, gsub("[\\w]+$", "figures/", output_file, perl = TRUE)))
 }
 
 

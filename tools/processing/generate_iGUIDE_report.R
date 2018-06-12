@@ -211,7 +211,7 @@ plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2,
       geom_vline(xintercept = x_breaks, color = "grey90") +
       scale_x_continuous(
         breaks = x_lab_pos,
-        labels = stringr::str_remove(names(x_lab_pos), "chr"))
+        labels = gsub("chr", "", names(x_lab_pos)))
   }else{
     p <- p + scale_x_continuous(labels = NULL)
   }
