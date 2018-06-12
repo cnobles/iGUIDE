@@ -66,9 +66,10 @@ knitr::opts_chunk$set(
 )
 
 if(args$figures != FALSE){
-knitr::opts_chunk$set(
-  fig.path = file.path(output_dir, stringr::str_replace(
-      output_file, ".pdf$", ".figures/")))
+  knitr::opts_chunk$set(
+    fig.path = file.path(
+      output_dir, 
+      paste0(stringr::str_remove(output_file, "[\\w]+$"), "figures/")))
 }
 
 
@@ -206,7 +207,7 @@ pander(
 
 ## Editing near known genomic sites
 
-```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=2.5*(ceiling(nrow(sites_included) * nrow(gRNAs) / 2))}
+```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=max(2.5*(ceiling(nrow(sites_included) * nrow(gRNAs) / 2)), 2.5)}
 incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
   geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
   geom_col(aes(fill = factor(strand)), width = 1) +
