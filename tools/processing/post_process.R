@@ -373,7 +373,7 @@ paired_algns <- probable_algns[
 paired_regions <- paired_algns %>%
   group_by(specimen, paired.algn, strand) %>%
   mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
-  ungroup() %>% group_by(specimen, paired.algn)
+  group_by(specimen, paired.algn)
 
 if(config$UMItags){
   paired_regions <- summarise(
@@ -382,7 +382,6 @@ if(config$UMItags){
     start = min(pos), end = max(pos), mid = start + (end-start)/2,
     strand = "*", width = end - start, algns = n(), umitag = sum(umitag), 
     count = sum(count))
-  
 }else{
   paired_regions <- summarise(
     paired_regions,
@@ -391,23 +390,24 @@ if(config$UMItags){
     strand = "*", width = end - start, algns = n(), count = sum(count))
 }
 
-paired_regions <- ungroup(paired_regions) %>% 
-  as.data.frame() %>%
+paired_regions <- group_by(paired_regions, specimen, paired.algn) %>%
   mutate(
+#    gene_id = assign_gene_id(
+#      seqnames, mid, reference = ref_genome, 
+#      ref_genes = ref_genes, onco_genes = onco_genes, 
+#      bad_actors = bad_actors),
     on.off.target = ifelse(
-      seqnames == str_extract(
-        on_target_sites[unlist(treatment[specimen])], "[\\w]+"),
-      ifelse(
-        start <= as.numeric(
-          str_extract(on_target_sites[unlist(treatment[specimen])], "[\\w]+$")),
-        ifelse(end >= as.numeric(
-          str_extract(on_target_sites[unlist(treatment[specimen])], "[\\w]+$")),
-          "On-target", "Off-target"), "Off-target"), "Off-target"),
-    gene_id = assign_gene_id(
-      seqnames, mid, reference = ref_genome, 
-      ref_genes = ref_genes, onco_genes = onco_genes, 
-      bad_actors = bad_actors))
-
+      any(sapply(
+        unlist(on_target_sites[
+          which(names(on_target_sites) %in% treatment[[specimen]])]),
+        function(x, seq, st, en){
+          seq == str_extract(x, "[\\w]+") &
+            st <= as.numeric(str_extract(x, "[\\w]+$")) + downstream_dist &
+            en >= as.numeric(str_extract(x, "[\\w]+$")) - downstream_dist
+      }, seq = seqnames, st = start, en = end)), "On-target", "Off-target")) %>%
+  ungroup() %>% 
+  as.data.frame()
+      
 pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),]
 

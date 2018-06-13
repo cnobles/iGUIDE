@@ -1,6 +1,7 @@
 # Run configuration
 Run_Name : "default"
 Sample_Info : "sampleInfo/default.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/default.supp.csv"
 RefGenome : "hg38"
 RefGenomePath : "genomes/hg38.2bit"
 Aligner : "blat"
@@ -17,19 +18,23 @@ Sample_Name_Column : "sampleName"
 
 # Sequence information
 R1_Leading_Trim : "."
-R1_Overreading_Trim : "GCTCGCGTTTAATTGAGTTG"
-R2_Leading_Trim : "ACATATGACAACTCAATTAAACGCGAGC"
-R2_Leading_Trim_ODN : "."
+R1_Overreading_Trim : "TCGCGTATACCGTTATTAACATATGACAACTCAA"
+R2_Leading_Trim : "TTGAGTTGTCATATGTTAATAACGGTAT"
+R2_Leading_Trim_ODN : "ACGCGA"
 R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
 
 # Guide RNA information, including PAM sequence with gRNA
 Guide_RNA_Sequences :
-    B2M : "gagtagcgcgagcacagctangg"
-    TRAC5 : "tgtgctagacatgaggtctangg"
-PAM_Sequence : "ngg"
+    B2M : "GAGTAGCGCGAGCACAGCTANGG"
+    TRAC : "TGTGCTAGACATGAGGTCTANGG"
+    TRBC : "GGAGAATGACGAGTGGACCCNGG"
+PAM_Sequence : "NGG"
 On_Target_Sites :
     B2M : "chr15:-:44711569"
-    TRAC5 : "chr14:+:22547664"
+    TRAC : "chr14:+:22547664"
+    TRBC'1 : "chr7:+:142792020"
+    TRBC'2 : "chr7:+:142801367"
+
 
 # Specimen treatment
 # Data can be input here or referenced in sampleInfo by just putting 
@@ -38,7 +43,7 @@ On_Target_Sites :
 # names. If placing data in sampleInfo, delimit multiple guideRNA names with a
 # semicolon ';'.
 Treatment :
-    all : ["B2M;TRAC5"]
+    all : "sampleInfo:gRNA"
 
 
 # ------------------------------------------------------------------------------
@@ -89,3 +94,8 @@ specialGeneList :
 upstreamDist : 100
 downstreamDist : 30
 pileUpMin : 3
+
+# Report
+suppFile : TRUE
+figures : TRUE
+report_data : FALSE

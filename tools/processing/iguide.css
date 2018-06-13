@@ -12,14 +12,14 @@ p.caption {
   font-weight: bold;
 }  
 
-th.msa {
+th {
   text-align: center;
   padding: 6px;
   border-bottom: 2px solid #ddd;
 }
 
-td.msa {
-  font-family: "Courier New", courier, monospace;
+td {
+  vertical-align: center;
   text-align: center;
   padding: 8px;
 }

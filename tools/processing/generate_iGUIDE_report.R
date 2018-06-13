@@ -434,8 +434,12 @@ gRNAs <- bind_rows(mapply(function(seqs, pam){
 
 ## Identify on-target edit sites from config files
 on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites"))
-names(on_targets) <- stringr::str_extract(names(on_targets), "[\\w\\_\\-]+$")
-on_targets <- on_targets[match(unique(names(on_targets)), names(on_targets))]
+names(on_targets) <- stringr::str_extract(
+    names(on_targets), "[\\w\\_\\-\\']+$") %>%
+  stringr::str_extract("[\\w\\_\\-]+")
+on_targets <- structure(
+  unique(on_targets), 
+  names = names(on_targets)[match(unique(on_targets), on_targets)])
 
 ## Treatment across runs
 treatments <- lapply(configs, "[[", "Treatment")
@@ -624,9 +628,14 @@ if(length(unique(on_tar_dists$condition)) == 1){
   on_tar_dists$condition <- " "
 }
 
-sites_included <- on_tar_dists %>%
-  group_by(condition, gRNA) %>%
-  summarise(
+if(is.null(args$support)){
+  sites_included <- on_tar_dists %>% group_by(gRNA)
+}else{
+  sites_included <- on_tar_dists %>% group_by(condition, gRNA)
+}
+
+sites_included <- summarise(
+    sites_included,
     prop = 100 * sum(cnt[
       abs(edit.site.dist) <= upstream_dist & 
         abs(edit.site.dist) >= -downstream_dist]) / 
@@ -790,9 +799,15 @@ ft_seqs <- input_data$matched_summary %>%
   group_by(
     condition, edit.site, aligned.sequence, guideRNA.match,
     guideRNA.mismatch, on.off.target, gene_id) %>%
-  summarise(algns = sum(algns)) %>%
-  group_by(condition, guideRNA.match) %>%
-  arrange(desc(algns), guideRNA.mismatch) %>%
+  summarise(algns = sum(algns))
+
+if(is.null(args$support)){
+  ft_seqs <- group_by(ft_seqs, guideRNA.match)
+}else{
+  ft_seqs <- group_by(ft_seqs, condition, guideRNA.match)
+}
+
+ft_seqs <- arrange(ft_seqs, desc(algns), guideRNA.mismatch) %>%
   ungroup() %>%
   mutate(on.off.target = stringr::str_extract(on.off.target, "[\\w]+")) %>%
   rename(
@@ -800,7 +815,12 @@ ft_seqs <- input_data$matched_summary %>%
     guideRNA.mismatch = "mismatch", 
     guideRNA.match = "gRNA")
 
-ft_seqs_list <- split(ft_seqs, paste0(ft_seqs$condition, " - ", ft_seqs$gRNA))
+if(is.null(args$support)){
+  ft_seqs_list <- split(ft_seqs, ft_seqs$gRNA)
+}else{
+  ft_seqs_list <- split(ft_seqs, paste0(ft_seqs$condition, " - ", ft_seqs$gRNA))
+}
+
 message("Analysis complete. Starting report generation.")
 
 # Data passed to Rmd for report generation -------------------------------------

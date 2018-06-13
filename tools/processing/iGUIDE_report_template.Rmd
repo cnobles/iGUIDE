@@ -170,11 +170,14 @@ if(args$format == "pdf") cat("\\newpage")
 Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in Table 2. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
 ```{r gRNA_tbl}
-gRNAs$`Edit Loci` <- on_targets[gRNAs$Guide]
+gRNAs$`Edit Loci` <- sapply(gRNAs$Guide, function(x){
+  paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
+})
+
 emphasize.verbatim.cols(c(2,3))
 pander(
   gRNAs, caption = tbl_caps[2], 
-  justify = "center")
+  justify = "center", style = "multiline")
 ```
 
 Analysis of On-target associated incorporation sites produces several notable features that are helpful in identifying non-specific or Off-target sites. These include the following:
@@ -206,7 +209,7 @@ pander(
 
 ## Editing near known genomic sites
 
-```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=max(2.5*(ceiling(nrow(sites_included) * nrow(gRNAs) / 2)), 2.5)}
+```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=max(2.5*(ceiling(nrow(sites_included) / 2)), 2.5)}
 incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
   geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
   geom_col(aes(fill = factor(strand)), width = 1) +
@@ -279,15 +282,6 @@ if(args$format == "pdf") cat("\\newpage")
 The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent ring plot the alignments associated with Pileups, Flanking Pairs, and gRNA Matched groups. The length of the bar within it's associated ring is directly correlated to the number of incorporations identified within the **10 Mb window**.
 
 ```{r genomic_distribution, fig.cap=fig_caps[2], fig.width=7.5, fig.height=ifelse(num_conds < 2, 5, 3.75*ceiling(num_conds/2))}
-if(is.null(args$support)){
-  plot_genomic_density(genomic_grl, res = 1E7) + 
-    custom_theme +
-    theme(
-      panel.background = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks = element_blank(), 
-      legend.position = "top")
-}else{
   plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
     facet_wrap(~ cond, ncol = 2) +
     custom_theme +
@@ -296,7 +290,6 @@ if(is.null(args$support)){
       panel.border = element_blank(),
       axis.ticks = element_blank(), 
       legend.position = "top")
-}
 ```
 
 ## Off-target gRNA sequence comparison
