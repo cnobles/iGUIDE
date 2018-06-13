@@ -511,7 +511,7 @@ filter_inappropriate_comparisons <- function(guideRNA.match, specimen,
 }
 
 assign_gene_id <- function(seqnames, positions, reference, ref_genes, 
-                           onco_genes, bad_actors, annotations = TRUE){
+                           onco_genes, special_genes, annotations = TRUE){
   require(GenomicRanges)
   require(hiAnnotator)
   stopifnot(length(seqnames) == length(positions))
@@ -531,7 +531,7 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
     gr <- getNearestFeature(
       gr, ref_genes, colnam = "nearest_gene", feature.colnam = "annot_sym")
   
-    ## Add gene marks ("*" for in_gene, "~" for onco gene, and "!" for bad_actors)
+    ## Add gene marks ("*" for in_gene, "~" for onco gene, and "!" for special_genes)
     gr$gene_id_wo_annot <- ifelse(
       gr$in_gene == "FALSE", gr$nearest_gene, gr$in_gene)
     gr$gene_id_wo_annot <- sapply(strsplit(gr$gene_id_wo_annot, ","), "[[", 1)
@@ -545,7 +545,7 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
       gr$gene_id_wo_annot %in% onco_genes, paste0(gr$gene_id, "~"), gr$gene_id)
   
     gr$gene_id <- ifelse(
-      gr$gene_id_wo_annot %in% bad_actors, paste0(gr$gene_id, "!"), gr$gene_id)
+      gr$gene_id_wo_annot %in% special_genes, paste0(gr$gene_id, "!"), gr$gene_id)
   
     if(annotations){
       return(gr$gene_id)

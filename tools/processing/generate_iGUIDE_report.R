@@ -376,7 +376,7 @@ ref_genes <- load_ref_files(
 onco_genes <- load_ref_files(
   configs[[1]]$oncoGeneList, 
   type = "gene.list", freeze = configs[[1]]$RefGenome)
-bad_actors <- load_ref_files(
+special_genes <- load_ref_files(
   configs[[1]]$specialGeneList, 
   type = "gene.list", freeze = config[[1]]$RefGenome)
 
@@ -716,13 +716,13 @@ rand_sites <- selectRandomSites(
 rand_sites$gene_id <- suppressMessages(assign_gene_id(
   seqnames(rand_sites), start(rand_sites), 
   reference = ref_genome, ref_genes = ref_genes, 
-  onco_genes = onco_genes, bad_actors = bad_actors))
+  onco_genes = onco_genes, special_genes = special_genes))
 
 rand_df <- data.frame(
   condition = "Random Sites", 
   "total" = length(rand_sites), 
   "onco" = sum(stringr::str_detect(rand_sites$gene_id, "~")), 
-  "bad.actors" = sum(stringr::str_detect(rand_sites$gene_id, "!")))
+  "special" = sum(stringr::str_detect(rand_sites$gene_id, "!")))
 
 paired_list <- split(
   input_data$paired_regions, 
@@ -733,7 +733,7 @@ paired_df <- bind_rows(lapply(paired_list, function(df){
   data.frame(
     "total" = nrow(df), 
     "onco" = sum(stringr::str_detect(df$gene_id, "~")), 
-    "bad.actors" = sum(stringr::str_detect(df$gene_id, "!")))
+    "special" = sum(stringr::str_detect(df$gene_id, "!")))
 }), .id = "condition")
 
 matched_list <- split(
@@ -745,7 +745,7 @@ matched_df <- bind_rows(lapply(matched_list, function(df){
   data.frame(
     "total" = nrow(df), 
     "onco" = sum(stringr::str_detect(df$gene_id, "~")), 
-    "bad.actors" = sum(stringr::str_detect(df$gene_id, "!")))
+    "special" = sum(stringr::str_detect(df$gene_id, "!")))
 }), .id = "condition")
 
 enrich_df <- bind_rows(list(
@@ -762,18 +762,18 @@ enrich_df$onco.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
     ref[,c("diff", "onco")], query[,c("diff", "onco")])))$p.value
 }), method = "BH")
 
-enrich_df$bad.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
-  ref <- enrich_df[1, c("total", "bad.actors")]
-  query <- enrich_df[i, c("total", "bad.actors")]
+enrich_df$special.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
+  ref <- enrich_df[1, c("total", "special")]
+  query <- enrich_df[i, c("total", "special")]
   ref$diff <- abs(diff(as.numeric(ref)))
   query$diff <- abs(diff(as.numeric(query)))
   fisher.test(as.matrix(rbind(
-    ref[,c("diff", "bad.actors")], query[,c("diff", "bad.actors")])))$p.value
+    ref[,c("diff", "special")], query[,c("diff", "special")])))$p.value
 }), method = "BH")
 
 names(enrich_df) <- c(
   "Origin", "Condition", "Total", "Onco-Rel.", 
-  "Bad-Actors", "Onco Enrich.", "Actor Enrich.")
+  "Spec. Genes", "Onco Enrich.", "Special Enrich.")
 
 
 # Genomic Distribution of edited sites -----------------------------------------

@@ -97,7 +97,7 @@ ref_genes <- load_ref_files(
   config$refGenes, type = "GRanges", freeze = config$RefGenome)
 onco_genes <- load_ref_files(
   config$oncoGeneList, type = "gene.list", freeze = config$RefGenome)
-bad_actors <- load_ref_files(
+special_genes <- load_ref_files(
   config$specialGeneList, type = "gene.list", freeze = config$RefGenome)
 
 ## Incorporation site parameters ===============================================
@@ -365,7 +365,7 @@ matched_summary <- ungroup(matched_summary) %>%
     positions = as.numeric(stringr::str_extract(edit.site, "[\\w]+$")), 
     reference = ref_genome, 
     ref_genes = ref_genes, onco_genes = onco_genes, 
-    bad_actors = bad_actors))
+    special_genes = special_genes))
 
 paired_algns <- probable_algns[
   probable_algns$paired.algn %in% names(tbl_paried_algn),]
@@ -395,7 +395,7 @@ paired_regions <- group_by(paired_regions, specimen, paired.algn) %>%
 #    gene_id = assign_gene_id(
 #      seqnames, mid, reference = ref_genome, 
 #      ref_genes = ref_genes, onco_genes = onco_genes, 
-#      bad_actors = bad_actors),
+#      special_genes = special_genes),
     on.off.target = ifelse(
       any(sapply(
         unlist(on_target_sites[
@@ -472,7 +472,7 @@ crispr_sites$gene_id <- assign_gene_id(
   reference = ref_genome, 
   ref_genes = ref_genes, 
   onco_genes = onco_genes, 
-  bad_actors = bad_actors)
+  special_genes = special_genes)
 crispr_sites$gene_id <- sapply(1:nrow(crispr_sites), function(i, df, on){
   if(df$edit.site[i] %in% on){
     return(paste0(names(on)[match(df$edit.site[i], on)], "*"))

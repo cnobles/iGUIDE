@@ -304,14 +304,17 @@ ft_seq_plots <- lapply(ft_seqs_list, function(x){
   }else{
     title <- paste0("gRNA: ", unique(x$gRNA))
   }
-  select(
-      head(x, n = 10), aligned.sequence, mismatch, target, algns, gene_id) %>%
+  y <- head(x, n = 10)
+  
+  select(y, aligned.sequence, mismatch, target, algns, gene_id) %>%
     seq_diverge_plot(
       ref = ref_gRNA, padding = 7, text.size = 4, 
       font.family = "Courier", font.face = "plain") +
     labs(title = title) +
     blank_theme +
-    theme(title = element_text(size = 9, face = "bold"))
+    theme(
+      title = element_text(size = 9, face = "bold"),
+      aspect.ratio = nrow(y)/nchar(ref_gRNA))
 })
 
 gridExtra::grid.arrange(grobs = ft_seq_plots, ncol = 1)

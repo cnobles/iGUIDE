@@ -12,6 +12,10 @@ p.caption {
   font-weight: bold;
 }  
 
+table {
+  margin: 1em auto;
+}
+
 th {
   text-align: center;
   padding: 6px;
@@ -19,8 +23,7 @@ th {
 }
 
 td {
-  vertical-align: center;
-  text-align: center;
+  valign: middle;
   padding: 8px;
 }
 
