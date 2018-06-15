@@ -1,0 +1,114 @@
+%
+% SimIncorpSites Inputs
+
+[ 2018-06-15 12:42:21 ]
+
+Variables     Values      
+------------- ------------
+config :      config.yml  
+outfolder :   Data        
+seed :        1           
+
+%
+% Configuration
+                            _                                                             
+sample_info                 sampleInfo.csv                                                
+ref_genome                  hg38                                                          
+guide_rna_sequences.B2M     GAGTAGCGCGAGCACAGCTANGG                                       
+guide_rna_sequences.TRAC    TGTGCTAGACATGAGGTCTANGG                                       
+guide_rna_sequences.TRBC    GGAGAATGACGAGTGGACCCNGG                                       
+pam_sequence                NGG                                                           
+on_target_sites.B2M         chr15:-:44711569                                              
+on_target_sites.TRAC        chr14:+:22547664                                              
+on_target_sites.TRBC'1      chr7:+:142792020                                              
+on_target_sites.TRBC'2      chr7:+:142801367                                              
+on_target_params.abund      250                                                           
+off_target_params.num       5                                                             
+off_target_params.abund1    20                                                            
+off_target_params.abund2    15                                                            
+off_target_params.abund3    10                                                            
+off_target_params.abund4    8                                                             
+off_target_params.abund5    5                                                             
+off_target_params.mismatch  4                                                             
+false_target_sites.TET2     chr4:+:105272459                                              
+false_target_params.abund   15                                                            
+random_background.num       1400                                                          
+random_background.max_abund 2                                                             
+seqs.P5                     AATGATACGGCGACCACCGAGATCTACAC                                 
+seqs.PI2                    ACACTCTTTCCCTACACGACGCTCTTCCGATCT                             
+seqs.P7                     CAAGCAGAAGACGGCATACGAGAT                                      
+seqs.PI1                    GTGACTGGAGTCCTCTCTATGGGCAGTCGGTGATTTGAGTTGTCATATGTTAATAACGGTAT
+seqs.ODNbit                 ACGCGA                                                        
+seqs.R1                     ACACTCTTTCCCTACACGACGCTCTTCCGATCT                             
+seqs.I1                     ATCACCGACTGCCCATAGAGAGGACTCCAGTCAC                            
+seqs.I2                     AATGATACGGCGACCACCGAGATCTACAC                                 
+seqs.R2                     GTGACTGGAGTCCTCTCTATGGGCAGTCGGTGAT                            
+seq_dists.R1                150                                                           
+seq_dists.I1                8                                                             
+seq_dists.I2                16                                                            
+seq_dists.R2                150                                                           
+seq_files.R1                Undetermined_S0_L001_R1_001.fastq.gz                          
+seq_files.I1                Undetermined_S0_L001_I1_001.fastq.gz                          
+seq_files.I2                Undetermined_S0_L001_I2_001.fastq.gz                          
+seq_files.R2                Undetermined_S0_L001_R2_001.fastq.gz                          
+min_length                  35                                                            
+fill_qual                   B                                                             
+instrument                  miseq                                                         
+%
+% Sample Information
+
+
+ sampleName   barcode1       barcode2         gRNA   
+------------ ---------- ------------------ ----------
+    iGXA      GGACTCCT   AGAGTAGANNWNNWNN     TRAC   
+    iGXB      GGACTCCT   CTCTCTATNNWNNWNN     B2M    
+    iGXC      TAAGGCGA   TATCCTCTNNWNNWNN   TRAC;B2M 
+    iGXD      TAAGGCGA   GTAAGGAGNNWNNWNN     TRBC   
+    iGXE      TAAGGCGA   ACTGCATANNWNNWNN     TRBC   
+
+
+[ 2018-06-15 12:42:37 ] Loaded reference genome:  BSgenome.Hsapiens.UCSC.hg38
+[ 2018-06-15 12:42:37 ] Identifying top potential off-target sites for gRNA(s):  B2M, TRAC, TRBC
+[ 2018-06-15 12:48:19 ] Generating random pool of  7000  sites.%
+% Sample from target data set.
+
+
+ class    gRNA        posid         abund 
+-------- ------ ------------------ -------
+   on     B2M    chr15:-:44711569    250  
+   on     TRAC   chr14:+:22547664    250  
+   on     TRBC   chr7:+:142792020    250  
+   on     TRBC   chr7:+:142801367    250  
+  off     B2M    chr9:+:94689940     20   
+ random   all    chrY:-:22432264      1   
+ random   all    chrY:-:50176614      2   
+ random   all    chrY:-:32228359      2   
+ random   all    chrY:+:33603240      1   
+ random   all    chrY:-:55873572      2   
+
+
+[ 2018-06-15 12:48:53 ] Generating incorporation positions from targets.%
+% Sample from incorporation data set.
+
+
+ class    gRNA        posid              incorp      
+-------- ------ ------------------ ------------------
+ random   all    chr17:-:77178962   chr17:-:77178889 
+   on     TRAC   chr14:+:22547664   chr14:-:22547626 
+ random   all    chr1:-:243509336   chr1:-:243509326 
+ random   all    chrY:+:39522075    chrY:+:39522105  
+ random   all    chr12:+:40272436   chr12:+:40272550 
+ random   all    chr18:+:13008374   chr18:+:13008495 
+  off     TRAC   chr5:+:99273655    chr5:-:99273608  
+ random   all    chr17:+:74951093   chr17:-:74951022 
+ random   all    chr6:-:58106853    chr6:-:58106839  
+ random   all    chr7:+:72029630    chr7:+:72029717  
+
+
+[ 2018-06-15 12:48:56 ] Retrieving genomic sequences for template construction.
+[ 2018-06-15 12:49:02 ] Building templates with accessory sequences.
+[ 2018-06-15 12:49:31 ] Simulating  10  reads for sequencing cycles:  R1, I1, I2, R2
+[ 2018-06-15 12:49:31 ] Constructed reads. Saving output to:  Data
+[ 2018-06-15 12:49:32 ] Writing truth files.
+[ 2018-06-15 12:49:32 ] Writing fastq files for reads.
+[ 2018-06-15 12:49:33 ] Script completed.
