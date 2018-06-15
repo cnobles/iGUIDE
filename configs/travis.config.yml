@@ -98,4 +98,4 @@ pileUpMin : 3
 # Report
 suppFile : TRUE
 figures : TRUE
-report_data : FALSE
+reportData : FALSE
