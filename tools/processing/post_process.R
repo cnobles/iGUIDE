@@ -392,14 +392,16 @@ if(config$UMItags){
 
 paired_regions <- group_by(paired_regions, specimen, paired.algn) %>%
   mutate(
-#    gene_id = assign_gene_id(
-#      seqnames, mid, reference = ref_genome, 
-#      ref_genes = ref_genes, onco_genes = onco_genes, 
-#      special_genes = special_genes),
+    gene_id = assign_gene_id(
+      seqnames, mid, reference = ref_genome, 
+      ref_genes = ref_genes, onco_genes = onco_genes, 
+      special_genes = special_genes),
     on.off.target = ifelse(
       any(sapply(
         unlist(on_target_sites[
-          which(names(on_target_sites) %in% treatment[[specimen]])]),
+          which(
+            str_extract(names(on_target_sites), "[\\w\\-\\_]+") %in% 
+              treatment[[specimen]])]),
         function(x, seq, st, en){
           seq == str_extract(x, "[\\w]+") &
             st <= as.numeric(str_extract(x, "[\\w]+$")) + downstream_dist &

@@ -35,7 +35,6 @@ On_Target_Sites :
     TRBC'1 : "chr7:+:142792020"
     TRBC'2 : "chr7:+:142801367"
 
-
 # Specimen treatment
 # Data can be input here or referenced in sampleInfo by just putting 
 # 'sampleInfo:{column}'. For simplicity, if all samples were treated with the 
@@ -98,4 +97,4 @@ pileUpMin : 3
 # Report
 suppFile : TRUE
 figures : TRUE
-report_data : FALSE
+reportData : FALSE

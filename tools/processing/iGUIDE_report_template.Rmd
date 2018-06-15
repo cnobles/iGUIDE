@@ -317,6 +317,10 @@ ft_seq_plots <- lapply(ft_seqs_list, function(x){
       aspect.ratio = nrow(y)/nchar(ref_gRNA))
 })
 
-gridExtra::grid.arrange(grobs = ft_seq_plots, ncol = 1)
+layout_mat <- matrix(
+  c(rep(seq_along(ft_seqs_list), sapply(ft_seqs_list, nrow) + 1)),
+  ncol = 1)
+
+gridExtra::grid.arrange(grobs = ft_seq_plots, layout_matrix = layout_mat)
 ```
 

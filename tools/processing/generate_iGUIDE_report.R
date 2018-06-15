@@ -795,16 +795,20 @@ ft_seqs <- input_data$matched_summary %>%
   select(
     specimen, aligned.sequence, guideRNA.match, edit.site,
     guideRNA.mismatch, on.off.target, algns, gene_id) %>% 
-  dplyr::left_join(cond_overview, by = "specimen") %>% 
-  group_by(
-    condition, edit.site, aligned.sequence, guideRNA.match,
-    guideRNA.mismatch, on.off.target, gene_id) %>%
-  summarise(algns = sum(algns))
+  dplyr::left_join(cond_overview, by = "specimen")
 
 if(is.null(args$support)){
-  ft_seqs <- group_by(ft_seqs, guideRNA.match)
+  ft_seqs <- group_by(
+      ft_seqs, 
+      guideRNA.match, edit.site, aligned.sequence, 
+      guideRNA.mismatch, on.off.target, gene_id) %>%
+    summarise(algns = sum(algns))
 }else{
-  ft_seqs <- group_by(ft_seqs, condition, guideRNA.match)
+  ft_seqs <- group_by(
+      ft_seqs,
+      condition, guideRNA.match, edit.site, aligned.sequence, 
+      guideRNA.mismatch, on.off.target, gene_id) %>%
+    summarise(algns = sum(algns))
 }
 
 ft_seqs <- arrange(ft_seqs, desc(algns), guideRNA.mismatch) %>%
