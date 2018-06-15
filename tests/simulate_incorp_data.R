@@ -15,12 +15,12 @@ panderOptions("table.split.table", Inf)
 
 # Set up and gather command line arguments -------------------------------------
 parser <- ArgumentParser(
-  description = "Simulate incorporation sites to generate a test dataset for iGUIDE software.")
+  description = "Simulate incorporation site data to generate test data for iGUIDE software.")
 parser$add_argument(
   "config", nargs = 1, type = "character", help = "Configuration file.")
 parser$add_argument(
   "-o", "--outfolder", nargs = 1, type = "character", default = "Data",
-  help = "Output folder. [sim_inc_set] by default.")
+  help = "Output folder. [Data] by default.")
 parser$add_argument(
   "-s", "--seed", nargs = 1, type = "integer", default = 1,
   help = "Set random seed, 1 by default.")
@@ -36,7 +36,7 @@ input_table <- input_table[
   match(
     c("config :", "outfolder :", "seed :"), 
     input_table$Variables),]
-pandoc.title("SimIncorpSites Inputs")
+pandoc.title("SimIncorpData Inputs")
 cat("\n[", paste(Sys.time()), "]")
 pandoc.table(data.frame(input_table, row.names = NULL), 
              justify = c("left", "left"), 
