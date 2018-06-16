@@ -71,8 +71,8 @@ false_target_params :
 # will then be drawn from for each sample. "max_abund" will be the upper limit 
 # on the number of unique reads to include for each random site.
 random_background:
-    num : 750
-    max_abund : 2
+    num : 600
+    max_abund : 1
 
 # Seqs are all the associated sequences found appended onto the templates. The 
 # structure of a template is essentially:
