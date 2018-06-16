@@ -152,7 +152,7 @@ selectRandomSites <- function(num, ref.genome, drop.extra.seqs = TRUE,
   gr
 }
 
-genIncorpDist <- function(posid, num, sd = 51){
+genIncorpDist <- function(posid, num, sd = 41){
   chr <- stringr::str_extract(posid, "[\\w]+")
   pos <- as.numeric(stringr::str_extract(posid, "[0-9]+$"))
   dist <- round(rnorm(num, 0, sd = sd))
@@ -233,12 +233,20 @@ cat(
   "] Generating random pool of ", 
   nrow(sample_info) * config$random_background$num, 
   " sites.")
-
-random_gr <- selectRandomSites(
-  num = nrow(sample_info) * config$random_background$num, 
-  ref.genome = ref_genome, 
-  drop.extra.seqs = TRUE, 
-  set.seed = args$seed)
+if(!is.null(config$random_background$chrs)){
+  random_gr <- selectRandomSites(
+    num = nrow(sample_info) * config$random_background$num, 
+    ref.genome = ref_genome, 
+    drop.extra.seqs = TRUE, 
+    seq.names = config$random_background$chrs,
+    set.seed = args$seed)
+}else{
+  random_gr <- selectRandomSites(
+    num = nrow(sample_info) * config$random_background$num, 
+    ref.genome = ref_genome, 
+    drop.extra.seqs = TRUE, 
+    set.seed = args$seed)
+}
 
 random_sites <- paste0(
   seqnames(random_gr), ":", strand(random_gr), ":", start(random_gr))

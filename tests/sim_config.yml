@@ -40,7 +40,7 @@ on_target_sites :
 # Additional parameters for on-target sites. Abund determines the number of 
 # unique reads associated with each on-target site.
 on_target_params :
-    abund : 200
+    abund : 100
 
 # Off-target parameters: "num" is the number of off-target sites per guide RNA,
 # "abund" will be the number of unique reads per off-target site, a single 
@@ -66,12 +66,14 @@ false_target_params :
 # Many sites observed in experimental data appear to not be associate with guide
 # RNAs or treatment. These incorporation sites can make up most the data 
 # collected from an iGUIDE or GUIDE-seq experiment. Here, they are simulated 
-# with a random uniform distribution across the reference genome. "num" 
-# determines the number of random sites per gRNA to be included into a pool that
-# will then be drawn from for each sample. "max_abund" will be the upper limit 
-# on the number of unique reads to include for each random site.
+# with a random uniform distribution across the reference genome, or on specific
+# chromosomes as determined by "chrs". "num" determines the number of random 
+# sites per gRNA to be included into a pool that will then be drawn from for 
+# each sample. "max_abund" will be the upper limit on the number of unique reads
+# to include for each random site.
 random_background:
-    num : 600
+    num : 200
+    chrs : ["chr1", "chr2"]
     max_abund : 1
 
 # Seqs are all the associated sequences found appended onto the templates. The 

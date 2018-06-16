@@ -89,7 +89,7 @@ code_dir <- dirname(sub(
 
 source(file.path(code_dir, "post_process_support.R"))
 
-## Supporting functions
+## Supporting functions --------------------------------------------------------
 generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
   if(class(ref) == "BSgenome") ref <- GenomicRanges::seqinfo(ref)
   if(drop.alt.chr){
