@@ -73,7 +73,7 @@ false_target_params :
 # to include for each random site.
 random_background:
     num : 200
-    chrs : ["chr1", "chr2"]
+    chrs : 
     max_abund : 1
 
 # Seqs are all the associated sequences found appended onto the templates. The 
