@@ -115,7 +115,7 @@ generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
   })))
 }
 
-genomic_density <- function(gr, res, cutoff = 2, drop.alt.chr = TRUE){
+genomic_density <- function(gr, res, cutoff = 2, adj = 1, drop.alt.chr = TRUE){
   stopifnot(class(gr) == "GRanges")
   if(is.na(sum(is.numeric(
     GenomeInfoDb::seqlengths(GenomicRanges::seqinfo(gr)))))){
@@ -124,7 +124,7 @@ genomic_density <- function(gr, res, cutoff = 2, drop.alt.chr = TRUE){
   
   ref_regions <- generate_genomic_regions(
     GenomicRanges::seqinfo(gr), res, drop.alt.chr = drop.alt.chr)
-  ref_regions$count <- GenomicRanges::countOverlaps(ref_regions, gr)
+  ref_regions$count <- GenomicRanges::countOverlaps(ref_regions, gr) + adj
   ref_regions$log.count <- log(ref_regions$count, base = 10)
   ref_regions$norm.log.count <- ref_regions$log.count/max(ref_regions$log.count)
   ref_regions <- ref_regions[ref_regions$count >= cutoff]
@@ -719,7 +719,7 @@ rand_sites$gene_id <- suppressMessages(assign_gene_id(
   onco_genes = onco_genes, special_genes = special_genes))
 
 rand_df <- data.frame(
-  condition = "Random Sites", 
+  condition = "Random", 
   "total" = length(rand_sites), 
   "onco" = sum(stringr::str_detect(rand_sites$gene_id, "~")), 
   "special" = sum(stringr::str_detect(rand_sites$gene_id, "!")))
@@ -772,8 +772,8 @@ enrich_df$special.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(
 }), method = "BH")
 
 names(enrich_df) <- c(
-  "Origin", "Condition", "Total", "Onco-Rel.", 
-  "Spec. Genes", "Onco Enrich.", "Special Enrich.")
+  "Origin", "Condition", "Total", "Onco Related", 
+  "Special Genes", "Onco Enrich.", "Special Enrich.")
 
 
 # Genomic Distribution of edited sites -----------------------------------------

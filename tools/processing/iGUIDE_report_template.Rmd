@@ -135,16 +135,24 @@ plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)
 
 ***
 
-```{r, include = FALSE} 
-if(args$format == "pdf") cat("\\newpage") 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 # Summary
 
 The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA or the inferred cells sampled. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data. The dynamic range of this method can be increased by processing samples in technical replicates. Specimens in these data were processed with up to `r group_by(sample_info, specimen) %>% summarize(cnt = n()) %$% max(cnt)` technical replicates each. Alternatively, unique molecular index tags (UMItags) can be used to quantify incorporations, see [**Tsai et al. 2015**](https://www.ncbi.nlm.nih.gov/pubmed/25513782).
 
-```{r, include = FALSE} 
-if(args$format == "pdf") cat("\\newpage") 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 # Specimen overview
@@ -161,8 +169,12 @@ Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was random
 
 DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in Table 1, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
 
-```{r, include = FALSE} 
-if(args$format == "pdf") cat("\\newpage") 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 # On-target analysis
@@ -190,8 +202,12 @@ Analysis of On-target associated incorporation sites produces several notable fe
 
 Specimen specific tables with data relating to these criteria are found in Table 3 for percent On-target editing and Table 4 for identified Off-target loci.
 
-```{r, include = FALSE} 
-if(args$format == "pdf") cat("\\newpage") 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 ## Specimen breakdown
@@ -237,6 +253,13 @@ if(!is.null(args$support)){
 
 These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which tunes the distance upstream of incorporation sites to search for nuclease edited sites.
 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
 
 # Off-target analysis
 ## Specimen breakdown
@@ -252,8 +275,12 @@ pander(
   keep.line.breaks = TRUE, style = "multiline")
 ```
 
-```{r, include = FALSE} 
-if(args$format == "pdf") cat("\\newpage") 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 ## Off-target enrichment in cancer-associated genes
@@ -261,6 +288,7 @@ if(args$format == "pdf") cat("\\newpage")
 Flanking **Paired** loci and gRNA **Matched** loci are tested for enrichment in cancer-associated genes in Table 5. This is done using a Fisher's Exact test and adjusting the p-value for multiple comparisons using a Benjamani-Hochberg correction.
 
 ```{r onco_enrichment}
+names(enrich_df) <- gsub(" ", "\n", names(enrich_df))
 enriched_idx <- which(enrich_df <= 0.05, arr.ind = TRUE)
 enriched_idx <- enriched_idx[enriched_idx[,2] >= 6, , drop = FALSE]
 enrich_df[,6] <- pNums(round(enrich_df[,6], digits = 3))
@@ -273,23 +301,35 @@ pander(enrich_df, caption = tbl_caps[5],
   keep.line.breaks = TRUE)
 ```
 
-```{r, include = FALSE} 
-if(args$format == "pdf") cat("\\newpage") 
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 ## Genomic distribution of incorporation sites
 
 The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent ring plot the alignments associated with Pileups, Flanking Pairs, and gRNA Matched groups. The length of the bar within it's associated ring is directly correlated to the number of incorporations identified within the **10 Mb window**.
 
-```{r genomic_distribution, fig.cap=fig_caps[2], fig.width=7.5, fig.height=ifelse(num_conds < 2, 5, 3.75*ceiling(num_conds/2))}
-  plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
-    facet_wrap(~ cond, ncol = 2) +
-    custom_theme +
-    theme(
-      panel.background = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks = element_blank(), 
-      legend.position = "top")
+```{r genomic_distribution, fig.cap=fig_caps[2], fig.width=7.5, fig.height=ifelse(length(unique(genomic_grl[[1]]$condition)) < 2, 5, 4.25*ceiling(length(unique(genomic_grl[[1]]$condition))/2))}
+plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
+  facet_wrap(~ cond, ncol = 2) +
+  custom_theme +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks = element_blank(), 
+    legend.position = "top")
+```
+
+```{r} 
+if(args$format == "pdf"){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
 ```
 
 ## Off-target gRNA sequence comparison
@@ -313,12 +353,14 @@ ft_seq_plots <- lapply(ft_seqs_list, function(x){
     labs(title = title) +
     blank_theme +
     theme(
-      title = element_text(size = 9, face = "bold"),
-      aspect.ratio = nrow(y)/nchar(ref_gRNA))
+      title = element_text(size = 9, face = "bold"))
+#      aspect.ratio = nrow(y)/nchar(ref_gRNA))
 })
 
 layout_mat <- matrix(
-  c(rep(seq_along(ft_seqs_list), sapply(ft_seqs_list, nrow) + 1)),
+  c(
+    rep(seq_along(ft_seqs_list), 
+        sapply(ft_seqs_list, function(x) min(nrow(x), 10)) + 4)),
   ncol = 1)
 
 gridExtra::grid.arrange(grobs = ft_seq_plots, layout_matrix = layout_mat)
