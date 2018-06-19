@@ -369,6 +369,14 @@ if(grepl(".fa", unique(sapply(configs, "[[", "RefGenome")))){
   ref_genome <- get(genome)
 }
 
+## Get versioning
+root_dir <- configs[[1]]$Install_Directory
+soft_version <- as.character(read.delim(
+  file = file.path(root_dir, ".version"), header = FALSE))
+build_version <- list.files(file.path(root_dir, "bin")) %>%
+  grep("build", ., value = TRUE) %>%
+  stringr::str_extract("v[0-9]+\\.[0-9]+.[0-9]+")
+
 ## Load reference files
 ref_genes <- load_ref_files(
   configs[[1]]$refGenes, 
@@ -503,6 +511,8 @@ input_data <- lapply(1:length(input_data[[1]]), function(i){
   bind_rows(lapply(input_data, "[[", i), .id = "run.set")
 })
 names(input_data) <- data_type_names
+input_data <- lapply(input_data, function(x){
+  x[x$specimen %in% spec_overview$specimen,] })
 
 
 message("Starting analysis.")

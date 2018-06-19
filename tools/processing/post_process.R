@@ -103,6 +103,7 @@ special_genes <- load_ref_files(
 ## Incorporation site parameters ===============================================
 upstream_dist <- config$upstreamDist
 downstream_dist <- config$downstreamDist
+maxGuideMismatch <- config$maxGuideMismatch
 pile_up_min <- config$pileUpMin
 on_target_sites <- config$On_Target_Sites 
 
@@ -272,7 +273,7 @@ algn_clusters$clus.seq <- getSiteSeqs(
 # Identify which guideRNAs potentially bind near clusters
 algn_clusters <- compareGuideRNAs(
   algn_clusters, guideRNASeqs = guide_rna_seqs, 
-  submat = submat, seq_col = "clus.seq",
+  submat = submat, seq_col = "clus.seq", tolerance = maxGuideMismatch,
   upstream_flank = upstream_dist, downstream_flank = downstream_dist)
 
 # Merge the guideRNA alignment information from the clusters back to all unique
