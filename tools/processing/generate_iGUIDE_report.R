@@ -782,8 +782,8 @@ enrich_df$special.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(
 }), method = "BH")
 
 names(enrich_df) <- c(
-  "Origin", "Condition", "Total", "Onco Related", 
-  "Special Genes", "Onco Enrich.", "Special Enrich.")
+  "Origin", "Condition", "Total Gene Count", "Onco Related Count", 
+  "Special Gene Count", "Onco Enrich. p-value", "Special Enrich. p-value")
 
 
 # Genomic Distribution of edited sites -----------------------------------------

@@ -146,7 +146,7 @@ if(args$format == "pdf"){
 
 # Summary
 
-The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` uniquely aligning fragments of DNA or the inferred cells sampled. These fragments of DNA were identified by their direct proximity to an incorporated double-stranded oligo dinucleotide (dsODN). Multiple incorporations at the same base pair can be distinguished by the randomly sheared portion of the DNA fragment, see developed [**SonicAbundance methods**](https://www.ncbi.nlm.nih.gov/pubmed/22238265), giving rise to collection of abundance data.
+The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(nrow(input_data$algnmts))` inferred cells sampled.
 
 ```{r} 
 if(args$format == "pdf"){
@@ -166,9 +166,11 @@ pander(
   big.mark = ",", style = "simple", missing = 0)
 ```
 
-Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. A nested-PCR amplified from incorporated dsODN sequences to the linker sequence with barcoded and linker specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
+Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. Nested-PCR was used to amplify from incorporated dsODN sequences to the linker sequences with barcoded and linker-specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
 
-DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in Table 1, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
+DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 1**, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
+
+Alternatively, random nucleotide sequences are included in the ligated linker sequences. These Unique Molecular Indeces (UMItags) can provide another method of abundance by counting the number of UMItags and breakpoint position combinations for each incorporation sites. This method of quantification has an increased dynamic range, yet can suffer from PCR artifacts leading to inflated abundances.
 
 ```{r} 
 if(args$format == "pdf"){
@@ -180,7 +182,7 @@ if(args$format == "pdf"){
 
 # On-target analysis
 
-Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in Table 2. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
+Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
 ```{r gRNA_tbl}
 gRNAs$`Edit Locus` <- sapply(gRNAs$Guide, function(x){
@@ -193,15 +195,15 @@ pander(
   justify = "center", style = "multiline")
 ```
 
-Analysis of On-target associated incorporation sites produces several notable features that are helpful in identifying non-specific or Off-target sites. These include the following:
+Analysis of On-target associated incorporation sites (**Table 3**) produces several features that are helpful in On- and Off-target site characterization. These include the following:
 
-* Alignment **Pileups**: unique alignments that overlap with each other or "pileup", suggesting a nearby location may be directly targeted for a double strand break (DSB). For this analyses, any group of `r unique(sapply(configs, "[[", "pileUpMin"))` or more unique alignments were considered as a pileup cluster.
+* Alignment **Pileups**: unique alignments that overlap with each other or "pileup", suggesting a nearby location may be targeted for a double strand break (DSB). For this analyses, any group of `r unique(sapply(configs, "[[", "pileUpMin"))` or more unique alignments were considered as a pileup cluster.
 
 * Flanking **Paired** alignments: alignments can be found on either side of a DSB, and therefore identifying flanking alignments suggests a DSB could be found between the paired alignments. Flanking alignments were searched for in these data up to `r 2*unique(sapply(configs, "[[", "upstreamDist"))` bp from each other.
 
-* gRNA **Matched** alignments: searching for the guide RNA sequence upstream of the incorporation site can be a strong indicator of guided nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching treated gRNA sequences were searched for up to `r unique(sapply(configs, "[[", "upstreamDist"))` bp upstream of the incorporation sites.
+* gRNA **Matched** alignments: searching for the guide RNA sequence upstream of the incorporation site can be an indicator of guided nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching treated gRNA sequences were searched for up to `r unique(sapply(configs, "[[", "upstreamDist"))` bp upstream of the incorporation sites and required to have no more than `r unique(sapply(configs, "[[", "maxGuideMismatch"))` mismatches.
 
-Specimen specific tables with data relating to these criteria are found in Table 3 for percent On-target editing and Table 4 for identified Off-target loci.
+Specimen specific tables with data relating to these criteria are found in **Table 3** for percent On-target editing and **Table 4** for identified Off-target loci.
 
 ```{r} 
 if(args$format == "pdf"){
@@ -213,7 +215,7 @@ if(args$format == "pdf"){
 
 ## Specimen breakdown
 
-Table 3 displays the percent of cells sampled that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
+**Table 3** displays the percent of cells sampled that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
 
 ```{r on_target_summary}
 pander(
@@ -226,7 +228,7 @@ pander(
 
 ## Editing near known genomic sites
 
-Figure 1 displays the distribution of dsODN incorporations around on-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of an incorporation sites to search for nuclease edited sites. Tuning can help with proper identification of gRNA similar sequences upstream of off-target sites. 
+**Figure 1** displays the distribution of dsODN incorporations around on-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of incorporation sites to search for nuclease edited sequences. 
 
 ```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=max(2.5*(ceiling(nrow(sites_included) / 2)), 2.5)}
 incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
@@ -265,7 +267,7 @@ if(args$format == "pdf"){
 # Off-target analysis
 ## Specimen breakdown
 
-Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. Table 4 shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). Guide RNA **Matched** loci require a match in the upstream sequence to a treated gRNA (within `r unique(sapply(configs, "[[", "maxGuideMismatch"))` mismatches out of the `r unique(nchar(gRNAs$gRNA))` nts and zero PAM mismatches).
+Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table 4** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). Guide RNA **Matched** loci require a match in the upstream sequence to a treated gRNA (within `r unique(sapply(configs, "[[", "maxGuideMismatch"))` mismatches out of the `r unique(nchar(gRNAs$gRNA))` nts and zero PAM mismatches).
 
 ```{r off_target_summary}
 pander(
@@ -286,19 +288,18 @@ if(args$format == "pdf"){
 
 ## Off-target enrichment in cancer-associated genes
 
-Flanking **Paired** loci and gRNA **Matched** loci are tested for enrichment against specific gene lists in Table 5. The cancer-associated and special gene lists (adjusted in the config file) included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction.
+Flanking **Paired** loci and gRNA **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists (adjusted in the config file) included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction.
 
 ```{r onco_enrichment}
 names(enrich_df) <- gsub(" ", "\n", names(enrich_df))
 enriched_idx <- which(enrich_df <= 0.05, arr.ind = TRUE)
 enriched_idx <- enriched_idx[enriched_idx[,2] >= 6, , drop = FALSE]
-enrich_df[,6] <- pNums(round(enrich_df[,6], digits = 3))
-enrich_df[,7] <- pNums(round(enrich_df[,7], digits = 3))
+enrich_df[,6] <- sprintf("%.3f", round(enrich_df[,6], digits = 3))
+enrich_df[,7] <- sprintf("%.3f", round(enrich_df[,7], digits = 3))
 if(nrow(enriched_idx) > 0) emphasize.strong.cells(enriched_idx)
 pander(enrich_df, caption = tbl_caps[5],
   digits = 4, style = "multiline",
-  justify = ifelse(sapply(seq_along(enrich_df), function(i){
-    is.numeric(enrich_df[,i]) }), "right", "center"),
+  justify = c("center", "center", rep("right", 5)),
   keep.line.breaks = TRUE)
 ```
 

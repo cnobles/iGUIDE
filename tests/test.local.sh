@@ -17,5 +17,5 @@ cp tests/Data/Undetermined_S0_L001_* analysis/default/input_data/
 # Generate test DAG graph
 snakemake --configfile configs/default.config.yml -np
 snakemake --configfile configs/default.config.yml --dag | dot -Tsvg > analysis/default/reports/default.dag.svg
-snakemake --configfile configs/default.config.yml --latency-wait 30 --cores ${CORES}
+snakemake --configfile configs/default.config.yml --latency-wait 30 --notemp --cores ${CORES}
 head analysis/default/output/unique_sites.default.csv
