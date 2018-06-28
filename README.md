@@ -36,7 +36,7 @@ bash bin/install.sh {env_name}
 #### Configuration Files - Configs
 Configuration files, or configs for short, contain both run-related and pipeline-related information. This is by design, for reproducibility it is easiest to have what was processed and how it was processed in the same location. There should be one config file for each sequencing run to be processed. Below is a brief summary of how to 'configure' your config file to your specific run.
 
-Config files need to be named in the format '{RunName}.config.yml', where {RunName} is a parameter set within the config file for the run. For example, the default run configuration file is named 'default.config.yml', so the run name is 'default'.
+Config files need to be named in the format '{RunName}.config.yml', where {RunName} is a parameter set within the config file for the run. For example, the default run configuration file is named 'simulation.config.yml', so the run name is 'simulation'.
 
 Config files can be deposited anywhere in the users directory, but a dediacted directory has been included in the release of iGUIDE. For convienence, config files can be placed in iGUIDE/configs/.
 
@@ -108,12 +108,12 @@ snakemake --configfile configs/{RunName}.config.yml
 
 Snakemake offers a great number of resources for managing the processing through the pipeline. I recommend familiarizing yourself with the utility (XXX). Some helpful flags:
 
-* [--configfile X] associate a specific configuration for processing
+* [--configfile X] associate a specific configuration for processing, essential for processing
 * [--cores X] multicored processing, specified cores to use by X
 * [--nolock] process multiple runs a the same time, from different sessions
 * [--notemp] keep all temporary files, otherwise removed
 * [--keep-going] will keep processing if one or more job error out
-* [-w X] wait X seconds for the output files to appear before erroring out
+* [-w X, --latency-wait X] wait X seconds for the output files to appear before erroring out
 
 ### An Example Run
 To perform a local test of running the iGUIDE informatic pipeline, run the below code after installing. This block first activates your conda environment, 'iguide' by default, and then creates a test directory within the analysis directory. The run information is stored in the run specific configuration file (config file). Using the '-np' flag with the snakemake call will perform a dry-run (won't actually process anything) and print the commands to the terminal, so you can see what snakemake is about to perform. Next, the test data is moved to the input directory underneath the new test run directory. Then the entirety of processing can start. Using the '--dag' flag and piping the output to 'dot -Tsvg' will generate a vector graphic of the directed acyclic graph (dag) workflow that snakemake will follow given the data provided. 
@@ -125,17 +125,17 @@ export PATH=${PATH}:${PREFIX}/bin
 source activate iguide
 
 # Create test analysis directory
-snakemake analysis/default --configfile configs/default.config.yml -np
-snakemake analysis/default --configfile configs/default.config.yml
+snakemake analysis/simulation --configfile configs/simulation.config.yml -np
+snakemake analysis/simulation --configfile configs/simulation.config.yml
 
 # Move test sequence files to analysis directory
-cp tests/Data/Undetermined_S0_L001_* analysis/default/input_data/
+cp tests/Data/Undetermined_S0_L001_* analysis/simulation/input_data/
 
 # Generate test DAG graph
-snakemake --configfile configs/default.config.yml -np
-snakemake --configfile configs/default.config.yml --dag | dot -Tsvg > default.dag.svg
-snakemake --configfile configs/default.config.yml --latency-wait 30
-cat analysis/default/output/unique_sites.default.csv
+snakemake --configfile configs/simulation.config.yml -np
+snakemake --configfile configs/simulation.config.yml --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
+snakemake --configfile configs/simulation.config.yml --latency-wait 30
+cat analysis/simulation/output/unique_sites.simulation.csv
 ```
 ### Uninstall
 To uninstall iGUIDE, the user will need to remove the environment and the directory.

@@ -1,7 +1,7 @@
 # Run configuration
-Run_Name : "default"
-Sample_Info : "sampleInfo/default.sampleInfo.csv"
-Supplemental_Info : "sampleInfo/default.supp.csv"
+Run_Name : "simulation"
+Sample_Info : "sampleInfo/simulation.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/simulation.supp.csv"
 RefGenome : "hg38"
 RefGenomePath : "genomes/hg38.2bit"
 Aligner : "blat"
