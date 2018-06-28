@@ -519,7 +519,7 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
   gr <- GRanges(
     seqnames = seqnames,
     ranges = IRanges(start = positions, width = rep(1, length(positions))),
-    strand = rep("*", length(positions)),
+    strand = rep("+", length(positions)),
     seqinfo = seqinfo(reference))
   
   if(length(gr) == 0){

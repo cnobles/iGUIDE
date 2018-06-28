@@ -25,7 +25,7 @@ parser$add_argument(
   "-c", "--config", nargs = 1, type = "character",
   help = "Run specific config file in yaml format.")
 parser$add_argument(
-  "-u", "--umitags", nargs = "+", type = "character", default = FALSE,
+  "-u", "--umitags", nargs = "+", type = "character",
   help = "Path(s) to associated fasta files containing read specific random captured sequences. Multiple file paths can be separated by a space.")
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
@@ -190,7 +190,7 @@ pandoc.table(
 rm(temp_table)
 
 ## Umitags or captured random sequences ========================================
-if(all(args$umitags != FALSE)){
+if(all(!is.null(args$umitags))){
   umitags <- lapply(args$umitags, ShortRead::readFasta)
   umitags <- serial_append_S4(umitags)
   reads$umitag <- as.character(ShortRead::sread(umitags))[
@@ -378,25 +378,29 @@ paired_regions <- paired_algns %>%
 
 if(config$UMItags){
   paired_regions <- summarise(
-    paired_regions,
-    seqnames = unique(seqnames),
-    start = min(pos), end = max(pos), mid = start + (end-start)/2,
-    strand = "*", width = end - start, algns = n(), umitag = sum(umitag), 
-    count = sum(count))
+      paired_regions,
+      seqnames = unique(seqnames),
+      start = min(pos), end = max(pos), mid = start + (end-start)/2,
+      strand = "*", width = end - start, algns = n(), umitag = sum(umitag), 
+      count = sum(count)) %>%
+    ungroup()
 }else{
   paired_regions <- summarise(
-    paired_regions,
-    seqnames = unique(seqnames),
-    start = min(pos), end = max(pos), mid = start + (end-start)/2,
-    strand = "*", width = end - start, algns = n(), count = sum(count))
+      paired_regions,
+      seqnames = unique(seqnames),
+      start = min(pos), end = max(pos), mid = start + (end-start)/2,
+      strand = "*", width = end - start, algns = n(), count = sum(count)) %>%
+    ungroup()
 }
 
-paired_regions <- group_by(paired_regions, specimen, paired.algn) %>%
-  mutate(
+paired_regions <- mutate(
+    paired_regions,     
     gene_id = assign_gene_id(
       seqnames, mid, reference = ref_genome, 
       ref_genes = ref_genes, onco_genes = onco_genes, 
-      special_genes = special_genes),
+      special_genes = special_genes)) %>%
+  group_by(specimen, paired.algn) %>%
+  mutate(
     on.off.target = ifelse(
       any(sapply(
         unlist(on_target_sites[
