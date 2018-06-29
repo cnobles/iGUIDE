@@ -9,6 +9,7 @@
 ## increase the range.
 pileupCluster <- function(gr, grouping = NULL, 
                               maxgap = 0L, return = "full"){
+  stopifnot(return %in% c("full", "simple", "ID"))
   if(!is.null(grouping)){
     group_vec <- mcols(gr)[,match(grouping, names(mcols(gr)))]
   }else{
@@ -31,14 +32,16 @@ pileupCluster <- function(gr, grouping = NULL,
   }))))
   
   if(length(gr) == 0){ gr$grouping <- gr$order <- seq_along(gr) }
-  gr$clusID <- as.integer(factor(gr$clus.ori))
+  gr$clus.ID <- as.integer(factor(gr$clus.ori))
   gr <- gr[order(gr$order)]
   gr$order <- gr$grouping <- NULL
   
   if(return == "full"){
-    return(list("gr" = gr, "clusID" = gr$clusID, "clusOri" = gr$clus.ori))
+    return(list("gr" = gr, "clusID" = gr$clus.ID, "clusOri" = gr$clus.ori))
   }else if(return == "simple"){
     return(gr$clus.ori)
+  }else if(return == "ID"){
+    return(gr$clus.ID)
   }
 }
 
@@ -179,7 +182,7 @@ pNums <- function(x, ...){
   format(x, big.mark = ",", ...)
 }
 
-load_ref_files <- function(ref, type = "gene.list", freeze = NULL){
+loadRefFiles <- function(ref, type = "gene.list", freeze = NULL){
   stopifnot(type %in% c("gene.list", "GRanges", "data.frame"))
   suppressMessages(require("data.table"))
   suppressMessages(require("GenomicRanges"))
@@ -486,7 +489,7 @@ calcCutSite <- function(sites, matched_seqs, upstream_flank,
   return(paste0(df$chr, ":", df$true.ort, ":", df$edit.pos))
 }
 
-filter_inappropriate_comparisons <- function(guideRNA.match, specimen, 
+filterInappropriateComparisons <- function(guideRNA.match, specimen, 
                                              treatment){
   require(stringr)
   
@@ -510,7 +513,7 @@ filter_inappropriate_comparisons <- function(guideRNA.match, specimen,
   edited_df$guideRNA
 }
 
-assign_gene_id <- function(seqnames, positions, reference, ref_genes, 
+assignGeneID <- function(seqnames, positions, reference, ref_genes, 
                            onco_genes, special_genes, annotations = TRUE){
   require(GenomicRanges)
   require(hiAnnotator)
@@ -555,7 +558,7 @@ assign_gene_id <- function(seqnames, positions, reference, ref_genes,
   }
 }
 
-calc_coverage <- function(gr, resolution){ ###!!!!!!!!Add option for counting coverage by reads or uniq frags
+calcCoverage <- function(gr, resolution){ ###!!!!!!!!Add option for counting coverage by reads or uniq frags
   #Set up coverage gr
   strandless <- gr
   strand(strandless) <- "*"
@@ -595,8 +598,8 @@ calc_coverage <- function(gr, resolution){ ###!!!!!!!!Add option for counting co
   }, gr = gr))
 }
 
-plot_coverage <- function(gr, resolution = 10L){
-  df <- calc_coverage(gr, resolution)
+plotCoverage <- function(gr, resolution = 10L){
+  df <- calcCoverage(gr, resolution)
   ggplot(df, aes(x = start)) + 
     geom_bar(
       aes(y = readCountsPos), 
@@ -619,7 +622,7 @@ plot_coverage <- function(gr, resolution = 10L){
       axis.line.y = element_line(color = "black"))
 }
 
-plot_edit_sites <- function(gr, sampleName = NULL, resolution = 10L){
+plotEditSites <- function(gr, sampleName = NULL, resolution = 10L){
   stopifnot(length(unique(gr$edit.site)) == 1)
   if(!is.null(sampleName)){  
     isThere <- match(sampleName, names(mcols(gr)))
@@ -633,7 +636,7 @@ plot_edit_sites <- function(gr, sampleName = NULL, resolution = 10L){
   edit_site <- unlist(strsplit(edit_site, ":"))
   edit_pos <- as.numeric(edit_site[3])
   edit_site[3] <- format(edit_pos, big.mark = ",", scientific = FALSE)
-  df <- calc_coverage(gr, resolution)
+  df <- calcCoverage(gr, resolution)
   df$edit.site <- paste0(
     "Sample: ", sample, 
     "\nGuide: ", guide,
@@ -724,4 +727,70 @@ serial_append_S4 <- function(split.seqs){
   })
   
   return(app_env$seqs)
+}
+
+#' Cluster or group key - value(s) pairs
+#' 
+#' @usage clusterKV(key, val)
+#' @usage clusterKV(key, val, return = "data.frame")
+#' 
+#' @description Function for clustering keys based on value content. Clustering
+#' or grouping is solely based on presence / absence of values across keys. For
+#' example, if we have the key - values of A = c(1, 2, 3), B = c(3, 4, 5), and
+#' C = c(6, 7, 8), then keys A and B will be clustered together because they 
+#' share the value 3, but C will not be clustered with either A or B because it
+#' does not share any values with the respective keys. This type of clustering
+#' can be helpful for grouping keys based on unique IDs, such as readnames or
+#' character strings representing unique alignment locations.
+#' 
+#' @param key,val vector coercible into a factor vector. Both key and val 
+#' vectors need to be equal length. Output will be of equal length and in same 
+#' input order.
+#' @param return options for output returned. "standard" will return a numeric 
+#' vector of grouping IDs and is the default. "data.frame" will return a 
+#' data.frame with key, val, and clus columns. "simple" will return a numeric
+#' vector of grouping IDs with the names associated with unique keys. Lastly,
+#' "graph" will return a simplifed graph with the keys as nodes and edges 
+#' indicating which keys share values.
+#' 
+#' @author Christopher Nobles, Ph.D.
+#' 
+#' @importFrom magrittr %>%
+#' 
+clusterKV <- function(key, val, return = "standard"){
+  # Check inputs
+  stopifnot(return %in% c("standard", "data.frame", "simple", "graph"))
+  stopifnot(length(key) == length(val))
+  
+  # Factorize keys and values for consistancy of indexing
+  key_fac <- factor(key)
+  val_fac <- factor(val)
+  
+  # Construct mock GRangesList where positions represent indices
+  grl <- GenomicRanges::GRanges(
+      seqnames = "mock", 
+      ranges = IRanges::IRanges(start = as.integer(val_fac), width = 1), 
+      strand = "*") %>%
+    GenomicRanges::split(key) %>%
+    GenomicRanges::reduce()
+  
+  # Determine which keys overlap based on associated values
+  g <- as.matrix(GenomicRanges::findOverlaps(grl)) %>%
+    igraph::graph.edgelist(directed = FALSE) %>%
+    igraph::simplify()
+  clus <- igraph::clusters(g)
+  
+  # Return data in different formats
+  if(return == "standard"){
+    return(igraph::membership(clus)[as.integer(key_fac)])
+  }else if(return == "data.frame"){
+    return(data.frame(
+      key = key, 
+      val = val, 
+      clus = igraph::membership(clus)[as.integer(key_fac)]))
+  }else if(return == "simple"){
+    return(structure(igraph::membership(clus), names = levels(key_fac)))
+  }else if(return == "graph"){
+    return(g)
+  }
 }

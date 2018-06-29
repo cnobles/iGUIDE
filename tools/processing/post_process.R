@@ -27,6 +27,10 @@ parser$add_argument(
 parser$add_argument(
   "-u", "--umitags", nargs = "+", type = "character",
   help = "Path(s) to associated fasta files containing read specific random captured sequences. Multiple file paths can be separated by a space.")
+parser$add_argument(
+  "-m", "--multihits", nargs = "+", type = "character",
+  help = "Path(s) to associated multihit files (.rds) as produced by blatCoupleR. Multiple file paths can be separated by a space.")
+
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -35,7 +39,7 @@ input_table <- data.frame(
   "Values" = sapply(1:length(args), function(i){
     paste(args[[i]], collapse = ", ")}))
 input_table <- input_table[
-  match(c("uniqSites :", "output :", "config :", "umitags :"),
+  match(c("uniqSites :", "output :", "config :", "umitags :", "multihits :"),
         input_table$Variables),]
 pandoc.title("Post-processing Inputs")
 pandoc.table(data.frame(input_table, row.names = NULL), 
@@ -93,11 +97,11 @@ if(grepl(".fa", config$RefGenome)){
 }
 
 ## Load refGenes and gene lists for annotation =================================
-ref_genes <- load_ref_files(
+ref_genes <- loadRefFiles(
   config$refGenes, type = "GRanges", freeze = config$RefGenome)
-onco_genes <- load_ref_files(
+onco_genes <- loadRefFiles(
   config$oncoGeneList, type = "gene.list", freeze = config$RefGenome)
-special_genes <- load_ref_files(
+special_genes <- loadRefFiles(
   config$specialGeneList, type = "gene.list", freeze = config$RefGenome)
 
 ## Incorporation site parameters ===============================================
@@ -163,7 +167,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
     "treatment" = sapply(treatment, paste, collapse = ";"))
 }
 
-cat("Sample Treatment Table:")
+cat("Sample Treatment Table:\n")
 pandoc.table(
   t(as.data.frame(treatment)), 
   style = "simple", 
@@ -174,7 +178,47 @@ pandoc.table(
 
 # Load input data --------------------------------------------------------------
 ## Unique sites ================================================================
-reads <- data.table::fread(args$uniqSites, data.table = FALSE)
+reads <- data.table::fread(
+  args$uniqSites, data.table = FALSE, stringsAsFactors = FALSE)
+
+## Multihits if requested ======================================================
+if(all(!is.null(args$multihits))){
+  uniq_reads <- GenomicRanges::makeGRangesFromDataFrame(
+    reads, keep.extra.columns = TRUE, seqinfo = seqinfo(ref_genome))
+  
+  multi_reads <- unlist(GRangesList(lapply(args$multihits, function(x){
+    multi <- readRDS(x)
+    seqinfo(multi$unclustered_multihits) <- seqinfo(ref_genome)
+    mcols(multi$unclustered_multihits) <- mcols(multi$unclustered_multihits)[
+      ,c(names(mcols(uniq_reads)))]
+    multi$unclustered_multihits
+  })))
+  
+  comb_reads <- c(uniq_reads, multi_reads)
+  mcols(comb_reads)$type <- rep(
+    c("uniq", "multi"), c(length(uniq_reads), length(multi_reads)))
+  mcols(comb_reads)$clus.id <- pileupCluster(
+    comb_reads, grouping = "sampleName", return = "ID")
+  
+  filt_multi_reads <- bind_rows(lapply(
+    split(comb_reads, comb_reads$sampleName), function(x){
+      uniq_id <- unique(x$clus.id[x$type == "uniq"])
+      multi_id <- unique(x$clus.id[x$type == "multi"])
+      y <- x[x$type == "multi" & x$clus.id %in% intersect(uniq_id, multi_id)]
+      mcols(y)$clus.id <- NULL
+      if(length(y) > 0){
+        contrib_amt <- 1/table(mcols(y)$ID)
+        mcols(y)$contrib <- as.numeric(contrib_amt[mcols(y)$ID])
+      }
+      as.data.frame(y, row.names = NULL) %>%
+        mutate(seqnames = as.character(seqnames), strand = as.character(strand))
+    }))
+  
+  reads <- mutate(reads, type = "uniq", contrib = 1) %>%
+    bind_rows(., filt_multi_reads)
+}else{
+  reads <- mutate(reads, type = "uniq", contrib = 1)
+}
 
 # Print out stats during analysis.
 cat("Tabulation of aligned reads per specimen:")
@@ -202,21 +246,24 @@ if(all(!is.null(args$umitags))){
 algnmts <- mutate(reads, specimen = str_extract(sampleName, "[\\w]+"))
 
 if(config$UMItags){
-  algnmts <- group_by(
-      algnmts, seqnames, start, end, strand, specimen, sampleName, umitag) %>%
-    summarise(count = n()) %>%
+  algnmts <- arrange(algnmts, desc(contrib)) %>%
     group_by(seqnames, start, end, strand, specimen, sampleName) %>%
-    summarise(count = sum(count), umitag = n_distinct(umitag)) %>%
+    summarise(
+      contrib = max(contrib),
+      count = sum(contrib),
+      umitag = as.integer(!duplicated(umitag)) * contrib) %>%
     ungroup() %>%
     select(
-      seqnames, start, end, strand, specimen, sampleName, umitag, count) %>%
+      seqnames, start, end, strand, specimen, 
+      sampleName, contrib, umitag, count) %>%
     as.data.frame()
 }else{
   algnmts <- group_by(
       algnmts, seqnames, start, end, strand, specimen, sampleName) %>%
-    summarize(count = n()) %>%
+    summarize(contrib = max(contrib), count = sum(contrib)) %>%
     ungroup() %>%
-    select(seqnames, start, end, strand, specimen, sampleName, count) %>%
+    select(
+      seqnames, start, end, strand, specimen, sampleName, contrib, count) %>%
     as.data.frame()
 }
 
@@ -240,10 +287,10 @@ algnmts_gr <- GRanges(
 
 if(config$UMItags){
   mcols(algnmts_gr) <- dplyr::select(
-    algnmts, specimen, sampleName, umitag, count)
+    algnmts, specimen, sampleName, contrib, umitag, count)
 }else{
   mcols(algnmts_gr) <- dplyr::select(
-    algnmts, specimen, sampleName, count)
+    algnmts, specimen, sampleName, contrib, count)
 }
 
 # Analyze alignments -----------------------------------------------------------
@@ -287,7 +334,7 @@ algnmts <- merge(
   as.data.frame()
 
 # Change guideRNA.match to No_Valid_Match if an inappropriate gRNA is annotated
-algnmts$guideRNA.match <- filter_inappropriate_comparisons(
+algnmts$guideRNA.match <- filterInappropriateComparisons(
   algnmts$guideRNA.match, algnmts$specimen, treatment)
 
 # Fragment pileups, paired clustering, and guideRNA alignments have been used to
@@ -347,7 +394,7 @@ if(config$UMItags){
     paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
     umitag = sum(umitag),
     count = sum(count), 
-    algns = n(),
+    algns = sum(contrib),
     orient = paste(sort(unique(as.character(strand))), collapse = ";"))
 }else{
   matched_summary <- summarise(
@@ -355,13 +402,13 @@ if(config$UMItags){
     on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
     paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
     count = sum(count), 
-    algns = n(),
+    algns = sum(contrib),
     orient = paste(sort(unique(as.character(strand))), collapse = ";"))
 }
 
 matched_summary <- ungroup(matched_summary) %>% 
   as.data.frame() %>%
-  mutate(gene_id = assign_gene_id( 
+  mutate(gene_id = assignGeneID( 
     seqnames = stringr::str_extract(edit.site, "[\\w]+"), 
     positions = as.numeric(stringr::str_extract(edit.site, "[\\w]+$")), 
     reference = ref_genome, 
@@ -381,21 +428,22 @@ if(config$UMItags){
       paired_regions,
       seqnames = unique(seqnames),
       start = min(pos), end = max(pos), mid = start + (end-start)/2,
-      strand = "*", width = end - start, algns = n(), umitag = sum(umitag), 
-      count = sum(count)) %>%
+      strand = "*", width = end - start, algns = sum(contrib), 
+      umitag = sum(umitag), count = sum(count)) %>%
     ungroup()
 }else{
   paired_regions <- summarise(
       paired_regions,
       seqnames = unique(seqnames),
       start = min(pos), end = max(pos), mid = start + (end-start)/2,
-      strand = "*", width = end - start, algns = n(), count = sum(count)) %>%
+      strand = "*", width = end - start, algns = sum(contrib), 
+      count = sum(count)) %>%
     ungroup()
 }
 
 paired_regions <- mutate(
     paired_regions,     
-    gene_id = assign_gene_id(
+    gene_id = assignGeneID(
       seqnames, mid, reference = ref_genome, 
       ref_genes = ref_genes, onco_genes = onco_genes, 
       special_genes = special_genes)) %>%
@@ -473,7 +521,7 @@ crispr_sites <- GenomicRanges::as.data.frame(
     site.ort = sapply(strsplit(edit.site, ":"), "[[", 2),
     site.pos = as.numeric(sapply(strsplit(edit.site, ":"), "[[", 3))) %>%
   as.data.frame()
-crispr_sites$gene_id <- assign_gene_id(
+crispr_sites$gene_id <- assignGeneID(
   crispr_sites$site.chr, 
   positions = crispr_sites$site.pos, 
   reference = ref_genome, 

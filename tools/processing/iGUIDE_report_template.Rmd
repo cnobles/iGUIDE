@@ -356,7 +356,6 @@ ft_seq_plots <- lapply(ft_seqs_list, function(x){
     blank_theme +
     theme(
       title = element_text(size = 9, face = "bold"))
-#      aspect.ratio = nrow(y)/nchar(ref_gRNA))
 })
 
 layout_mat <- matrix(

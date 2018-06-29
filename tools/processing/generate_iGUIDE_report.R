@@ -89,7 +89,7 @@ code_dir <- dirname(sub(
 
 source(file.path(code_dir, "post_process_support.R"))
 
-## Supporting functions --------------------------------------------------------
+## Additional supporting functions --------------------------------------------------------
 generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
   if(class(ref) == "BSgenome") ref <- GenomicRanges::seqinfo(ref)
   if(drop.alt.chr){
@@ -378,13 +378,13 @@ build_version <- list.files(file.path(root_dir, "bin")) %>%
   stringr::str_extract("v[0-9]+\\.[0-9]+.[0-9]+")
 
 ## Load reference files
-ref_genes <- load_ref_files(
+ref_genes <- loadRefFiles(
   configs[[1]]$refGenes, 
   type = "GRanges", freeze = configs[[1]]$RefGenome)
-onco_genes <- load_ref_files(
+onco_genes <- loadRefFiles(
   configs[[1]]$oncoGeneList, 
   type = "gene.list", freeze = configs[[1]]$RefGenome)
-special_genes <- load_ref_files(
+special_genes <- loadRefFiles(
   configs[[1]]$specialGeneList, 
   type = "gene.list", freeze = config[[1]]$RefGenome)
 
@@ -532,10 +532,10 @@ tbl_algn_counts <- input_data$algnmts %>% group_by(specimen)
 if(umitag_option){
   tbl_algn_counts <- summarise(
     tbl_algn_counts, 
-    Reads = sum(count), UMItags = sum(umitag), Alignments = n())
+    Reads = sum(count), UMItags = sum(umitag), Alignments = sum(contrib))
 }else{
   tbl_algn_counts <- summarise(
-    tbl_algn_counts, Reads = sum(count), Alignments = n())
+    tbl_algn_counts, Reads = sum(count), Alignments = sum(contrib))
 }
 
 spec_overview_join <- dplyr::left_join(
@@ -549,8 +549,9 @@ tbl_ot_algn <- input_data$algnmts %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   group_by(specimen) %>%
   summarise(
-    ot_algns = pNums(sum(as.integer(edit.site %in% on_targets))),
-    ot_algns_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
+    ot_algns = pNums(sum(contrib * as.integer(edit.site %in% on_targets))),
+    ot_algns_pct = 100 * sum(contrib * as.integer(edit.site %in% on_targets)) /
+      sum(contrib)) %>%
   ungroup() %>% as.data.frame()
 
 # Probable edited sites
@@ -559,8 +560,9 @@ tbl_ot_prob <- input_data$probable_algns %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   group_by(specimen) %>%
   summarise(
-    ot_prob = pNums(sum(as.integer(edit.site %in% on_targets))),
-    ot_prob_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
+    ot_prob = pNums(sum(contrib * as.integer(edit.site %in% on_targets))),
+    ot_prob_pct = 100 * sum(contrib * as.integer(edit.site %in% on_targets)) /
+      sum(contrib)) %>%
   ungroup() %>% as.data.frame()
 
 # Pile ups of read alignments
@@ -569,8 +571,9 @@ tbl_ot_pile <- input_data$pile_up_algns %>%
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
   group_by(specimen) %>%
   summarise(
-    ot_pile = pNums(sum(as.integer(edit.site %in% on_targets))),
-    ot_pile_pct = 100 * sum(as.integer(edit.site %in% on_targets))/n()) %>%
+    ot_pile = pNums(sum(contrib * as.integer(edit.site %in% on_targets))),
+    ot_pile_pct = 100 * sum(contrib * as.integer(edit.site %in% on_targets)) /
+      sum(contrib)) %>%
   ungroup() %>% as.data.frame()
 
 # Paired or flanking algnments
@@ -626,9 +629,10 @@ on_tar_dists <- input_data$matched_algns %>%
     edit.site.dist = ifelse(strand == "+", start - pos, end - pos)) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   select(
-    run.set, specimen, gRNA, condition, edit.site, edit.site.dist, strand) %>%
+    run.set, specimen, gRNA, condition, 
+    edit.site, edit.site.dist, strand, contrib) %>%
   group_by(condition, gRNA, edit.site.dist, strand) %>%
-  summarise(cnt = n()) %>%
+  summarise(cnt = sum(contrib)) %>%
   ungroup() %>%
   mutate(
     strand.cnt = ifelse(
@@ -686,7 +690,7 @@ tbl_ft_pile <- input_data$pile_up_algns %>%
   summarise(ft_pile = n_distinct(clus.ori)) %>%
   ungroup() %>% as.data.frame()
 
-# Paired or flanked alignments
+# Paired or flanked loci
 tbl_ft_pair <- input_data$paired_regions %>%
   mutate(specimen = factor(
     specimen, levels = sort(unique(sample_info$specimen)))) %>%
@@ -723,7 +727,7 @@ rand_sites <- selectRandomSites(
   num = nrow(input_data$paired_regions) + nrow(input_data$matched_summary), 
   refGenome = ref_genome, drop_extra_seqs = TRUE, setSeed = 714)
 
-rand_sites$gene_id <- suppressMessages(assign_gene_id(
+rand_sites$gene_id <- suppressMessages(assignGeneID(
   seqnames(rand_sites), start(rand_sites), 
   reference = ref_genome, ref_genes = ref_genes, 
   onco_genes = onco_genes, special_genes = special_genes))
@@ -763,23 +767,25 @@ enrich_df <- bind_rows(list(
   "Flanking Pairs" = paired_df, 
   "gRNA Matched" = matched_df), .id = "origin")
 
-enrich_df$onco.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
-  ref <- enrich_df[1, c("total", "onco")]
-  query <- enrich_df[i, c("total", "onco")]
-  ref$diff <- abs(diff(as.numeric(ref)))
-  query$diff <- abs(diff(as.numeric(query)))
-  fisher.test(as.matrix(rbind(
-    ref[,c("diff", "onco")], query[,c("diff", "onco")])))$p.value
-}), method = "BH")
+enrich_df$onco.p.value <- p.adjust(
+  sapply(seq_len(nrow(enrich_df)), function(i){
+    ref <- enrich_df[1, c("total", "onco")]
+    query <- enrich_df[i, c("total", "onco")]
+    ref$diff <- abs(diff(as.numeric(ref)))
+    query$diff <- abs(diff(as.numeric(query)))
+    fisher.test(as.matrix(rbind(
+      ref[,c("diff", "onco")], query[,c("diff", "onco")])))$p.value
+  }), method = "BH")
 
-enrich_df$special.p.value <- p.adjust(sapply(seq_len(nrow(enrich_df)), function(i){
-  ref <- enrich_df[1, c("total", "special")]
-  query <- enrich_df[i, c("total", "special")]
-  ref$diff <- abs(diff(as.numeric(ref)))
-  query$diff <- abs(diff(as.numeric(query)))
-  fisher.test(as.matrix(rbind(
-    ref[,c("diff", "special")], query[,c("diff", "special")])))$p.value
-}), method = "BH")
+enrich_df$special.p.value <- p.adjust(
+  sapply(seq_len(nrow(enrich_df)), function(i){
+    ref <- enrich_df[1, c("total", "special")]
+    query <- enrich_df[i, c("total", "special")]
+    ref$diff <- abs(diff(as.numeric(ref)))
+    query$diff <- abs(diff(as.numeric(query)))
+    fisher.test(as.matrix(rbind(
+      ref[,c("diff", "special")], query[,c("diff", "special")])))$p.value
+  }), method = "BH")
 
 names(enrich_df) <- c(
   "Origin", "Condition", "Total Gene Count", "Onco Related Count", 
