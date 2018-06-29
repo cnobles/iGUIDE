@@ -73,9 +73,6 @@ analysis/{RunName}/
 ├── input_data
 ├── logs
 ├── output
-│   ├── chimeras
-│   ├── multihits
-│   └── uniqSites
 ├── processData
 └── reports
 ```
@@ -86,9 +83,6 @@ Components within the run directory:
 * input_data - Directory where input fastq.gz files are deposited
 * logs - Directory containing log files from processing steps
 * output - Directory containing output data from the analysis
-  + chimeras - These data are likely artifactual but appear in the input data
-  + multihits - These data contain alignments mapping to multiple genomic locations
-  + uniqSites - These data are focused on for further analysis
 * processData - Directory containing intermediate processing files
 * reports - Directory containing output reports and figures
 
