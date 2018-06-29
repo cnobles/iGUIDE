@@ -15,11 +15,8 @@ rule setup_working_dir:
     mkdir logs
     mkdir processData
     mkdir output
-    mkdir output/uniqSites
-    mkdir output/chimeras
-    mkdir output/multihits
     mkdir reports
-    cd ../../
+    cd ../
 
     echo "{RUN} run has been set up."
     echo "Please place input fastq.gz files into the following directory:"

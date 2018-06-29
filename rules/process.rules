@@ -3,28 +3,36 @@
 
 rule all_uniq_sites:
   input:
-    expand(RUN_DIR + "/output/uniqSites/{sample}.uniq.csv", sample=SAMPLES)
+    expand(RUN_DIR + "/processData/{sample}.uniq.csv", sample=SAMPLES)
   output:
     RUN_DIR + "/output/unique_sites." + RUN + ".csv"
   params:
-    RUN_DIR + "/output"
+    RUN_DIR + "/processData"
   shell:
     """
-    head -n 1 -q {params}/uniqSites/* | uniq > {output}
-    cat {params}/uniqSites/* | sed '/seqnames/d' >> {output}
+    head -n 1 -q {params}/*.uniq.csv | uniq > {output}
+    cat {params}/*.uniq.csv | sed '/seqnames/d' >> {output}
     """
 
-def all_edit_sites_inputs(wildcards):
+def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
       RUN_DIR + "/processData/{sample}.umitags.fasta.gz", sample = SAMPLES)
   else:
     return []
 
+def all_multi_inputs(wildcards):
+  if (config["recoverMultihits"]):
+    return expand(
+      RUN_DIR + "/processData/{sample}.multihits.rds", sample = SAMPLES)
+  else:
+    return []
+
 rule all_edit_sites:
   input:
-    sites = RUN_DIR + "/output/unique_sites." + RUN + ".csv",
-    umitag = all_edit_sites_inputs
+    sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
+    umitag=all_umitag_inputs,
+    multi=all_multi_inputs
   output:
     RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   params:
@@ -33,12 +41,13 @@ rule all_edit_sites:
   log:
     RUN_DIR + "/logs/" + RUN + ".postproc.log"
   run:
+    call_str="Rscript {params.tool} {input.sites} -o {output} "
     if (config["UMItags"]):
-      shell("Rscript {params.tool} {input.sites} -o {output} " + \
-        "-c {params.config} -u {input.umitag} > {log} 2>&1")
-    else:
-      shell("Rscript {params.tool} {input.sites} -o {output} " + \
-        "-c {params.config} > {log} 2>&1")
+        call_str=call_str + "-u {input.umitag} "
+    if (config["recoverMultihits"]):
+        call_str=call_str + "-m {input.multi} "
+    call_str=call_str + "-c {params.config} > {log} 2>&1"
+    shell(call_str)
 
 def report_supp(wildcards):
   supp_str = str()

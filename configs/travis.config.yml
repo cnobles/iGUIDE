@@ -1,7 +1,7 @@
 # Run configuration
 Run_Name : "travis"
-Sample_Info : "sampleInfo/default.sampleInfo.csv"
-Supplemental_Info : "sampleInfo/default.supp.csv"
+Sample_Info : "sampleInfo/simulation.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/simulation.supp.csv"
 RefGenome : "hg38"
 RefGenomePath : "genomes/hg38.2bit"
 Aligner : "blat"
@@ -34,7 +34,6 @@ On_Target_Sites :
     TRAC : "chr14:+:22547664"
     TRBC'1 : "chr7:+:142792020"
     TRBC'2 : "chr7:+:142801367"
-
 
 # Specimen treatment
 # Data can be input here or referenced in sampleInfo by just putting 
@@ -95,6 +94,7 @@ maxGuideMismatch : 6
 upstreamDist : 100
 downstreamDist : 30
 pileUpMin : 3
+recoverMultihits : TRUE
 
 # Report
 suppFile : TRUE

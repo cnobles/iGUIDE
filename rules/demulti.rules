@@ -10,9 +10,13 @@ rule demultiplex:
     I1=RUN_DIR + "/input_data/" + config["I1"],
     I2=RUN_DIR + "/input_data/" + config["I2"]
   output:
-    temp(expand(
+    data=temp(expand(
       RUN_DIR + "/processData/{sample}.{type}.fastq.gz", \
-      sample=SAMPLES, type=TYPES))
+      sample=SAMPLES, type=TYPES)),
+    ambi=temp(expand(
+      RUN_DIR + "/processData/ambiguous.{type}.fastq.gz", type=TYPES)),
+    unas=temp(expand(
+      RUN_DIR + "/processData/unassigned.{type}.fastq.gz", type=TYPES))
   params:
     tool=ROOT_DIR + "/tools/dualDemultiplexR/dualDemultiplex.R",
     bc1Len=config["barcode1Length"],
