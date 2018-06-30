@@ -189,8 +189,13 @@ if(all(!is.null(args$multihits))){
   multi_reads <- unlist(GRangesList(lapply(args$multihits, function(x){
     multi <- readRDS(x)
     seqinfo(multi$unclustered_multihits) <- seqinfo(ref_genome)
-    mcols(multi$unclustered_multihits) <- mcols(multi$unclustered_multihits)[
-      ,c(names(mcols(uniq_reads)))]
+    if(length(multi$unclustered_multihits) > 0){
+      mcols(multi$unclustered_multihits) <- mcols(multi$unclustered_multihits)[
+        ,c(names(mcols(uniq_reads)))]
+    }else{
+      mcols(multi$unclustered_multihits) <- mcols(uniq_reads)[0
+        ,c(names(mcols(uniq_reads)))]
+    }
     multi$unclustered_multihits
   })))
   
