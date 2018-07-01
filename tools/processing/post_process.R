@@ -254,21 +254,21 @@ if(config$UMItags){
   algnmts <- arrange(algnmts, desc(contrib)) %>%
     group_by(seqnames, start, end, strand, specimen, sampleName) %>%
     summarise(
-      contrib = max(contrib),
       count = sum(contrib),
-      umitag = as.integer(!duplicated(umitag)) * contrib) %>%
+      umitag = sum(as.integer(!duplicated(umitag)) * contrib),
+      contrib = max(contrib)) %>%
     ungroup() %>%
     select(
       seqnames, start, end, strand, specimen, 
-      sampleName, contrib, umitag, count) %>%
+      sampleName, count, umitag, contrib) %>%
     as.data.frame()
 }else{
   algnmts <- group_by(
       algnmts, seqnames, start, end, strand, specimen, sampleName) %>%
-    summarize(contrib = max(contrib), count = sum(contrib)) %>%
+    summarize(count = sum(contrib), contrib = max(contrib)) %>%
     ungroup() %>%
     select(
-      seqnames, start, end, strand, specimen, sampleName, contrib, count) %>%
+      seqnames, start, end, strand, specimen, sampleName, count, contrib) %>%
     as.data.frame()
 }
 
@@ -292,10 +292,10 @@ algnmts_gr <- GRanges(
 
 if(config$UMItags){
   mcols(algnmts_gr) <- dplyr::select(
-    algnmts, specimen, sampleName, contrib, umitag, count)
+    algnmts, specimen, sampleName, count, umitag, contrib)
 }else{
   mcols(algnmts_gr) <- dplyr::select(
-    algnmts, specimen, sampleName, contrib, count)
+    algnmts, specimen, sampleName, count, contrib)
 }
 
 # Analyze alignments -----------------------------------------------------------
@@ -397,8 +397,8 @@ if(config$UMItags){
     matched_summary,
     on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
     paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
-    umitag = sum(umitag),
     count = sum(count), 
+    umitag = sum(umitag),
     algns = sum(contrib),
     orient = paste(sort(unique(as.character(strand))), collapse = ";"))
 }else{
@@ -433,16 +433,16 @@ if(config$UMItags){
       paired_regions,
       seqnames = unique(seqnames),
       start = min(pos), end = max(pos), mid = start + (end-start)/2,
-      strand = "*", width = end - start, algns = sum(contrib), 
-      umitag = sum(umitag), count = sum(count)) %>%
+      strand = "*", width = end - start, count = sum(count), 
+      umitag = sum(umitag), algns = sum(contrib)) %>%
     ungroup()
 }else{
   paired_regions <- summarise(
       paired_regions,
       seqnames = unique(seqnames),
       start = min(pos), end = max(pos), mid = start + (end-start)/2,
-      strand = "*", width = end - start, algns = sum(contrib), 
-      count = sum(count)) %>%
+      strand = "*", width = end - start, count = sum(count), 
+      algns = sum(contrib)) %>%
     ungroup()
 }
 
