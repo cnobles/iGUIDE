@@ -146,7 +146,7 @@ if(args$format == "pdf"){
 
 # Summary
 
-The following document summarizes the results of processing `r set_names` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(sum(input_data$algnmts$count))` reads are considered in this analysis, which represent `r pNums(sum(input_data$algnmts$contrib))` inferred cells sampled.
+The following document summarizes the results of processing `r gsub("_", " ", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(input_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(input_data$algnmts$contrib)))` inferred cells sampled.
 
 ```{r} 
 if(args$format == "pdf"){
