@@ -541,8 +541,8 @@ assignGeneID <- function(seqnames, positions, reference, ref_genes,
   
     gr$gene_id <- ifelse(
       gr$in_gene == "FALSE", 
-      paste0(gr$gene_id_wo_annot, " "), 
-      paste0(gr$gene_id_wo_annot, " *"))
+      gr$gene_id_wo_annot, 
+      paste0(gr$gene_id_wo_annot, "*"))
   
     gr$gene_id <- ifelse(
       gr$gene_id_wo_annot %in% onco_genes, paste0(gr$gene_id, "~"), gr$gene_id)
@@ -792,5 +792,29 @@ clusterKV <- function(key, val, return = "standard"){
     return(structure(igraph::membership(clus), names = levels(key_fac)))
   }else if(return == "graph"){
     return(g)
+  }
+}
+
+#' Predict Edit Site Probablility based on incorporation distance given an
+#' On-target incorporation density
+#' 
+#' @usage predictESProb(x, density)
+#' 
+#' @param x integer position within range of density object indicating the 
+#' distance from the predicted edit site.
+#' @param density a density object constructed from the incorporation site 
+#' distribution around associated On-target editing site(s).
+#' @param range a numeric vector indicating the range of data to consider.
+#' 
+#' @author Christopher Nobles, Ph.D.
+#' 
+predictESProb <- function(x, density, range = NULL){
+  if(is.null(range) & class(density) == "density") range <- range(density$x)
+  if(suppressWarnings(
+    x >= min(range) & x <= max(range) & class(density) == "density")){
+      idx <- match(x, round(density$x))
+      return(with(density, 1 - sum(y[seq_len(idx)] * rep(diff(x)[1], idx))))
+  }else{
+    return(NA)
   }
 }

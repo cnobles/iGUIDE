@@ -89,7 +89,7 @@ code_dir <- dirname(sub(
 
 source(file.path(code_dir, "post_process_support.R"))
 
-## Additional supporting functions --------------------------------------------------------
+## Additional supporting functions ---------------------------------------------
 generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
   if(class(ref) == "BSgenome") ref <- GenomicRanges::seqinfo(ref)
   if(drop.alt.chr){
@@ -276,6 +276,7 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
   names(nucleotide_colors) <- nucleotide_levels
   
   # Sequence matrix
+  N_pos <- which(unlist(strsplit(ref, "")) == "N")
   nuc_melt <- stringr::str_split(
     c(ref, paste(rep(" ", nuc_len), collapse = ""), seqs), 
     pattern = "", simplify = TRUE) %>%
@@ -284,8 +285,10 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
     melt(id.vars = "pos.y") %>%
     mutate(
       pos.x = as.numeric(stringr::str_extract(variable, "[0-9]+$")),
-      color = nucleotide_colors[value],
-      color = ifelse(is.na(color), "#FFFFFF", color)) %>%
+      color = nucleotide_colors[value],      
+      color = ifelse(
+        pos.x %in% N_pos, rep(nucleotide_colors["N"], n()), color),
+      color = ifelse(value == " ", "#FFFFFF", color)) %>%
     select(pos.x, pos.y, value, color)
   
   # Format remaining cols of input
@@ -312,11 +315,10 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
   plot_melt <- bind_rows(nuc_melt, sup_melt)
   
   plot_colors <- structure(
-    plot_melt$color[match(unique(plot_melt$value), plot_melt$value)],
-    names = unique(plot_melt$value))
-  
+    unique(plot_melt$color), names = unique(plot_melt$color))
+
   p <- ggplot(plot_melt, aes(x = pos.x, y = pos.y)) +
-    geom_tile(aes(fill = value)) +
+    geom_tile(aes(fill = color)) +
     geom_text(
       aes(label = value), size = text.size, 
       family = font.family, fontface = font.face) +
@@ -463,7 +465,8 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
     treatment = sample_info[,info_col])
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")]) %>%
-    arrange(specimen)
+    arrange(specimen) %>%
+    mutate(treatment = ifelse(is.na(treatment), "Mock", treatment))
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
 }else if(any(grepl("all", names(treatments[[1]])))){
@@ -472,7 +475,8 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
     treatment = unique(unlist(treatments)))
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")]) %>%
-    arrange(specimen)
+    arrange(specimen) %>%
+    mutate(treatment = ifelse(is.na(treatment), "Mock", treatment))
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
 }else{
@@ -630,8 +634,19 @@ on_tar_dists <- input_data$matched_algns %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   select(
     run.set, specimen, gRNA, condition, 
-    edit.site, edit.site.dist, strand, contrib) %>%
-  group_by(condition, gRNA, edit.site.dist, strand) %>%
+    edit.site, edit.site.dist, strand, contrib)
+
+on_tar_dens <- lapply(split(on_tar_dists, on_tar_dists$condition), function(x){
+  if(nrow(x) >= 10){
+    return(density(
+      abs(x$edit.site.dist), from = 0, to = upstream_dist, bw = 1))
+  }else{
+    return(NA)
+  }
+})
+
+on_tar_dists <- group_by(
+    on_tar_dists, condition, gRNA, edit.site.dist, strand) %>%
   summarise(cnt = sum(contrib)) %>%
   ungroup() %>%
   mutate(
@@ -807,33 +822,51 @@ names(genomic_grl) <- c(
 
 
 # Off-target sequence analysis -------------------------------------------------
+ft_MESL <- input_data$matched_algns %>%
+  mutate(edit.site.dist = abs(ifelse(
+    strand == "+", 
+    start - as.numeric(str_extract(edit.site, "[0-9]+$")), 
+    as.numeric(str_extract(edit.site, "[0-9]+$")) - end))) %>%
+  dplyr::left_join(cond_overview, by = "specimen") %>%
+  mutate(order = seq_len(n())) %>%
+  group_by(order) %>%
+  mutate(
+    ESL = predictESProb(edit.site.dist, on_tar_dens[[condition]]),
+    gene_id = input_data$matched_summary$gene_id[
+      match(edit.site, input_data$matched_summary$edit.site)]) %>%
+  group_by(condition, edit.site, gene_id) %>%
+  summarise(MESL = 100 * max(c(0,ESL), na.rm = TRUE)) %>%
+  ungroup()
+
 ft_seqs <- input_data$matched_summary %>%
   select(
     specimen, aligned.sequence, guideRNA.match, edit.site,
     guideRNA.mismatch, on.off.target, algns, gene_id) %>% 
-  dplyr::left_join(cond_overview, by = "specimen")
+  dplyr::left_join(cond_overview, by = "specimen") %>%
+  dplyr::left_join(ft_MESL, by = c("condition", "edit.site", "gene_id"))
 
 if(is.null(args$support)){
   ft_seqs <- group_by(
       ft_seqs, 
       guideRNA.match, edit.site, aligned.sequence, 
       guideRNA.mismatch, on.off.target, gene_id) %>%
-    summarise(algns = sum(algns))
+    summarise(algns = sum(algns), MESL = max(MESL, na.rm = TRUE))
 }else{
   ft_seqs <- group_by(
       ft_seqs,
       condition, guideRNA.match, edit.site, aligned.sequence, 
       guideRNA.mismatch, on.off.target, gene_id) %>%
-    summarise(algns = sum(algns))
+    summarise(algns = sum(algns), MESL = max(MESL, na.rm = TRUE))
 }
 
-ft_seqs <- arrange(ft_seqs, desc(algns), guideRNA.mismatch) %>%
+ft_seqs <- arrange(ft_seqs, desc(algns), desc(MESL), guideRNA.mismatch) %>%
   ungroup() %>%
   mutate(on.off.target = stringr::str_extract(on.off.target, "[\\w]+")) %>%
-  rename(
-    on.off.target = "target", 
-    guideRNA.mismatch = "mismatch", 
-    guideRNA.match = "gRNA")
+  dplyr::rename(
+    "target" = on.off.target, 
+    "mismatch" = guideRNA.mismatch, 
+    "gRNA" = guideRNA.match,
+    "aligns" = algns)
 
 if(is.null(args$support)){
   ft_seqs_list <- split(ft_seqs, ft_seqs$gRNA)
