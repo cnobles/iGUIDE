@@ -911,15 +911,20 @@ if(args$data){
 }
 
 if(args$format == "html"){
+  template_path <- normalizePath(
+    file.path(code_dir, "iGUIDE_report_template.Rmd"))
+  css_path <- normalizePath(file.path(code_dir, "iguide.css"))
   rmarkdown::render(
-    input = file.path(code_dir, "iGUIDE_report_template.Rmd"),
+    input = template_path,
     output_format = output_format, 
     output_file = output_file,
     output_dir = output_dir,
-    output_options = list("css" = file.path(code_dir, "iguide.css")))
+    output_options = list("css" = css_path))
 }else{
+  template_path <- normalizePath(
+    file.path(code_dir, "iGUIDE_report_template.Rmd"))
   rmarkdown::render(
-    input = file.path(code_dir, "iGUIDE_report_template.Rmd"),
+    input = template_path,
     output_format = output_format, 
     output_file = output_file,
     output_dir = output_dir)

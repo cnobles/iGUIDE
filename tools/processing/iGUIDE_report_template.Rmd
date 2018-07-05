@@ -1,7 +1,7 @@
 ---
 title: |
     | iGUIDE Summary Report: 
-    | Data: `r gsub("_", " ", set_names)`
+    | `r gsub("_", " ", set_names)`
 date: |
     | report generated : `r Sys.Date()`
     | software version : `r soft_version`
