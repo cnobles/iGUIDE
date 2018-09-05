@@ -260,10 +260,26 @@ div_seq <- function(seqs, ref, match.chr = "."){
 seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4, 
                              text.size = 2, convert.seq = TRUE, 
                              force.sq = FALSE, font.family = "Courier",
-                             font.face = "bold"){
+                             font.face = "bold", fill = "left"){
   if(is.null(nuc.col)){ nuc.col <- names(df)[1] }
   seqs <- dplyr::pull(df, var = match(nuc.col, names(df)))
-  stopifnot(all(nchar(as.character(seqs)) == nchar(ref)))
+  if(!all(nchar(as.character(seqs)) == nchar(ref))){
+    fill_idx <- which(nchar(seqs) != nchar(ref))
+    fill_width <- nchar(ref) - nchar(seqs)[fill_idx]
+    if(fill == "left"){
+      seqs[fill_idx] <- sapply(seq_along(fill_idx), function(i){
+        paste0(
+          paste(rep("N", fill_width[i]), collapse = ""), seqs[fill_idx[i]])
+      })
+    }else if(fill == "right"){
+      seqs[fill_idx] <- sapply(seq_along(fill_idx), function(i){
+        paste0(
+          seqs[fill_idx[i]], paste(rep("N", fill_width[i]), collapse = ""))
+      })
+    }else{
+      stop("fill parameter must be either left or right.")
+    }
+  }
   nuc_len <- nchar(ref)
   
   # Convert seqs
