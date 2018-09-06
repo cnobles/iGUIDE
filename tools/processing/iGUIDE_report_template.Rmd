@@ -291,7 +291,6 @@ if(args$format == "pdf"){
 Flanking **Paired** loci and gRNA **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists (adjusted in the config file) included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0).
 
 ```{r onco_enrichment}
-enrich_df <- enrich_df[enrich_df$`Total Gene Count` > 0,]
 names(enrich_df) <- gsub(" ", "\n", names(enrich_df))
 enriched_idx <- which(enrich_df <= 0.05, arr.ind = TRUE)
 enriched_idx <- enriched_idx[enriched_idx[,2] >= 6, , drop = FALSE]

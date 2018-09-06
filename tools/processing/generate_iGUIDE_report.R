@@ -200,9 +200,9 @@ plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2,
     gen_den$type <- factor(" ")
   }
   
-  if(is.factor(GenomicRanges::mcols(x)[,grp.col])){
+  if(is.factor(GenomicRanges::mcols(grl[[1]])[,grp.col])){
     gen_den$cond <- factor(
-      gen_den$cond, levels = levels(GenomicRanges::mcols(x)[,grp.col]))
+      gen_den$cond, levels = levels(GenomicRanges::mcols(grl[[1]])[,grp.col]))
   }
   gen_den$score <- as.numeric(gen_den$type) + gen_den$norm.log.count
   
@@ -825,9 +825,10 @@ matched_df <- bind_rows(lapply(matched_list, function(df){
 }), .id = "condition")
 
 enrich_df <- bind_rows(list(
-  "Reference" = rand_df, 
-  "Flanking Pairs" = paired_df, 
-  "gRNA Matched" = matched_df), .id = "origin")
+    "Reference" = rand_df, 
+    "Flanking Pairs" = paired_df, 
+    "gRNA Matched" = matched_df), .id = "origin") %>%
+  filter(total > 0)
 
 enrich_df$onco.p.value <- p.adjust(
   sapply(seq_len(nrow(enrich_df)), function(i){
@@ -921,7 +922,12 @@ ft_seqs <- arrange(ft_seqs, desc(algns), desc(MESL), guideRNA.mismatch) %>%
 if(is.null(args$support)){
   ft_seqs_list <- split(ft_seqs, ft_seqs$gRNA)
 }else{
-  ft_seqs_list <- split(ft_seqs, paste0(ft_seqs$condition, " - ", ft_seqs$gRNA))
+  ft_seqs_conds <- arrange(ft_seqs, condition, gRNA) %$% 
+    unique(paste0(condition, " - ", gRNA))
+  ft_seqs_list <- split(
+    ft_seqs, 
+    factor(
+      paste0(ft_seqs$condition, " - ", ft_seqs$gRNA), levels = ft_seqs_conds))
 }
 
 message("Analysis complete. Starting report generation.")
