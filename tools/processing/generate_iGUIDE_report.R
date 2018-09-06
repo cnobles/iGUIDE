@@ -135,6 +135,16 @@ vcollapse <- function(d, sep, fill = "NA"){
   if(is.vector(d)){
     stop("Function vcollapse() is not used on vectors, use paste(collapse = ...).")
   }
+  if(any(sapply(seq_len(ncol(d)), function(i) class(d[,i])) == "factor")){
+    fct_idx <- which(
+      sapply(seq_len(ncol(d)), function(i) class(d[,i])) == "factor")
+    mod_env <- new.env()
+    mod_env$d <- d
+    null <- lapply(fct_idx, function(i){
+      mod_env$d[,i] <- as.character(d[,i])
+    })
+    d <- mod_env$d
+  }
   if(class(d) != "matrix") d <- as.matrix(d)
   mat <- d
   if(!is.null(fill)) mat <- ifelse(is.na(mat), fill, mat)
@@ -429,6 +439,8 @@ sample_name_col <- unique(sapply(configs, "[[", "Sample_Name_Column"))
 if(length(sample_name_col) != 1) stop("SampleInfo files not in same format.")
 sample_info$specimen <- stringr::str_extract(
   sample_info[,sample_name_col], "[\\w]+")
+specimen_levels <- unique(sample_info$specimen)
+sample_info$specimen <- factor(sample_info$specimen, levels = specimen_levels)
 
 ## Identify all gRNAs used from config files
 gRNAs <- lapply(
@@ -477,22 +489,28 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
     stop("Cannot parse treatment data. Check config yaml and sampleInfo.")
   }
   treatment_df <- data.frame(
-    sampleName = sample_info[,sample_name_col], 
-    treatment = sample_info[,info_col])
-  treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
-  treatment_df <- unique(treatment_df[,c("specimen", "treatment")]) %>%
+      sampleName = sample_info[,sample_name_col], 
+      treatment = unique(unlist(treatments))) %>%
+    mutate(
+      specimen = str_extract(sampleName, "[\\w]+"),
+      specimen = factor(specimen, levels = specimen_levels)) %>%
+    distinct(specimen, treatment) %>%
     arrange(specimen) %>%
-    mutate(treatment = ifelse(is.na(treatment), "Mock", treatment))
+    mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
+    select(specimen, treatment)
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
 }else if(any(grepl("all", names(treatments[[1]])))){
   treatment_df <- data.frame(
-    sampleName = sample_info[,sample_name_col], 
-    treatment = unique(unlist(treatments)))
-  treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
-  treatment_df <- unique(treatment_df[,c("specimen", "treatment")]) %>%
+      sampleName = sample_info[,sample_name_col], 
+      treatment = unique(unlist(treatments))) %>%
+    mutate(
+      specimen = str_extract(sampleName, "[\\w]+"),
+      specimen = factor(specimen, levels = specimen_levels)) %>%
+    distinct(specimen, treatment) %>%
     arrange(specimen) %>%
-    mutate(treatment = ifelse(is.na(treatment), "Mock", treatment))
+    mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
+    select(specimen, treatment)
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
 }else{
@@ -504,7 +522,8 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
 ## Load in supporting information ==============================================
 if(length(args$support) > 0){
   supp_data <- data.table::fread(args$support, data.table = FALSE)
-  supp_data <- filter(supp_data, specimen %in% sample_info$specimen)
+  supp_data <- filter(supp_data, specimen %in% sample_info$specimen) %>%
+    mutate(specimen = factor(specimen, levels = specimen_levels))
 }else{
   supp_data <- data.frame()
 }
@@ -518,8 +537,10 @@ if(is.null(args$support)){
 }
 
 cond_overview <- spec_overview %>%
-  mutate(condition = vcollapse(
-    select(spec_overview, -specimen), " - ", fill = "NA")) %>%
+  mutate(
+    condition = vcollapse(
+      select(spec_overview, -specimen), " - ", fill = "NA"),
+    condition = factor(condition, levels = c(unique(condition), "Mock"))) %>%
   select(specimen, condition)
 
 
@@ -547,7 +568,9 @@ graphic_grl <- GRangesList(lapply(
 
 # Specimen summary -------------------------------------------------------------
 # Summarize components and append to specimen table
-tbl_algn_counts <- input_data$algnmts %>% group_by(specimen)
+tbl_algn_counts <- input_data$algnmts %>% 
+  mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
+  group_by(specimen)
 
 if(umitag_option){
   tbl_algn_counts <- summarise(
@@ -626,8 +649,10 @@ tbl_ot_match <- input_data$matched_summary %>%
   ungroup() %>% as.data.frame()
 
 # Summary table
-ot_tbl_summary <- mutate(treatment_df, specimen = factor(
-  specimen, levels = sort(unique(sample_info$specimen))))
+ot_tbl_summary <- left_join(treatment_df, cond_overview, by = "specimen") %>%
+  mutate(condition = factor(
+    ifelse(is.na(condition), "Mock", paste(condition)), 
+    levels = levels(condition)))
 
 ot_tbl_summary <- Reduce(
   function(x,y){ dplyr::left_join(x, y, by = "specimen") },
@@ -636,7 +661,7 @@ ot_tbl_summary <- Reduce(
   init = ot_tbl_summary)
 
 names(ot_tbl_summary) <- c(
-  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
+  "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 
   "Flanking\nPairs", "gRNA\nMatched")
 
 
@@ -646,7 +671,8 @@ on_tar_dists <- input_data$matched_algns %>%
   mutate(
     gRNA = str_extract(guideRNA.match, "[\\w]+"),
     pos = as.numeric(str_extract(edit.site, "[0-9]+$")),
-    edit.site.dist = ifelse(strand == "+", start - pos, end - pos)) %>%
+    edit.site.dist = ifelse(strand == "+", start - pos, end - pos),
+    specimen = factor(specimen, levels = levels(cond_overview$specimen))) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   select(
     run.set, specimen, gRNA, condition, 
@@ -740,8 +766,10 @@ tbl_ft_match <- input_data$matched_summary %>%
   ungroup() %>% as.data.frame()
 
 # Summary table
-ft_tbl_summary <- mutate(treatment_df, specimen = factor(
-  specimen, levels = sort(unique(sample_info$specimen))))
+ft_tbl_summary <- left_join(treatment_df, cond_overview, by = "specimen") %>%
+  mutate(condition = factor(
+    ifelse(is.na(condition), "Mock", paste(condition)), 
+    levels = levels(condition)))
 
 ft_tbl_summary <- Reduce(
   function(x,y){ dplyr::left_join(x, y, by = "specimen") },
@@ -749,7 +777,7 @@ ft_tbl_summary <- Reduce(
   init = ft_tbl_summary)
 
 names(ft_tbl_summary) <- c(
-  "Specimen", "Treatment", "All\nAlign.", "Align.\nPileups", 
+  "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 
   "Flanking\nPairs", "gRNA\nMatched")
 
 
@@ -842,7 +870,8 @@ ft_MESL <- input_data$matched_algns %>%
   mutate(edit.site.dist = abs(ifelse(
     strand == "+", 
     start - as.numeric(str_extract(edit.site, "[0-9]+$")), 
-    as.numeric(str_extract(edit.site, "[0-9]+$")) - end))) %>%
+    as.numeric(str_extract(edit.site, "[0-9]+$")) - end)),
+    specimen = factor(specimen, levels = levels(cond_overview$specimen))) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   mutate(order = seq_len(n())) %>%
   group_by(order) %>%
@@ -857,7 +886,9 @@ ft_MESL <- input_data$matched_algns %>%
 ft_seqs <- input_data$matched_summary %>%
   select(
     specimen, aligned.sequence, guideRNA.match, edit.site,
-    guideRNA.mismatch, on.off.target, algns, gene_id) %>% 
+    guideRNA.mismatch, on.off.target, algns, gene_id) %>%
+  mutate(
+    specimen = factor(specimen, levels = levels(cond_overview$specimen))) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   dplyr::left_join(ft_MESL, by = c("condition", "edit.site", "gene_id"))
 
