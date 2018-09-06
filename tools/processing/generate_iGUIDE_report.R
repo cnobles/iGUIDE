@@ -178,8 +178,7 @@ plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2,
     if(is.null(grp.col)){
       x <- list(x)
     }else{
-      x <- split(x, vcollapse(
-        GenomicRanges::mcols(x)[,grp.col, drop = FALSE], sep = " - "))
+      x <- split(x, GenomicRanges::mcols(x)[,grp.col, drop = FALSE])
     }
       
     dplyr::bind_rows(lapply(x, function(y){
@@ -201,6 +200,10 @@ plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2,
     gen_den$type <- factor(" ")
   }
   
+  if(is.factor(GenomicRanges::mcols(x)[,grp.col])){
+    gen_den$cond <- factor(
+      gen_den$cond, levels = levels(GenomicRanges::mcols(x)[,grp.col]))
+  }
   gen_den$score <- as.numeric(gen_den$type) + gen_den$norm.log.count
   
   # Grid layout
