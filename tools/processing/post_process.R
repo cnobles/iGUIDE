@@ -250,7 +250,7 @@ if(all(!is.null(args$umitags))){
 ## Format input alignments =====================================================
 algnmts <- mutate(reads, specimen = str_extract(sampleName, "[\\w]+"))
 
-if(config$UMItags){
+if(config$UMItags & !is.null(args$umitags)){
   algnmts <- arrange(algnmts, desc(contrib)) %>%
     group_by(seqnames, start, end, strand, specimen, sampleName) %>%
     summarise(
@@ -290,7 +290,7 @@ algnmts_gr <- GRanges(
   strand = algnmts$strand,
   seqinfo = seqinfo(ref_genome))
 
-if(config$UMItags){
+if(config$UMItags & !is.null(args$umitags)){
   mcols(algnmts_gr) <- dplyr::select(
     algnmts, specimen, sampleName, count, umitag, contrib)
 }else{

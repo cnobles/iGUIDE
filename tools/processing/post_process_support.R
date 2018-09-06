@@ -352,7 +352,7 @@ compareGuideRNAs <- function(gr_with_sequences, seq_col,
   pam <- paste0(gsub("N", ".", PAM), "$")
   
   sites <- gr_with_sequences
-  sites$siteID <- 1:length(sites)
+  sites$siteID <- seq_len(length(sites))
   seq_col_match <- match(seq_col, names(mcols(sites)))
   if(length(seq_col_match) == 0){
     stop("Cannot find sequences in column.")
@@ -454,10 +454,10 @@ alnGuideRNAs <- function(seqs, guideRNASeqs, tolerance){
     select(names, guideRNA, guideRNA.mismatch, start, end, width) %>%
     distinct() %>%
     left_join(., nt_widths, by = "names") %>%
-    mutate(start = ifelse(start <= 0, 1, start)) %>%
-    mutate(end = ifelse(
-      end > nt_width, nt_width, end)) %>%
-    mutate(width = end - start + 1)
+    mutate(
+      start = ifelse(start <= 0, 1, start),
+      end = ifelse(end > nt_width, nt_width, end),
+      width = end - start + 1)
 }
 
 calcCutSite <- function(sites, matched_seqs, upstream_flank, 
