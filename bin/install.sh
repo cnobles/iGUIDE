@@ -11,7 +11,6 @@ OUTPUT=${2-/dev/stdout}
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 DIR=${DIR::-4}
 sed -i '/Install_Directory/c\Install_Directory : "'"${DIR}"'"'  ${DIR}/configs/simulation.config.yml
-sed -i '/Install_Directory/c\Install_Directory : "'"${DIR}"'"'  ${DIR}/configs/travis.config.yml
 
 install_conda () {
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
