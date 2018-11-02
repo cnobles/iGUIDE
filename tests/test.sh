@@ -4,7 +4,7 @@ set -ev
 # Test script
 PREFIX=${HOME}/miniconda3
 export PATH=${PATH}:${PREFIX}/bin
-source activate igtest
+source activate iguide
 CORES=${1-1}
 
 # Create test analysis directory
