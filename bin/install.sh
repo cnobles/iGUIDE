@@ -7,7 +7,7 @@ PREFIX=${HOME}/miniconda3
 IGUIDE_ENV_NAME=${1-iguide}
 OUTPUT=${2-/dev/stdout}
 
-# Update install directory in simulation config and travis config
+# Update install directory in simulation config file
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 DIR=${DIR::-4}
 sed -i '/Install_Directory/c\Install_Directory : "'"${DIR}"'"'  ${DIR}/configs/simulation.config.yml
