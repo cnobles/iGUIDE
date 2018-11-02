@@ -20,3 +20,4 @@ genomes/*
 sampleInfo/*
 configs/*
 tests/*
+docs/_*
