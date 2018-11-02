@@ -7,6 +7,11 @@ PREFIX=${HOME}/miniconda3
 IGUIDE_ENV_NAME=${1-iguide}
 OUTPUT=${2-/dev/stdout}
 
+# Update install directory in simulation config file
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+DIR=${DIR::-4}
+sed -i '/Install_Directory/c\Install_Directory : "'"${DIR}"'"'  ${DIR}/configs/simulation.config.yml
+
 install_conda () {
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh -b -p ${PREFIX} >> ${OUTPUT}
