@@ -18,3 +18,5 @@ tools/pytools/__pycache__
 analysis/*
 genomes/*
 sampleInfo/*
+configs/*
+tests/*
