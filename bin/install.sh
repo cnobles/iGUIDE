@@ -11,13 +11,14 @@ OUTPUT=${2-/dev/stdout}
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 DIR=${DIR::-4}
 sed -i '/Install_Directory/c\Install_Directory : "'"${DIR}"'"'  ${DIR}/configs/simulation.config.yml
+sed -i '/source activate/c\source activate '${IGUIDE_ENV_NAME}''  ${DIR}/tests/test.sh
 
 install_conda () {
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh -b -p ${PREFIX} >> ${OUTPUT}
     export PATH=${PATH}:${PREFIX}/bin
     command -v conda > /dev/null 2>&1 || { echo "Conda still is not on the path, try installing manually"; exit 1; }
-    conda update -n root conda --yes
+    conda update -n base conda --yes
     rm Miniconda3-latest-Linux-x86_64.sh
 }
 
