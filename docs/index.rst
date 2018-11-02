@@ -246,3 +246,8 @@ used::
 
   # Remove conda
   rm -r path/to/miniconda3
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: Contents:
