@@ -24,20 +24,6 @@ into three parts:
 2. setting up a run directory and acquiring the sequence data
 3. initializing the pipeline and understanding the output
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
 =======
 Install
 =======
