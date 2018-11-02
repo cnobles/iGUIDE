@@ -1,6 +1,8 @@
 ## iGUIDE - improved Genome-wide Unbiased Identification of Double-strand DNA break Events
 [![Build Status](https://travis-ci.org/cnobles/iGUIDE.svg?branch=master)](https://travis-ci.org/cnobles/iGUIDE)
 [![Snakemake](https://img.shields.io/badge/snakemake-≥3.5.2-brightgreen.svg?style=flat)](http://snakemake.bitbucket.org)
+[![Documentation Status](https://iguide.readthedocs.io/en/latest/?badge=latest)](https://iguide.readthedocs.io/en/latest/?badge=latest)
+
 Bioinformatic pipeline for processing iGUIDE and GUIDE-seq samples.
 
 ### Description
