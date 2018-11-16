@@ -34,19 +34,20 @@ rule all_edit_sites:
     umitag=all_umitag_inputs,
     multi=all_multi_inputs
   output:
-    RUN_DIR + "/output/edited_sites." + RUN + ".rds"
+    edit=RUN_DIR + "/output/edited_sites." + RUN + ".rds",
+    stat=temp(RUN_DIR + "/processData/" + RUN + ".edit.stat")
   params:
     config = RUN_DIR + "/" + "config.yml",
     tool = ROOT_DIR + "/tools/processing/post_process.R"
   log:
     RUN_DIR + "/logs/" + RUN + ".postproc.log"
   run:
-    call_str="Rscript {params.tool} {input.sites} -o {output} "
+    call_str="Rscript {params.tool} {input.sites} -o {output.edit} "
     if (config["UMItags"]):
         call_str=call_str + "-u {input.umitag} "
     if (config["recoverMultihits"]):
         call_str=call_str + "-m {input.multi} "
-    call_str=call_str + "-c {params.config} > {log} 2>&1"
+    call_str=call_str + "-c {params.config} --stat {output.stat} > {log} 2>&1"
     shell(call_str)
 
 def report_supp(wildcards):

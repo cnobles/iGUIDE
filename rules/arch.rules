@@ -1,6 +1,6 @@
 # -*- mode: Snakemake -*-
 # Architecture Rules
-# Related to setting up analysis directories
+# Related to setting up analysis directories and consolidating data
 
 rule setup_working_dir:
   input: "configs/" + RUN + ".config.yml"
@@ -23,3 +23,32 @@ rule setup_working_dir:
     echo "${{WORK_DIR}}/input_data"
     """
 
+rule generate_stat_matrix:
+  input:
+    demulti=RUN_DIR + "/processData/" + RUN + ".demulti.stat",
+    trimR1=expand(
+      RUN_DIR + "/processData/{sample}.R1.trim.stat", sample=SAMPLES),
+    trimPrimer=expand(
+      RUN_DIR + "/processData/{sample}.R2.primer.trim.stat", sample=SAMPLES),
+    trimODN=expand(
+      RUN_DIR + "/processData/{sample}.R2.trim.stat", sample=SAMPLES),
+    umitags=expand(
+      RUN_DIR + "/processData/{sample}.umitags.stat", sample=SAMPLES),
+    filt=expand(
+      RUN_DIR + "/processData/{sample}.filt.stat", sample=SAMPLES),
+    consol=expand(
+      RUN_DIR + "/processData/{sample}.{read}.consol.stat", 
+      sample=SAMPLES, read=READS),
+    align=expand(
+      RUN_DIR + "/processData/{sample}.align.stat", sample=SAMPLES),
+    proc=RUN_DIR + "/processData/" + RUN + ".edit.stat"
+  output:
+    RUN_DIR + "/output/stats." + RUN + ".csv"
+  params:
+    tool=ROOT_DIR + "/tools/rtools/collect_stats.R"
+  shell:
+    """
+    Rscript {params.tool} {input.demulti} {input.trimR1} {input.trimPrimer} \
+      {input.trimODN} {input.umitags} {input.filt} {input.consol} \
+      {input.align} {input.proc} -o {output}
+    """

@@ -528,8 +528,18 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
 ## Load in supporting information ==============================================
 if(length(args$support) > 0){
   supp_data <- data.table::fread(args$support, data.table = FALSE)
-  supp_data <- filter(supp_data, specimen %in% sample_info$specimen) %>%
+  specimen_levels <- supp_data$specimen[supp_data$specimen %in% specimen_levels]
+  supp_data <- filter(supp_data, specimen %in% specimen_levels) %>%
     mutate(specimen = factor(specimen, levels = specimen_levels))
+  treatment_df <- filter(treatment_df, specimen %in% specimen_levels) %>%
+    mutate(
+      specimen = factor(as.character(specimen), levels = specimen_levels)) %>%
+    arrange(specimen)
+  treatment <- treatment[names(treatment) %in% specimen_levels]
+  sample_info <- filter(sample_info, specimen %in% specimen_levels) %>%
+    mutate(
+      specimen = factor(as.character(specimen), levels = specimen_levels)) %>%
+    arrange(specimen)
 }else{
   supp_data <- data.frame()
 }
@@ -661,10 +671,13 @@ ot_tbl_summary <- left_join(treatment_df, cond_overview, by = "specimen") %>%
     levels = levels(condition)))
 
 ot_tbl_summary <- Reduce(
-  function(x,y){ dplyr::left_join(x, y, by = "specimen") },
-  list(tbl_ot_algn[,c(1,3)], tbl_ot_pile[,c(1,3)],
-       tbl_ot_pair[,c(1,3)], tbl_ot_match[,c(1,3)]),
-  init = ot_tbl_summary)
+    function(x,y){ dplyr::left_join(x, y, by = "specimen") },
+    list(tbl_ot_algn[,c(1,3)], tbl_ot_pile[,c(1,3)],
+         tbl_ot_pair[,c(1,3)], tbl_ot_match[,c(1,3)]),
+    init = ot_tbl_summary) %>%
+  mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
+  arrange(specimen)
+
 
 names(ot_tbl_summary) <- c(
   "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 
@@ -778,9 +791,11 @@ ft_tbl_summary <- left_join(treatment_df, cond_overview, by = "specimen") %>%
     levels = levels(condition)))
 
 ft_tbl_summary <- Reduce(
-  function(x,y){ dplyr::left_join(x, y, by = "specimen") },
-  list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
-  init = ft_tbl_summary)
+    function(x,y){ dplyr::left_join(x, y, by = "specimen") },
+    list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
+    init = ft_tbl_summary) %>%
+  mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
+  arrange(specimen)
 
 names(ft_tbl_summary) <- c(
   "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 

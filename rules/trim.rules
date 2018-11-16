@@ -5,7 +5,8 @@ rule seq_trim_R1:
   input:
     RUN_DIR + "/processData/{sample}.R1.fastq.gz"
   output:
-    temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz")
+    trim=temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/processData/{sample}.R1.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
     lead=lambda wildcards: R1_LEAD[wildcards.sample],
@@ -17,17 +18,19 @@ rule seq_trim_R1:
     RUN_DIR + "/logs/{sample}.R1.trim.log"
   shell:
     """
-    Rscript {params.tool} {input} -o {output} \
-      -l {params.lead} --leadMisMatch {params.leadMis} \
-      -r {params.over} --overMisMatch {params.overMis} \
-      --overMaxLength {params.overLen} --compress > {log} 2>&1
+    Rscript {params.tool} {input} -o {output.trim} \
+      -l {params.lead} --leadMismatch {params.leadMis} \
+      -r {params.over} --overMismatch {params.overMis} \
+      --overMaxLength {params.overLen} --stat {output.stat} \
+      --compress > {log} 2>&1
     """
 
 rule seq_trim_R2_primer:
   input:
     RUN_DIR + "/processData/{sample}.R2.fastq.gz"
   output:
-    temp(RUN_DIR + "/processData/{sample}.R2.primer.trim.fastq.gz")
+    trim=temp(RUN_DIR + "/processData/{sample}.R2.primer.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/processData/{sample}.R2.primer.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
     lead=lambda wildcards: R2_LEAD[wildcards.sample],
@@ -39,17 +42,19 @@ rule seq_trim_R2_primer:
     RUN_DIR + "/logs/{sample}.R2.primer.trim.log"
   shell:
     """
-    Rscript {params.tool} {input} -o {output} \
-      -l {params.lead} --leadMisMatch {params.leadMis} \
-      -r {params.over} --overMisMatch {params.overMis} \
-      --overMaxLength {params.overLen} --compress > {log} 2>&1
+    Rscript {params.tool} {input} -o {output.trim} \
+      -l {params.lead} --leadMismatch {params.leadMis} \
+      -r {params.over} --overMismatch {params.overMis} \
+      --overMaxLength {params.overLen} --stat {output.stat} \
+      --compress > {log} 2>&1
     """
 
 rule seq_trim_R2_odn:
   input:
     RUN_DIR + "/processData/{sample}.R2.primer.trim.fastq.gz"
   output:
-    temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz")
+    trim=temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/processData/{sample}.R2.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
     lead=lambda wildcards: R2_LEAD_ODN[wildcards.sample],
@@ -58,7 +63,7 @@ rule seq_trim_R2_odn:
     RUN_DIR + "/logs/{sample}.R2.odn.trim.log"
   shell:
     """
-    Rscript {params.tool} {input} -o {output} \
-      -l {params.lead} --leadMisMatch {params.leadMis} \
-      --noQualTrimming --compress > {log} 2>&1
+    Rscript {params.tool} {input} -o {output.trim} \
+      -l {params.lead} --leadMismatch {params.leadMis} \
+      --noQualTrimming --stat {output.stat} --compress > {log} 2>&1
     """

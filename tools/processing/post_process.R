@@ -30,6 +30,9 @@ parser$add_argument(
 parser$add_argument(
   "-m", "--multihits", nargs = "+", type = "character",
   help = "Path(s) to associated multihit files (.rds) as produced by blatCoupleR. Multiple file paths can be separated by a space.")
+parser$add_argument(
+  "--stat", nargs = 1, type = "character", default = FALSE, 
+  help = "File name to be written in output directory of read couts for each sample. CSV file format. ie. test.stat.csv.")
 
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
@@ -39,7 +42,9 @@ input_table <- data.frame(
   "Values" = sapply(1:length(args), function(i){
     paste(args[[i]], collapse = ", ")}))
 input_table <- input_table[
-  match(c("uniqSites :", "output :", "config :", "umitags :", "multihits :"),
+  match(c(
+    "uniqSites :", "output :", "config :", 
+    "umitags :", "multihits :", "stat :"),
         input_table$Variables),]
 pandoc.title("Post-processing Inputs")
 pandoc.table(data.frame(input_table, row.names = NULL), 
@@ -478,6 +483,35 @@ if(nrow(paired_regions) > 0){
       
 pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),]
+
+# Generate stats if requested --------------------------------------------------
+if(args$stat != FALSE){
+  stat_summary <- function(x, y){
+    x %>%
+      mutate(metric = y) %>%
+      group_by(sampleName, metric) %>%
+      summarize(count = sum(contrib)) %>%
+      ungroup()
+  }
+  
+  total_stat <- stat_summary(algnmts, "total.algns")
+  combined_stat <- stat_summary(probable_algns, "combined.algns")
+  pileup_stat <- stat_summary(pile_up_algns, "pileup.algns")
+  paired_stat <- stat_summary(paired_algns, "paired.algns")
+  matched_stat <- stat_summary(matched_algns, "matched.algns")
+  on_tar_stat <- filter(matched_algns, on.off.target == "On-target") %>%
+    stat_summary("ontarget.algns")
+  off_tar_stat <- filter(matched_algns, on.off.target == "Off-target") %>%
+    stat_summary("offtarget.algns")
+  
+  stat <- bind_rows(
+    total_stat, combined_stat, pileup_stat, paired_stat, 
+    matched_stat, on_tar_stat, off_tar_stat)
+  
+  write.table(
+    stat, file = args$stat, 
+    sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+}
 
 # Output data composition ------------------------------------------------------
 # rds file that can be read into reports or loaded

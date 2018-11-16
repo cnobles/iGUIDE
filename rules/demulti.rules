@@ -16,7 +16,9 @@ rule demultiplex:
     ambi=temp(expand(
       RUN_DIR + "/processData/ambiguous.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
-      RUN_DIR + "/processData/unassigned.{type}.fastq.gz", type=TYPES))
+      RUN_DIR + "/processData/unassigned.{type}.fastq.gz", type=TYPES)),
+    stat=temp(
+      RUN_DIR + "/processData/" + RUN + ".demulti.stat")
   params:
     tool=ROOT_DIR + "/tools/dualDemultiplexR/dualDemultiplex.R",
     bc1Len=config["barcode1Length"],
@@ -24,7 +26,8 @@ rule demultiplex:
     bc1=config["barcode1"],
     bc2=config["barcode2"],
     bc1Mis=config["bc1Mismatch"],
-    bc2Mis=config["bc2Mismatch"]
+    bc2Mis=config["bc2Mismatch"],
+    statName=RUN + ".demulti.stat"
   log: 
     RUN_DIR + "/logs/demultiplex." + RUN + ".log"
   threads: 
@@ -37,6 +40,7 @@ rule demultiplex:
       --barcode1 {params.bc1} --barcode1Length {params.bc1Len} \
       --barcode2 {params.bc2} --barcode2Length {params.bc2Len} \
       --bc1Mismatch {params.bc1Mis} --bc2Mismatch {params.bc2Mis} \
-      -o {RUN_DIR}/processData -c {threads} --compress > {log} 2>&1
+      -o {RUN_DIR}/processData --stat {params.statName} -c {threads} \
+      --compress > {log} 2>&1
     """
 
