@@ -151,7 +151,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
     treatment = sample_info[,info_col])
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
-  treatment <- strsplit(treatment_df$treatment, ";")
+  treatment <- strsplit(as.character(treatment_df$treatment), ";")
   names(treatment) <- treatment_df$specimen
 }else if(any(grepl("all", names(treatment)))){
   treatment_df <- data.frame(
@@ -159,7 +159,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
     treatment = unique(unlist(treatment)))
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
-  treatment <- strsplit(treatment_df$treatment, ";")
+  treatment <- strsplit(as.character(treatment_df$treatment), ";")
   names(treatment) <- treatment_df$specimen
 }else{
   treatment_df <- data.frame(
@@ -255,7 +255,7 @@ if(config$UMItags & !is.null(args$umitags)){
     group_by(seqnames, start, end, strand, specimen, sampleName) %>%
     summarise(
       count = sum(contrib),
-      umitag = sum(as.integer(!duplicated(umitag)) * contrib),
+      umitag = sum(as.integer(!duplicated(umitag[!is.na(umitag)])) * contrib),
       contrib = max(contrib)) %>%
     ungroup() %>%
     select(
@@ -446,27 +446,35 @@ if(config$UMItags){
     ungroup()
 }
 
-paired_regions <- mutate(
-    paired_regions,     
-    gene_id = assignGeneID(
-      seqnames, mid, reference = ref_genome, 
-      ref_genes = ref_genes, onco_genes = onco_genes, 
-      special_genes = special_genes)) %>%
-  group_by(specimen, paired.algn) %>%
-  mutate(
-    on.off.target = ifelse(
-      any(sapply(
-        unlist(on_target_sites[
-          which(
-            str_extract(names(on_target_sites), "[\\w\\-\\_]+") %in% 
-              treatment[[specimen]])]),
-        function(x, seq, st, en){
-          seq == str_extract(x, "[\\w]+") &
-            st <= as.numeric(str_extract(x, "[\\w]+$")) + downstream_dist &
-            en >= as.numeric(str_extract(x, "[\\w]+$")) - downstream_dist
-      }, seq = seqnames, st = start, en = end)), "On-target", "Off-target")) %>%
-  ungroup() %>% 
-  as.data.frame()
+if(nrow(paired_regions) > 0){
+  paired_regions <- mutate(
+      paired_regions,     
+      gene_id = assignGeneID(
+        seqnames, mid, reference = ref_genome, 
+        ref_genes = ref_genes, onco_genes = onco_genes, 
+        special_genes = special_genes)) %>%
+    group_by(specimen, paired.algn) %>%
+    mutate(
+      on.off.target = ifelse(
+        any(sapply(
+          unlist(on_target_sites[
+            which(
+              str_extract(names(on_target_sites), "[\\w\\-\\_]+") %in% 
+                treatment[[specimen]])]),
+          function(x, seq, st, en){
+            seq == str_extract(x, "[\\w]+") &
+              st <= as.numeric(str_extract(x, "[\\w]+$")) + downstream_dist &
+              en >= as.numeric(str_extract(x, "[\\w]+$")) - downstream_dist
+        }, seq = seqnames, st = start, en = end)), 
+        "On-target", "Off-target")) %>%
+    ungroup() %>% 
+    as.data.frame()
+}else{
+  paired_regions <- mutate(
+    paired_regions,
+    gene_id = vector(mode = "character"),
+    on.off.target = vector(mode = "character"))
+}
       
 pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),]

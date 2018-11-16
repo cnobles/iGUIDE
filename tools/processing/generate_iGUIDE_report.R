@@ -448,10 +448,12 @@ sample_info$specimen <- factor(sample_info$specimen, levels = specimen_levels)
 ## Identify all gRNAs used from config files
 gRNAs <- lapply(
   do.call(c, lapply(configs, "[[", "Guide_RNA_Sequences")), toupper)
+gRNAs_grps <- stringr::str_extract(names(gRNAs), "[\\w\\-\\_]+")
+names(gRNAs) <- stringr::str_remove(names(gRNAs), "[\\w\\-\\_]+.")
+gRNAs <- split(gRNAs, gRNAs_grps)
+
 pams <- lapply(
   do.call(c, lapply(configs, "[[", "PAM_Sequence")), toupper)
-
-gRNAs <- split(gRNAs, stringr::str_extract(names(gRNAs), "[\\w\\-\\_]+"))
 pams <- split(pams, stringr::str_extract(names(pams), "[\\w\\-\\_]+"))
 
 gRNAs <- bind_rows(mapply(function(seqs, pam){
@@ -460,7 +462,7 @@ gRNAs <- bind_rows(mapply(function(seqs, pam){
       ncol = length(pam))
     if(any(rowSums(pam_mat) > 1)){ 
       stop("Multiple PAM sequences detected on a single guide RNA.") }
-    rownames(pam_mat) <- str_extract(names(seqs), "[\\w\\-\\_]+$")
+    rownames(pam_mat) <- str_extract(names(seqs), "[\\w\\-\\_\\.]+$")
     colnames(pam_mat) <- unlist(pam)
     data.frame(
       row.names = rownames(pam_mat),
@@ -493,7 +495,8 @@ if(any(grepl("sampleInfo:", treatments[[1]]))){
   }
   treatment_df <- data.frame(
       sampleName = sample_info[,sample_name_col], 
-      treatment = unique(unlist(treatments))) %>%
+      treatment = sample_info[,info_col]) %>%
+      #treatment = unique(unlist(treatments))) %>%
     mutate(
       specimen = str_extract(sampleName, "[\\w]+"),
       specimen = factor(specimen, levels = specimen_levels)) %>%
@@ -877,15 +880,24 @@ ft_MESL <- input_data$matched_algns %>%
     as.numeric(str_extract(edit.site, "[0-9]+$")) - end)),
     specimen = factor(specimen, levels = levels(cond_overview$specimen))) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
-  mutate(order = seq_len(n())) %>%
-  group_by(order) %>%
-  mutate(
-    ESL = predictESProb(edit.site.dist, on_tar_dens[[condition]]),
-    gene_id = input_data$matched_summary$gene_id[
-      match(edit.site, input_data$matched_summary$edit.site)]) %>%
-  group_by(condition, edit.site, gene_id) %>%
-  summarise(MESL = 100 * max(c(0,ESL), na.rm = TRUE)) %>%
-  ungroup()
+  mutate(order = seq_len(n())) 
+
+if(nrow(ft_MESL) > 0){
+  ft_MESL <- ft_MESL %>%
+    group_by(order) %>%
+    mutate(
+      ESL = predictESProb(edit.site.dist, on_tar_dens[[condition]]),
+      gene_id = input_data$matched_summary$gene_id[
+        match(edit.site, input_data$matched_summary$edit.site)]) %>%
+    group_by(condition, edit.site, gene_id) %>%
+    summarise(MESL = 100 * max(c(0,ESL), na.rm = TRUE)) %>%
+    ungroup()
+}else{
+  ft_MESL <- ft_MESL %>%
+    mutate(
+      MESL = vector(mode = "numeric"), gene_id = vector(mode = "character")) %>%
+    select(condition, edit.site, gene_id, MESL)
+}
 
 ft_seqs <- input_data$matched_summary %>%
   select(
