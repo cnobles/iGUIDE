@@ -380,8 +380,10 @@ template_seqs <- structure(lapply(
     n_idx <- which(stringr::str_detect(as.character(seqs), "N"))
     ran_idx <- which(gr$class == "random")
     remove_idx <- n_idx[which(n_idx %in% ran_idx)]
-    seqs <- seqs[-remove_idx]
-    gr <- gr[-remove_idx]
+    if(length(remove_idx) > 0){
+      seqs <- seqs[-remove_idx]
+      gr <- gr[-remove_idx]
+    }
   
     # Reduce number of random sites to specified count
     random_posids <- sample(

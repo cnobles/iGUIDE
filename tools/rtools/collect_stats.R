@@ -17,8 +17,8 @@ args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 # Manipulate file paths to determine stat types
 all_paths <- args$paths
 file_names <- stringr::str_extract(all_paths, "[\\w\\.\\-\\_]+$")
-file_types <- stringr::str_remove(file_names, "[\\w\\-\\_]+.") %>%
-  stringr::str_remove(".stat")
+file_types <- sub("[\\w\\-\\_]+.", "", file_names, perl = TRUE)
+file_types <- sub(".stat", "", file_types)
 
 # Read in data in a long format
 long_data <- dplyr::bind_rows(
