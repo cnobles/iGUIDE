@@ -449,7 +449,7 @@ sample_info$specimen <- factor(sample_info$specimen, levels = specimen_levels)
 gRNAs <- lapply(
   do.call(c, lapply(configs, "[[", "Guide_RNA_Sequences")), toupper)
 gRNAs_grps <- stringr::str_extract(names(gRNAs), "[\\w\\-\\_]+")
-names(gRNAs) <- stringr::str_remove(names(gRNAs), "[\\w\\-\\_]+.")
+names(gRNAs) <- sub("[\\w\\-\\_]+.", "", names(gRNAs))
 gRNAs <- split(gRNAs, gRNAs_grps)
 
 pams <- lapply(
