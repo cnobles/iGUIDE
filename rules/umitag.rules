@@ -6,7 +6,8 @@ rule collect_umitags:
     RUN_DIR + "/processData/{sample}.I2.fastq.gz"
   output:
     seq=temp(RUN_DIR + "/processData/{sample}.I2.trim.fastq.gz"),
-    umi=temp(RUN_DIR + "/processData/{sample}.umitags.fasta.gz")
+    umi=RUN_DIR + "/processData/{sample}.umitags.fasta.gz",
+    stat=temp(RUN_DIR + "/processData/{sample}.umitags.stat")
   params:
     tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
     seq=lambda wildcards: UMIseqs[wildcards.sample],
@@ -16,6 +17,7 @@ rule collect_umitags:
   shell:
     """
     Rscript {params.tool} {input} -o {output.seq} \
-      -l {params.seq} --leadMisMatch {params.mis} --noQualTrimming \
-      --minSeqLength 0 --collectRandomIDs {output.umi} --compress > {log} 2>&1
+      -l {params.seq} --leadMismatch {params.mis} --noQualTrimming \
+      --minSeqLength 0 --collectRandomIDs {output.umi} --stat {output.stat} \
+      --compress > {log} 2>&1
     """

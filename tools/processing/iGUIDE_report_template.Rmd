@@ -1,7 +1,5 @@
 ---
-title: |
-    | iGUIDE Summary Report: 
-    | `r gsub("_", " ", set_names)`
+title: iGUIDE Summary Report
 date: |
     | report generated : `r Sys.Date()`
     | software version : `r soft_version`
@@ -131,6 +129,8 @@ if(args$format == "html"){
 ```
 
 ***
+
+This report includes data from the following sequencing runs: `r gsub("_", " ", set_names)`.
 
 ```{r title_graphic, fig.width=6, fig.height=6, eval = FALSE}
 plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)

@@ -30,6 +30,9 @@ parser$add_argument(
 parser$add_argument(
   "-m", "--multihits", nargs = "+", type = "character",
   help = "Path(s) to associated multihit files (.rds) as produced by blatCoupleR. Multiple file paths can be separated by a space.")
+parser$add_argument(
+  "--stat", nargs = 1, type = "character", default = FALSE, 
+  help = "File name to be written in output directory of read couts for each sample. CSV file format. ie. test.stat.csv.")
 
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
@@ -39,7 +42,9 @@ input_table <- data.frame(
   "Values" = sapply(1:length(args), function(i){
     paste(args[[i]], collapse = ", ")}))
 input_table <- input_table[
-  match(c("uniqSites :", "output :", "config :", "umitags :", "multihits :"),
+  match(c(
+    "uniqSites :", "output :", "config :", 
+    "umitags :", "multihits :", "stat :"),
         input_table$Variables),]
 pandoc.title("Post-processing Inputs")
 pandoc.table(data.frame(input_table, row.names = NULL), 
@@ -151,7 +156,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
     treatment = sample_info[,info_col])
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
-  treatment <- strsplit(treatment_df$treatment, ";")
+  treatment <- strsplit(as.character(treatment_df$treatment), ";")
   names(treatment) <- treatment_df$specimen
 }else if(any(grepl("all", names(treatment)))){
   treatment_df <- data.frame(
@@ -159,7 +164,7 @@ if(any(grepl("sampleInfo:", treatment[1]))){
     treatment = unique(unlist(treatment)))
   treatment_df$specimen <- str_extract(treatment_df$sampleName, "[\\w]+")
   treatment_df <- unique(treatment_df[,c("specimen", "treatment")])
-  treatment <- strsplit(treatment_df$treatment, ";")
+  treatment <- strsplit(as.character(treatment_df$treatment), ";")
   names(treatment) <- treatment_df$specimen
 }else{
   treatment_df <- data.frame(
@@ -255,7 +260,7 @@ if(config$UMItags & !is.null(args$umitags)){
     group_by(seqnames, start, end, strand, specimen, sampleName) %>%
     summarise(
       count = sum(contrib),
-      umitag = sum(as.integer(!duplicated(umitag)) * contrib),
+      umitag = sum(as.integer(!duplicated(umitag[!is.na(umitag)])) * contrib),
       contrib = max(contrib)) %>%
     ungroup() %>%
     select(
@@ -446,30 +451,67 @@ if(config$UMItags){
     ungroup()
 }
 
-paired_regions <- mutate(
-    paired_regions,     
-    gene_id = assignGeneID(
-      seqnames, mid, reference = ref_genome, 
-      ref_genes = ref_genes, onco_genes = onco_genes, 
-      special_genes = special_genes)) %>%
-  group_by(specimen, paired.algn) %>%
-  mutate(
-    on.off.target = ifelse(
-      any(sapply(
-        unlist(on_target_sites[
-          which(
-            str_extract(names(on_target_sites), "[\\w\\-\\_]+") %in% 
-              treatment[[specimen]])]),
-        function(x, seq, st, en){
-          seq == str_extract(x, "[\\w]+") &
-            st <= as.numeric(str_extract(x, "[\\w]+$")) + downstream_dist &
-            en >= as.numeric(str_extract(x, "[\\w]+$")) - downstream_dist
-      }, seq = seqnames, st = start, en = end)), "On-target", "Off-target")) %>%
-  ungroup() %>% 
-  as.data.frame()
+if(nrow(paired_regions) > 0){
+  paired_regions <- mutate(
+      paired_regions,     
+      gene_id = assignGeneID(
+        seqnames, mid, reference = ref_genome, 
+        ref_genes = ref_genes, onco_genes = onco_genes, 
+        special_genes = special_genes)) %>%
+    group_by(specimen, paired.algn) %>%
+    mutate(
+      on.off.target = ifelse(
+        any(sapply(
+          unlist(on_target_sites[
+            which(
+              str_extract(names(on_target_sites), "[\\w\\-\\_]+") %in% 
+                treatment[[specimen]])]),
+          function(x, seq, st, en){
+            seq == str_extract(x, "[\\w]+") &
+              st <= as.numeric(str_extract(x, "[\\w]+$")) + downstream_dist &
+              en >= as.numeric(str_extract(x, "[\\w]+$")) - downstream_dist
+        }, seq = seqnames, st = start, en = end)), 
+        "On-target", "Off-target")) %>%
+    ungroup() %>% 
+    as.data.frame()
+}else{
+  paired_regions <- mutate(
+    paired_regions,
+    gene_id = vector(mode = "character"),
+    on.off.target = vector(mode = "character"))
+}
       
 pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),]
+
+# Generate stats if requested --------------------------------------------------
+if(args$stat != FALSE){
+  stat_summary <- function(x, y){
+    x %>%
+      mutate(metric = y) %>%
+      group_by(sampleName, metric) %>%
+      summarize(count = sum(contrib)) %>%
+      ungroup()
+  }
+  
+  total_stat <- stat_summary(algnmts, "total.algns")
+  combined_stat <- stat_summary(probable_algns, "combined.algns")
+  pileup_stat <- stat_summary(pile_up_algns, "pileup.algns")
+  paired_stat <- stat_summary(paired_algns, "paired.algns")
+  matched_stat <- stat_summary(matched_algns, "matched.algns")
+  on_tar_stat <- filter(matched_algns, on.off.target == "On-target") %>%
+    stat_summary("ontarget.algns")
+  off_tar_stat <- filter(matched_algns, on.off.target == "Off-target") %>%
+    stat_summary("offtarget.algns")
+  
+  stat <- bind_rows(
+    total_stat, combined_stat, pileup_stat, paired_stat, 
+    matched_stat, on_tar_stat, off_tar_stat)
+  
+  write.table(
+    stat, file = args$stat, 
+    sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+}
 
 # Output data composition ------------------------------------------------------
 # rds file that can be read into reports or loaded

@@ -47,7 +47,9 @@ if not os.path.isdir(ROOT_DIR):
 
 # Target Rules
 rule all:
-    input: RUN_DIR + "/reports/report." + RUN + ".html"
+    input: 
+      report=RUN_DIR + "/reports/report." + RUN + ".html",
+      stats=RUN_DIR + "/output/stats." + RUN + ".csv"
 
 # Architecture Rules
 include: "rules/arch.rules"
