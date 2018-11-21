@@ -14,10 +14,10 @@ rule align:
   shell:
     """
     input_seq_cnt=$(sed -n '2~2p' {input.seq} | wc -l)
-    if[ "${{input_seq_cnt}}" -eq "0" ]
+    if [[ "${{input_seq_cnt}}" -eq "0" ]]
         then
             touch {output}
-            cat "Empty input sequences for {input.seq}." > {log} 2>&1
+            echo 'Empty input sequences for {input.seq}.' > {log} 2>&1
         else
             blat {input.genome} {input.seq} {output} {params} > {log} 2>&1
     fi
