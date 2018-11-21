@@ -12,7 +12,16 @@ rule align:
   log:
     RUN_DIR + "/logs/{sample}.{read}.blat.log"
   shell:
-    "blat {input.genome} {input.seq} {output} {params} > {log} 2>&1"
+    """
+    input_seq_cnt=$(sed -n '2~2p' {input.seq} | wc -l)
+    if[ ${input_seq_cnt} -eq "0" ]
+        then
+            touch {output}
+            cat "Empty input sequences for {input.seq}." > {log} 2>&1
+        else
+            blat {input.genome} {input.seq} {output} {params} > {log} 2>&1
+    fi
+    """
 
 rule compress_align:
   input: RUN_DIR + "/processData/{sample}.{type}.psl"
