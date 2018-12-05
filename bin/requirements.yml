@@ -36,3 +36,4 @@ dependencies:
   - bioconductor-rsamtools
   - bioconductor-bsgenome
   - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - semantic_version

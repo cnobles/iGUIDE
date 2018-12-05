@@ -1,6 +1,6 @@
 # Options
 options(stringsAsFactors = FALSE)
-.libPaths(new = grep("miniconda3/env/", .libPaths(), value = TRUE))
+.libPaths(new = grep("miniconda3/envs/", .libPaths(), value = TRUE))
 
 r_libs <- c(
   "argparse", "data.table", "devtools", "igraph", "knitr", "magrittr", "Matrix",
