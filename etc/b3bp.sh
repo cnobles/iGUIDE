@@ -94,7 +94,7 @@ function __b3bp_log () {
   local log_line=""
 
   while IFS=$'\n' read -r log_line; do
-    echo -e "$(date -u +"%Y-%m-%d %H:%M:%S UTC") ${color}$(printf "[%9s]" "${log_level}")${color_reset} ${log_line}" 1>&2
+    echo -e "$(date +"%Y-%m-%d %H:%M:%S") ${color}$(printf "[%9s]" "${log_level}")${color_reset} ${log_line}" 1>&2
   done <<< "${@:-}"
 }
 
