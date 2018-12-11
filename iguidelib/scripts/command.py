@@ -3,20 +3,21 @@ import argparse
 import subprocess
 import iguidelib
 #from iguidelib.scripts.run import main as Run
-#from iguidelib.scripts.init import main as Init
+from iguidelib.scripts.setup import main as Setup
 #from iguidelib.scripts._config import main as Config
 #from iguidelib.scripts.list_samples import main as ListSamples
-#from iguidelib.scripts.get import main as Get
+
+# Goal is to be able to make command line calls in the form:
+# iguide <-h/-v/subcommand> <path/to/config.file> <options> -- <snakemake.options>
 
 def main():
 
-    usage_str = "%(prog)s [-h/--help,-v/--version] <subcommand>"
+    usage_str = "%(prog)s [-h/--help,-v/--version] <subcommand> <path/to/config.file> <options> -- <snakemake.options>"
     description_str = (
         "subcommands:\n"
-        "  init         \tCreate a new config file for a project using local data.\n"
-        "  get          \tCreate a new config file for a project using SRA data.\n"
-        "  run          \tExecute the pipeline.\n"
-        "  config       \tModify or update config files.\n"
+        "  setup         \tCreate a new config file for a project using local data.\n"
+        "  run          \tExecute the iGUIDE pipeline.\n"
+        "  config       \tModify or update iGUIDE config files.\n"
         "  list_samples \tMake a list of samples from a directory.\n"
     ).format(version=iguidelib.__version__)
 
@@ -38,14 +39,12 @@ def main():
 
     if args.command == "run":
         Run(remaining)
-    elif args.command == "init":
-        Init(remaining)
+    elif args.command == "setup":
+        Setup(remaining)
     elif args.command == "config":
         Config(remaining)
     elif args.command == "list_samples":
         ListSamples(remaining)
-    elif args.command == "get":
-        Get(remaining)
     else:
         parser.print_help()
         sys.stderr.write("Unrecognized command.\n")

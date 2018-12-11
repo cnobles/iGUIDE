@@ -124,7 +124,7 @@ function install_conda () {
 function install_environment () {
     debug_capture conda env update --name=$__iguide_env \
 			  --quiet --file build.v0.2.0.yml
-			  #			  --quiet --file bin/requirements.yml
+			  #--quiet --file bin/requirements.yml
 		source activate $__iguide_env
 		Rscript bin/setup.R >> ${__output}
     git clone https://github.com/cnobles/dualDemultiplexR.git tools/dualDemultiplexR >> ${__output}
@@ -195,8 +195,6 @@ else
     __env_changed=true
     info "iguide environment created."
 fi
-
-
 
 
 # Install iguidelib into environment if changed or requested

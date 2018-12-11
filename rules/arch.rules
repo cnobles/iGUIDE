@@ -4,7 +4,7 @@
 
 rule setup_working_dir:
   input: "configs/" + RUN + ".config.yml"
-  output: "analysis/" + RUN
+  output: directory("analysis/" + RUN)
   shell:
     """
     WORK_DIR="{ROOT_DIR}/analysis/{RUN}"
