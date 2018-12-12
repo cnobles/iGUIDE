@@ -48,7 +48,6 @@ except KeyError:
     raise SystemExit(
         "IGUIDE_DIR environment variable not defined. Are you sure you're "
         "running this from the iguide conda env?")
-print(ROOT_DIR)
 RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 
 # Check for directory paths !!! Not sure if this is going to work just yet.

@@ -2,7 +2,7 @@ import sys
 import argparse
 import subprocess
 import iguidelib
-#from iguidelib.scripts.run import main as Run
+from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
 #from iguidelib.scripts._config import main as Config
 #from iguidelib.scripts.list_samples import main as ListSamples

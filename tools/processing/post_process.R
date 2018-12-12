@@ -74,6 +74,10 @@ source(file.path(code_dir, "post_process_support.R"))
 
 # Inputs and parameters --------------------------------------------------------
 config <- yaml::yaml.load_file(args$config)
+# TODO
+# Clean up this chunk of code
+config$Install_Directory <- Sys.getenv("IGUIDE_DIR")
+message(config$Sample_Info)
 sample_info <- data.table::fread(
   file.path(config$Install_Directory, config$Sample_Info), data.table = FALSE)
 submat <- banmat()
