@@ -37,12 +37,17 @@ packs <- c(
   "knitr", "scales", "RColorBrewer", "tidyverse", "pander")
 
 packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
-if(!all(packs_loaded)){
-  print(data.frame(
-    "R-Packages" = names(packs_loaded), 
-    "Loaded" = packs_loaded, 
-    row.names = NULL), row.names = FALSE)
+if( !all(packs_loaded) ){
+  
+  print(
+    data.frame(
+      "R-Packages" = names(packs_loaded), 
+      "Loaded" = packs_loaded
+    ), 
+    row.names = FALSE
+  )
   stop("Check dependancies.")
+  
 }
 
 options(
@@ -66,17 +71,23 @@ knitr::opts_chunk$set(
   fig.width = 7
 )
 
-if(args$figures != FALSE){
+if( args$figures != FALSE ){
+  
   knitr::opts_chunk$set(
     fig.path = file.path(
-      output_dir, gsub("[\\w]+$", "figures/", output_file, perl = TRUE)))
+      output_dir, gsub("[\\w]+$", "figures/", output_file, perl = TRUE)
+    )
+  )
+  
 }
 
 
 # Helpful functions
 pNums <- function(x, ...){
+  
   x <- ifelse(is.na(x), 0, x)
   format(x, big.mark = ",", ...)
+  
 }
 
 # Custom theme
@@ -115,14 +126,16 @@ tbl_caps <- c(
   "Guide RNAs and associated information.",
   "Percent On-target.",
   "Off-target Loci.",
-  "Cancer-associated Gene editing enrichment.")
+  "Cancer-associated Gene editing enrichment."
+)
 
 fig_caps <- c(
   "Distance distribution of observed incorporation sites from On-target loci.",
   "Genomic distribution of incorporation sites by bioinformatic characteristics.",
-  "Sequence similarity between off-target sites and targeting gRNA(s).")
+  "Sequence similarity between off-target sites and targeting gRNA(s)."
+)
 
-if(args$format == "html"){
+if( args$format == "html" ){
   tbl_caps <- paste0("Table ", 1:5, ". ", tbl_caps)
   fig_caps <- paste0("Figure ", 1:3, ". ", fig_caps)
 }
@@ -137,7 +150,7 @@ plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)
 ```
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -149,7 +162,7 @@ if(args$format == "pdf"){
 The following document summarizes the results of processing `r gsub("_", " ", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(input_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(input_data$algnmts$contrib)))` inferred cells sampled.
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -160,10 +173,20 @@ if(args$format == "pdf"){
 
 ```{r spec_summary}
 pander(
-  spec_overview_join, caption = tbl_caps[1], 
-  justify = ifelse(sapply(seq_along(spec_overview_join), function(i){
-    is.numeric(spec_overview_join[,i]) }), "right", "center"),
-  big.mark = ",", style = "simple", missing = 0)
+  spec_overview_join, 
+  caption = tbl_caps[1], 
+  justify = ifelse(
+    sapply(
+      seq_along(spec_overview_join), 
+      function(i) is.numeric(spec_overview_join[,i])
+    ), 
+    "right", 
+    "center"
+  ),
+  big.mark = ",", 
+  style = "simple", 
+  missing = 0
+)
 ```
 
 Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. Nested-PCR was used to amplify from incorporated dsODN sequences to the linker sequences with barcoded and linker-specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
@@ -173,7 +196,7 @@ DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenom
 Alternatively, random nucleotide sequences are included in the ligated linker sequences. These Unique Molecular Indeces (UMItags) can provide another method of abundance by counting the number of UMItags and breakpoint position combinations for each incorporation sites. This method of quantification has an increased dynamic range, yet can suffer from PCR artifacts leading to inflated abundances.
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -185,14 +208,18 @@ if(args$format == "pdf"){
 Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
 ```{r gRNA_tbl}
-gRNAs$`Edit Locus` <- sapply(gRNAs$Guide, function(x){
-  paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
-})
+gRNAs$`Edit Locus` <- sapply(
+  gRNAs$Guide, 
+  function(x) paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
+)
 
 emphasize.verbatim.cols(c(2,3))
 pander(
-  gRNAs, caption = tbl_caps[2], 
-  justify = "center", style = "multiline")
+  gRNAs, 
+  caption = tbl_caps[2], 
+  justify = "center", 
+  style = "multiline"
+)
 ```
 
 Analysis of On-target associated incorporation sites (**Table 3**) produces several features that are helpful in On- and Off-target site characterization. These include the following:
@@ -206,7 +233,7 @@ Analysis of On-target associated incorporation sites (**Table 3**) produces seve
 Specimen specific tables with data relating to these criteria are found in **Table 3** for percent On-target editing and **Table 4** for identified Off-target loci.
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -219,11 +246,21 @@ if(args$format == "pdf"){
 
 ```{r on_target_summary}
 pander(
-  ot_tbl_summary, caption = tbl_caps[3], 
-  digits = 4, style = "multiline", missing = 0,
-  justify = ifelse(sapply(seq_along(ot_tbl_summary), function(i){
-    is.numeric(ot_tbl_summary[,i]) }), "right", "center"),
-  keep.line.breaks = TRUE)
+  ot_tbl_summary, 
+  caption = tbl_caps[3], 
+  digits = 4, 
+  style = "multiline", 
+  missing = 0,
+  justify = ifelse(
+    sapply(
+      seq_along(ot_tbl_summary), 
+      function(i) is.numeric(ot_tbl_summary[,i])
+    ), 
+    "right", 
+    "center"
+  ),
+  keep.line.breaks = TRUE
+)
 ```
 
 ## Editing near known genomic sites
@@ -248,7 +285,7 @@ incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
   custom_theme +
   theme(strip.text.y = element_text(angle = 0))
 
-if(!is.null(args$support)){
+if( !is.null(args$support) ){
   incorp_plot + facet_wrap(condition ~ gRNA, ncol = 2, scales = "free")
 }else{
   incorp_plot + facet_wrap(~ gRNA, ncol = 2, scales = "free")
@@ -257,7 +294,7 @@ if(!is.null(args$support)){
 ```
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -271,15 +308,26 @@ Using the criteria discussed previously based on characterizing features of nucl
 
 ```{r off_target_summary}
 pander(
-  ft_tbl_summary, caption = tbl_caps[4],
-  digits = 1, big.mark = ",", missing = 0,
-  justify = ifelse(sapply(seq_along(ft_tbl_summary), function(i){
-    is.numeric(ft_tbl_summary[,i]) }), "right", "center"),
-  keep.line.breaks = TRUE, style = "multiline")
+  ft_tbl_summary, 
+  caption = tbl_caps[4],
+  digits = 1, 
+  big.mark = ",", 
+  missing = 0,
+  justify = ifelse(
+    sapply(
+      seq_along(ft_tbl_summary), 
+      function(i) is.numeric(ft_tbl_summary[,i])
+    ), 
+    "right", 
+    "center"
+  ),
+  keep.line.breaks = TRUE, 
+  style = "multiline"
+)
 ```
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -296,15 +344,22 @@ enriched_idx <- which(enrich_df <= 0.05, arr.ind = TRUE)
 enriched_idx <- enriched_idx[enriched_idx[,2] >= 6, , drop = FALSE]
 enrich_df[,6] <- sprintf("%.3f", round(enrich_df[,6], digits = 3))
 enrich_df[,7] <- sprintf("%.3f", round(enrich_df[,7], digits = 3))
+
 if(nrow(enriched_idx) > 0) emphasize.strong.cells(enriched_idx)
-pander(enrich_df, caption = tbl_caps[5],
-  digits = 4, style = "multiline", row.names = FALSE,
+
+pander(
+  enrich_df, 
+  caption = tbl_caps[5],
+  digits = 4, 
+  style = "multiline", 
+  row.names = FALSE,
   justify = c("center", "center", rep("right", 5)),
-  keep.line.breaks = TRUE)
+  keep.line.breaks = TRUE
+)
 ```
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -323,11 +378,12 @@ plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
     panel.background = element_blank(),
     panel.border = element_blank(),
     axis.ticks = element_blank(), 
-    legend.position = "top")
+    legend.position = "top"
+  )
 ```
 
 ```{r} 
-if(args$format == "pdf"){
+if( args$format == "pdf" ){
   cat("\\newpage")
 }else{
   cat('<P style="page-break-before: always">')
@@ -339,31 +395,43 @@ if(args$format == "pdf"){
 Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the gRNA matched sites are displayed below in Figure 3 along with the number of mismatches to the gRNA sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`gene_id`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate `*`) that the site is within the transcription unit of the gene, `~`) the gene appears on the cancer-association list, `!`) and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
 
 ```{r off-target_seqs, fig.cap=fig_caps[3], fig.width=8, fig.height=0.25*sum(sapply(ft_seqs_list, function(x) min(nrow(x), 10)) + 4)}
-ft_seq_plots <- lapply(ft_seqs_list, function(x){
-  ref_gRNA <- paste0(gRNAs$gRNA, gRNAs$PAM)[match(unique(x$gRNA), gRNAs$Guide)]
-  if(!is.null(args$support)){
-    title <- paste0(unique(x$condition), "\ngRNA: ", unique(x$gRNA))
-  }else{
-    title <- paste0("gRNA: ", unique(x$gRNA))
+ft_seq_plots <- lapply(
+  ft_seqs_list, 
+  function(x){
+    
+    ref_gRNA <- paste0(gRNAs$gRNA, gRNAs$PAM)[
+      match(unique(x$gRNA), gRNAs$Guide)
+    ]
+    
+    if( !is.null(args$support) ){
+      title <- paste0(unique(x$condition), "\ngRNA: ", unique(x$gRNA))
+    }else{
+      title <- paste0("gRNA: ", unique(x$gRNA))
+    }
+    
+    y <- head(x, n = 10)
+    
+    dplyr::select(y, aligned.sequence, mismatch, target, aligns, MESL, gene_id) %>%
+      dplyr::mutate(MESL = format(round(MESL, digits = 1))) %>%
+      seq_diverge_plot(
+        ref = ref_gRNA, padding = 6, text.size = 4, 
+        font.family = "Courier", font.face = "plain") +
+      labs(title = title) +
+      blank_theme +
+      theme(
+        title = element_text(size = 9, face = "bold")
+      )
+    
   }
-  y <- head(x, n = 10)
-  
-  select(y, aligned.sequence, mismatch, target, aligns, MESL, gene_id) %>%
-    mutate(MESL = format(round(MESL, digits = 1))) %>%
-    seq_diverge_plot(
-      ref = ref_gRNA, padding = 6, text.size = 4, 
-      font.family = "Courier", font.face = "plain") +
-    labs(title = title) +
-    blank_theme +
-    theme(
-      title = element_text(size = 9, face = "bold"))
-})
+)
 
 layout_mat <- matrix(
-  c(
-    rep(seq_along(ft_seqs_list), 
-        sapply(ft_seqs_list, function(x) min(nrow(x), 10)) + 4)),
-  ncol = 1)
+  c(rep(seq_along(ft_seqs_list), sapply(
+    ft_seqs_list, 
+    function(x) min(nrow(x), 10)
+  ) + 4)),
+  ncol = 1
+)
 
 gridExtra::grid.arrange(grobs = ft_seq_plots, layout_matrix = layout_mat)
 ```
