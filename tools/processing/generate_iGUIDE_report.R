@@ -459,14 +459,14 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
       simplify = TRUE
     ) %>%
     as.data.frame() %>%
-    dplyr::mutate(pos.y = -(seq_len(n()))) %>%
+    dplyr::mutate(pos.y = -(seq_len(dplyr::n()))) %>%
     tidyr::gather(key = "var", value = "value", -pos.y) %>%
     #reshape2::melt(id.vars = "pos.y") %>%
     dplyr::mutate(
       pos.x = as.numeric(stringr::str_extract(var, "[0-9]+$")),
       color = nucleotide_colors[value],      
       color = ifelse(
-        pos.x %in% N_pos, rep(nucleotide_colors["N"], n()), color),
+        pos.x %in% N_pos, rep(nucleotide_colors["N"], dplyr::n()), color),
       color = ifelse(value == " ", "#FFFFFF", color)
     ) %>%
     dplyr::select(pos.x, pos.y, value, color)
@@ -485,7 +485,7 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
       sup_df
     ) %>%
     dplyr::mutate_all(format, justify = "centre") %>%
-    dplyr::mutate(pos.y = -(seq_len(n())))
+    dplyr::mutate(pos.y = -(seq_len(dplyr::n())))
   
   sup_melt <- tidyr::gather(sup_df, key = "var", value = "value", -pos.y) %>%
     #melt(sup_df, id.vars = "pos.y") %>%
@@ -662,7 +662,7 @@ gRNAs_grps <- stringr::str_extract(
   pattern = "[\\w\\-\\_]+"
 )
 
-names(gRNAs) <- sub("[\\w\\-\\_]+.", "", names(gRNAs))
+names(gRNAs) <- sub("[\\w\\-\\_]+.", "", names(gRNAs), perl = TRUE)
 gRNAs <- split(gRNAs, gRNAs_grps)
 
 pams <- lapply(
@@ -713,7 +713,7 @@ gRNAs <- dplyr::bind_rows(
           ),
           "PAM" = colnames(pam_mat)[
             sapply(
-              seq_len(now(pam_mat)), 
+              seq_len(nrow(pam_mat)), 
               function(i) which(pam_mat[i,])
             )
           ]
@@ -837,7 +837,7 @@ if( is.null(args$support) ){
 cond_overview <- spec_overview %>%
   dplyr::mutate(
     condition = vcollapse(
-      d = select(spec_overview, -specimen), 
+      d = dplyr::select(spec_overview, -specimen), 
       sep = " - ", 
       fill = "NA"
     ),
@@ -974,7 +974,8 @@ tbl_ot_match <- input_data$matched_summary %>%
   ) %>%
   dplyr::group_by(specimen, on.off.target) %>%
   dplyr::summarise(cnt = sum(algns)) %>%
-  dplyr::ungroup() %>% group_by(specimen) %>%
+  dplyr::ungroup() %>% 
+  dplyr::group_by(specimen) %>%
   dplyr::summarise(
     ot_match = pNums(sum(ifelse(on.off.target == "On-target", cnt, 0))),
     ot_match_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
@@ -1087,7 +1088,7 @@ tbl_ft_algn <- input_data$algnmts %>%
   ) %>%
   dplyr::filter(!edit.site %in% on_targets) %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_algns = n_distinct(clus.ori)) %>%
+  dplyr::summarise(ft_algns = dplyr::n_distinct(clus.ori)) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1098,7 +1099,7 @@ tbl_ft_prob <- input_data$probable_algns %>%
   ) %>%
   dplyr::filter(on.off.target == "Off-target") %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_prob = n_distinct(clus.ori)) %>%
+  dplyr::summarise(ft_prob = dplyr::n_distinct(clus.ori)) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1109,7 +1110,7 @@ tbl_ft_pile <- input_data$pile_up_algns %>%
   ) %>%
   dplyr::filter(on.off.target == "Off-target") %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_pile = n_distinct(clus.ori)) %>%
+  dplyr::summarise(ft_pile = dplyr::n_distinct(clus.ori)) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1120,7 +1121,7 @@ tbl_ft_pair <- input_data$paired_regions %>%
   ) %>%
   dplyr::filter(on.off.target == "Off-target") %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_pair = n()) %>%
+  dplyr::summarise(ft_pair = dplyr::n()) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1131,7 +1132,7 @@ tbl_ft_match <- input_data$matched_summary %>%
   ) %>%
   dplyr::filter(on.off.target == "Off-target") %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_match = n()) %>%
+  dplyr::summarise(ft_match = dplyr::n()) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1151,8 +1152,8 @@ ft_tbl_summary <- Reduce(
     list(tbl_ft_algn, tbl_ft_pile, tbl_ft_pair, tbl_ft_match),
     init = ft_tbl_summary
   ) %>%
-  mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-  arrange(specimen)
+  dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
+  dplyr::arrange(specimen)
 
 names(ft_tbl_summary) <- c(
   "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 
@@ -1162,9 +1163,9 @@ names(ft_tbl_summary) <- c(
 # Onco-gene enrichment analysis ----
 rand_sites <- selectRandomSites(
   num = nrow(input_data$paired_regions) + nrow(input_data$matched_summary), 
-  refGenome = ref_genome, 
+  ref.genome = ref_genome, 
   drop.extra.seqs = TRUE, 
-  setSeed = 714)
+  rnd.seed = 714)
 
 rand_sites$gene_id <- suppressMessages(assignGeneID(
   seqnames = seqnames(rand_sites), 
@@ -1309,7 +1310,7 @@ ft_MESL <- input_data$matched_algns %>%
     specimen = factor(specimen, levels = levels(cond_overview$specimen))
   ) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
-  dplyr::mutate(order = seq_len(n())) 
+  dplyr::mutate(order = seq_len(dplyr::n())) 
 
 if( nrow(ft_MESL) > 0 ){
   
@@ -1421,11 +1422,11 @@ output_path <- unlist(strsplit(args$output, "/"))
 output_dir <- paste(output_path[seq_len(length(output_path)-1)], collapse = "/")
 output_file <- output_path[length(output_path)]
 
-if( args$format == "html" & !str_detect(output_file, ".html$") ){
+if( args$format == "html" & !stringr::str_detect(output_file, ".html$") ){
   output_file <- paste0(output_file, ".html")
 }
 
-if( args$format == "pdf" & !str_detect(output_file, ".pdf$") ){
+if( args$format == "pdf" & !stringr::str_detect(output_file, ".pdf$") ){
   output_file <- paste0(output_file, ".pdf")
 }
 

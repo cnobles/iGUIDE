@@ -32,11 +32,10 @@ geometry: margin=0.5in
 ---
 
 ```{r setup, include=FALSE}
-packs <- c(
-  "magrittr", "data.table", "Biostrings", "GenomicRanges",
-  "knitr", "scales", "RColorBrewer", "tidyverse", "pander")
+packs <- c("magrittr", "knitr", "scales", "RColorBrewer", "tidyverse", "pander")
 
 packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
+
 if( !all(packs_loaded) ){
   
   print(

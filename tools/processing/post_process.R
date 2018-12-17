@@ -63,9 +63,10 @@ args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
 input_table <- data.frame(
   "Variables" = paste0(names(args), " :"), 
-  "Values" = sapply(seq_along(args), function(i){
-    paste(args[[i]], collapse = ", ")
-  })
+  "Values" = sapply(
+    seq_along(args), 
+    function(i) paste(args[[i]], collapse = ", ")
+  )
 )
 
 input_table <- input_table[
@@ -80,8 +81,8 @@ input_table <- input_table[
 cat("\nPost-processing Inputs")
 print(
   x = data.frame(input_table),
-  right = FALSE,
-  row.names = NULL
+  right = FALSE, 
+  row.names = FALSE
 )
 
 # Source supporting functions ----
@@ -594,10 +595,7 @@ idx_df <- data.frame(
 )
 
 cat("\nTable of uniquely aligned template counts:")
-print(
-  idx_df,
-  right = FALSE
-) 
+print(idx_df, right = FALSE, row.names = FALSE) 
 cat(paste0("\nTotal number of templates: ", nrow(algnmts)))
 
 probable_algns <- algnmts[idx_combined,]
@@ -711,9 +709,9 @@ if( nrow(paired_regions) > 0 ){
         seqnames = seqnames, 
         positions = mid, 
         reference = ref_genome, 
-        ref_genes = ref_genes, 
-        onco_genes = onco_genes, 
-        special_genes = special_genes
+        ref.genes = ref_genes, 
+        onco.genes = onco_genes, 
+        special.genes = special_genes
       )
     ) %>%
     dplyr::group_by(specimen, paired.algn) %>%

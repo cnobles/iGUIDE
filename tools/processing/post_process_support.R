@@ -69,8 +69,10 @@ groupPileups <- function(gr, strand, maxgap = maxgap){
   
   nodes <- unlist(red.gr$revmap)
   edgelist <- unique(matrix( c(axil_nodes, nodes), ncol = 2 ))
-  pile_ups <- igraph::clusters(graph.edgelist(edgelist, directed = FALSE))
-  gr$clusID <- membership(pile_ups)
+  pile_ups <- igraph::clusters(igraph::graph.edgelist(
+    el = edgelist, directed = FALSE
+  ))
+  gr$clusID <- igraph::membership(pile_ups)
   
   if( strand == "+" ){
     
