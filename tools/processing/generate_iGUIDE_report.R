@@ -459,14 +459,14 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
       simplify = TRUE
     ) %>%
     as.data.frame() %>%
-    dplyr::mutate(pos.y = -(seq_len(dplyr::n()))) %>%
+    dplyr::mutate(pos.y = -(seq_len(n()))) %>%
     tidyr::gather(key = "var", value = "value", -pos.y) %>%
     #reshape2::melt(id.vars = "pos.y") %>%
     dplyr::mutate(
       pos.x = as.numeric(stringr::str_extract(var, "[0-9]+$")),
       color = nucleotide_colors[value],      
       color = ifelse(
-        pos.x %in% N_pos, rep(nucleotide_colors["N"], dplyr::n()), color),
+        pos.x %in% N_pos, rep(nucleotide_colors["N"], n()), color),
       color = ifelse(value == " ", "#FFFFFF", color)
     ) %>%
     dplyr::select(pos.x, pos.y, value, color)
@@ -485,7 +485,7 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
       sup_df
     ) %>%
     dplyr::mutate_all(format, justify = "centre") %>%
-    dplyr::mutate(pos.y = -(seq_len(dplyr::n())))
+    dplyr::mutate(pos.y = -(seq_len(n())))
   
   sup_melt <- tidyr::gather(sup_df, key = "var", value = "value", -pos.y) %>%
     #melt(sup_df, id.vars = "pos.y") %>%
@@ -1121,7 +1121,7 @@ tbl_ft_pair <- input_data$paired_regions %>%
   ) %>%
   dplyr::filter(on.off.target == "Off-target") %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_pair = dplyr::n()) %>%
+  dplyr::summarise(ft_pair = n()) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1132,7 +1132,7 @@ tbl_ft_match <- input_data$matched_summary %>%
   ) %>%
   dplyr::filter(on.off.target == "Off-target") %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(ft_match = dplyr::n()) %>%
+  dplyr::summarise(ft_match = n()) %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
@@ -1310,7 +1310,7 @@ ft_MESL <- input_data$matched_algns %>%
     specimen = factor(specimen, levels = levels(cond_overview$specimen))
   ) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
-  dplyr::mutate(order = seq_len(dplyr::n())) 
+  dplyr::mutate(order = seq_len(n())) 
 
 if( nrow(ft_MESL) > 0 ){
   
