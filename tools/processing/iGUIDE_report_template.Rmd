@@ -55,6 +55,8 @@ options(
   knitr.table.format = "latex"
 )
 
+panderOptions('table.split.table', Inf)
+
 knitr::opts_chunk$set(
   echo = FALSE,
   comment = "",
