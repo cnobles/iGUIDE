@@ -4,7 +4,6 @@ import subprocess
 import iguidelib
 from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
-from iguidelib.scripts.config import main as Config
 #from iguidelib.scripts.list_samples import main as ListSamples
 
 # Goal is to be able to make command line calls in the form:
