@@ -5,130 +5,147 @@ channels:
   - bushmanlab
   - defaults
 dependencies:
-  - bioconductor-biobase=2.38.0=r3.4.1_0
-  - bioconductor-biocgenerics=0.24.0=r3.4.1_0
-  - bioconductor-biocparallel=1.12.0=r3.4.1_0
-  - bioconductor-biostrings=2.46.0=r3.4.1_0
-  - bioconductor-bsgenome=1.46.0=r3.4.1_0
-  - bioconductor-bsgenome.hsapiens.ucsc.hg38=1.4.1=r3.4.1_2
-  - bioconductor-delayedarray=0.4.1=r3.4.1_0
-  - bioconductor-genomeinfodb=1.14.0=r3.4.1_0
-  - bioconductor-genomeinfodbdata=1.0.0=r3.4.1_1
-  - bioconductor-genomicalignments=1.14.1=r3.4.1_0
-  - bioconductor-genomicranges=1.30.3=r3.4.1_0
-  - bioconductor-hiannotator=1.11.1=r3.4.1_0
-  - bioconductor-iranges=2.12.0=r3.4.1_0
-  - bioconductor-rsamtools=1.30.0=r3.4.1_0
-  - bioconductor-rtracklayer=1.38.3=r3.4.1_0
-  - bioconductor-s4vectors=0.16.0=r3.4.1_0
-  - bioconductor-shortread=1.36.0=r3.4.1_0
-  - bioconductor-summarizedexperiment=1.8.0=r3.4.1_0
-  - bioconductor-xvector=0.18.0=r3.4.1_0
-  - bioconductor-zlibbioc=1.24.0=r3.4.1_0
+  - bioconductor-biobase=2.40.0=r341h470a237_0
+  - bioconductor-biocgenerics=0.26.0=r341_0
+  - bioconductor-biocparallel=1.14.2=r341h26a2512_0
+  - bioconductor-biostrings=2.48.0=r341h470a237_0
+  - bioconductor-bsgenome=1.48.0=r341_0
+  - bioconductor-bsgenome.hsapiens.ucsc.hg38=1.4.1=r341_4
+  - bioconductor-delayedarray=0.6.6=r341_0
+  - bioconductor-genomeinfodb=1.16.0=r341_0
+  - bioconductor-genomeinfodbdata=1.1.0=r341_0
+  - bioconductor-genomicalignments=1.16.0=r341h470a237_0
+  - bioconductor-genomicranges=1.32.7=r341h470a237_0
+  - bioconductor-hiannotator=1.14.0=r341_0
+  - bioconductor-iranges=2.14.12=r341h470a237_0
+  - bioconductor-rsamtools=1.32.3=r341hfc679d8_0
+  - bioconductor-rtracklayer=1.40.6=r341h470a237_0
+  - bioconductor-s4vectors=0.18.3=r341h470a237_0
+  - bioconductor-shortread=1.38.0=r341hfc679d8_0
+  - bioconductor-summarizedexperiment=1.10.1=r341_0
+  - bioconductor-xvector=0.20.0=r341h470a237_0
+  - bioconductor-zlibbioc=1.26.0=r341h470a237_0
   - blat=36=0
-  - bwa=0.7.17=pl5.22.0_2
+  - bwa=0.7.17=ha92aebf_3
   - filechunkio=1.6=py36_0
   - ftputil=3.2=py36_0
-  - libdeflate=0.8=0
+  - libdeflate=1.0=h470a237_0
   - pyasn1-modules=0.0.5=py36_0
+  - pygraphviz=1.3.1=py36_0
   - pysftp=0.2.9=py36_0
-  - r-data.table=1.10.4=r3.4.1_0
+  - r-data.table=1.11.6=r341hc070d10_0
   - r-psych=1.5.8=r3.4.1_0
   - rsa=3.1.4=py36_0
-  - samtools=1.8=4
-  - snakemake=5.1.4=py36_0
+  - samtools=1.9=h46bd0b3_0
+  - snakemake=5.3.0=2
+  - snakemake-minimal=5.3.0=py_2
   - urllib3=1.12=py36_0
   - aioeasywebdav=2.2.0=py36_0
-  - aiohttp=3.3.2=py36_0
-  - appdirs=1.4.3=py_0
-  - asn1crypto=0.24.0=py36_0
-  - async-timeout=3.0.0=py36_0
-  - attrs=18.1.0=py_1
-  - boto3=1.7.39=py_0
-  - botocore=1.10.40=py_0
-  - bzip2=1.0.6=1
-  - ca-certificates=2018.4.16=0
-  - cachetools=2.0.1=py_0
-  - certifi=2018.4.16=py36_0
-  - cffi=1.11.5=py36_0
-  - chardet=3.0.4=py36_0
-  - configargparse=0.12.0=py36_0
-  - cryptography=2.2.1=py36_0
-  - curl=7.60.0=0
-  - docutils=0.14=py36_0
+  - aiohttp=3.4.4=py36h470a237_0
+  - appdirs=1.4.3=py_1
+  - asn1crypto=0.24.0=py36_1003
+  - async-timeout=3.0.1=py_1000
+  - attrs=18.2.0=py_0
+  - bcrypt=3.1.4=py36h470a237_0
+  - blas=1.1=openblas
+  - boto3=1.7.84=py_0
+  - botocore=1.10.84=py_0
+  - bzip2=1.0.6=h470a237_2
+  - ca-certificates=2018.11.29=ha4d7672_0
+  - cachetools=2.1.0=py_0
+  - certifi=2018.11.29=py36_1000
+  - cffi=1.11.5=py36h5e8e0c9_1
+  - chardet=3.0.4=py36_1003
+  - configargparse=0.13.0=py_1
+  - cryptography=2.3.1=py36hdffb7b8_0
+  - cryptography-vectors=2.3.1=py36_1000
+  - curl=7.62.0=h74213dd_0
+  - decorator=4.3.0=py_0
+  - docutils=0.14=py36_1001
   - dropbox=7.3.1=py36_0
-  - expat=2.2.5=0
-  - gmp=6.1.2=0
+  - expat=2.2.5=hfc679d8_2
+  - gitdb2=2.0.5=py_0
+  - gitpython=2.1.11=py_0
+  - gmp=6.1.2=hfc679d8_0
   - google-auth=1.2.1=py_0
-  - google-auth-httplib2=0.0.2=py36_0
+  - google-auth-httplib2=0.0.3=py_2
   - google-cloud-core=0.24.1=py36_0
   - google-cloud-storage=1.1.1=py36_0
   - google-resumable-media=0.0.2=py36_0
-  - googleapis-common-protos=1.5.3=py36_0
+  - googleapis-common-protos=1.5.5=py_0
   - graphviz=2.38.0=0
-  - gsl=2.1=2
-  - httplib2=0.11.1=py36_0
-  - idna=2.7=py36_0
+  - gsl=2.4=blas_openblas_0
+  - httplib2=0.12.0=py36_1000
+  - idna=2.7=py36_1002
   - idna_ssl=1.0.0=0
-  - jinja2=2.10=py36_0
-  - jmespath=0.9.3=py36_0
-  - jpeg=9b=2
-  - jsonschema=2.6.0=py36_1
-  - krb5=1.14.6=0
-  - libffi=3.2.1=3
+  - jinja2=2.10=py_1
+  - jmespath=0.9.3=py_1
+  - jpeg=9c=h470a237_1
+  - jsonschema=3.0.0a3=py36_1000
+  - krb5=1.16.2=hbb41f41_0
+  - libcurl=7.62.0=hbdb9355_0
+  - libedit=3.1.20170329=0
+  - libffi=3.2.1=hfc679d8_5
+  - libgcc=7.2.0=h69d50b8_2
+  - libgcc-ng=7.2.0=hdf63c60_3
+  - libgfortran=3.0.0=1
   - libiconv=1.14=4
-  - libpng=1.6.34=0
-  - libprotobuf=3.5.2=0
-  - libssh2=1.8.0=2
-  - libtiff=4.0.9=0
-  - libtool=2.4.6=0
-  - markupsafe=1.0=py36_0
-  - mkl_fft=1.0.2=py36_0
-  - mkl_random=1.0.1=py36_0
-  - multidict=4.3.1=py36_0
+  - libpng=1.6.35=ha92aebf_2
+  - libprotobuf=3.6.1=hd28b015_0
+  - libssh2=1.8.0=h5b517e9_3
+  - libstdcxx-ng=7.2.0=hdf63c60_3
+  - libtiff=4.0.9=he6b73bb_2
+  - libtool=2.4.6=h470a237_2
+  - markupsafe=1.1.0=py36h470a237_0
+  - multidict=4.5.1=py36h470a237_0
   - ncurses=5.9=10
-  - openssl=1.0.2o=0
-  - pandas=0.23.1=py36_0
+  - networkx=2.2=py_1
+  - numpy=1.15.1=py36_blas_openblashd3ea46f_0
+  - openblas=0.2.20=8
+  - openssl=1.0.2p=h470a237_1
+  - pandas=0.23.4=py36hf8a1672_0
   - pandoc=1.19.2=0
-  - paramiko=2.4.1=py36_0
+  - paramiko=2.4.2=py36_1000
   - pcre=8.39=0
-  - perl=5.22.0.1=0
-  - pip=9.0.3=py36_0
-  - pixman=0.34.0=2
-  - prettytable=0.7.2=py36_1
-  - protobuf=3.5.2=py36_0
-  - psutil=5.4.6=py36_0
-  - pyasn1=0.4.3=py_0
-  - pycparser=2.18=py36_0
-  - pynacl=1.1.2=py36_0
+  - perl=5.26.2=h470a237_0
+  - pip=18.1=py36_1000
+  - pixman=0.34.0=h470a237_3
+  - prettytable=0.7.2=py_2
+  - protobuf=3.6.1=py36hfc679d8_1
+  - psutil=5.4.8=py36h470a237_0
+  - pyasn1=0.4.4=py_1
+  - pycparser=2.19=py_0
+  - pynacl=1.3.0=py36h470a237_0
+  - pyrsistent=0.14.7=py36h470a237_0
   - python=3.6.5=1
-  - python-dateutil=2.7.3=py_0
+  - python-dateutil=2.7.5=py_0
   - python-irodsclient=0.7.0=py_0
-  - pytz=2018.4=py_0
-  - pyyaml=3.12=py36_1
-  - r-futile.logger=1.4.3=r3.4.1_0
-  - r-futile.options=1.0.0=r3.4.1_0
-  - r-hwriter=1.3.2=r3.4.1_0
-  - r-lambda.r=1.2=r3.4.1_0
-  - r-matrixstats=0.53.1=r341_0
-  - r-pander=0.6.1=r3.4.1_0
-  - r-snow=0.4_2=r3.4.1_0
-  - ratelimiter=1.2.0=py36_0
+  - pytz=2018.7=py_0
+  - pyyaml=3.13=py36h470a237_1
+  - r-futile.logger=1.4.3=r341h6115d3f_1
+  - r-futile.options=1.0.1=r341h6115d3f_0
+  - r-hwriter=1.3.2=r341h6115d3f_1
+  - r-lambda.r=1.2.3=r341h6115d3f_0
+  - r-matrixstats=0.54.0=r341hc070d10_0
+  - r-pander=0.6.2=r341h9d2a408_2
+  - r-snow=0.4_3=r341h6115d3f_0
+  - ratelimiter=1.2.0=py36_1000
   - readline=7.0=0
   - requests=2.13.0=py36_0
-  - s3transfer=0.1.13=py36_0
-  - setuptools=39.2.0=py36_0
-  - six=1.11.0=py36_1
+  - ruamel.yaml=0.15.81=py36h470a237_0
+  - s3transfer=0.1.13=py36_1001
+  - setuptools=40.6.2=py36_0
+  - six=1.11.0=py36_1001
+  - smmap2=2.0.5=py_0
   - sqlite=3.20.1=2
-  - tk=8.6.7=0
-  - wheel=0.31.0=py36_0
-  - wrapt=1.10.11=py36_0
+  - tk=8.6.9=ha92aebf_0
+  - wheel=0.32.3=py36_0
+  - wrapt=1.10.11=py36h470a237_1
   - xmlrunner=1.7.7=py_0
-  - xz=5.2.3=0
-  - yaml=0.1.7=0
+  - xz=5.2.4=h470a237_1
+  - yaml=0.1.7=h470a237_1
   - yarl=1.2.6=py36h470a237_0
   - zlib=1.2.11=h470a237_3
-  - bcrypt=3.1.4=py36h621fe67_0
   - cairo=1.14.8=0
   - datrie=0.7.1=py36_0
   - fontconfig=2.12.1=3
@@ -136,15 +153,9 @@ dependencies:
   - glib=2.50.2=1
   - harfbuzz=0.9.39=2
   - icu=54.1=0
-  - intel-openmp=2018.0.3=0
-  - libgcc=7.2.0=h69d50b8_2
-  - libgcc-ng=7.2.0=hdf63c60_3
-  - libgfortran-ng=7.2.0=hdf63c60_3
-  - libstdcxx-ng=7.2.0=hdf63c60_3
   - libxml2=2.9.4=0
-  - mkl=2018.0.3=1
-  - numpy=1.14.2=py36hdbf6ddf_1
   - pango=1.40.3=1
+  - semantic_version=2.6.0=py36_0
   - wget=1.19.5=h1ad7b7a_0
   - _r-mutex=1.0.0=anacondar_1
   - r=3.4.1=r3.4.1_0
@@ -176,6 +187,7 @@ dependencies:
   - r-forcats=0.2.0=r3.4.1_0
   - r-foreach=1.4.3=r3.4.1_0
   - r-foreign=0.8_68=r3.4.1_0
+  - r-formatr=1.5=r3.4.1_0
   - r-getopt=1.20.0=r3.4.1_0
   - r-ggplot2=2.2.1=r3.4.1_0
   - r-git2r=0.18.0=r3.4.1_0

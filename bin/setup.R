@@ -1,6 +1,6 @@
 # Options
 options(stringsAsFactors = FALSE)
-.libPaths(new = grep("miniconda3/env/", .libPaths(), value = TRUE))
+.libPaths(new = grep("miniconda3/envs/", .libPaths(), value = TRUE))
 
 r_libs <- c(
   "argparse", "data.table", "devtools", "igraph", "knitr", "magrittr", "Matrix",
@@ -12,13 +12,8 @@ bioc_libs <- c(
 
 # Install developmental based packages from github
 options(unzip = "internal")
-devtools::install_github(
-  "cnobles/gintools",
-  repos = "https://mran.microsoft.com/snapshot/2018-05-01/",
-  upgrade_dependencies = FALSE,
-  dependencies = FALSE)
 
-all_required <- c(r_libs, bioc_libs, "gintools")
+all_required <- c(r_libs, bioc_libs)
 is_installed <- suppressMessages(
   sapply(all_required, require, character.only = TRUE))
 

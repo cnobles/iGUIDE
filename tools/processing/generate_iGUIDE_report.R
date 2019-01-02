@@ -48,6 +48,10 @@ parser$add_argument(
   "-t", "--format", nargs = 1, type = "character", default = "html",
   help = "Output format for report. Either 'pdf' or 'html' (default)."
 )
+parser$add_argument(
+  "--install_path", nargs = 1, type = "character", default = "IGUIDE_DIR",
+  help = "iGUIDE install directory path, do not change for normal applications.")
+
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
@@ -585,7 +589,11 @@ if( grepl(".fa", unique(sapply(configs, "[[", "RefGenome"))) ){
 }
 
 ## Get versioning
-root_dir <- configs[[1]]$Install_Directory
+
+# TODO
+# Clean up this code block
+# root_dir <- configs[[1]]$Install_Directory
+root_dir <- Sys.getenv("IGUIDE_DIR")
 
 soft_version <- as.character(read.delim(
   file = file.path(root_dir, ".version"), header = FALSE))
@@ -625,18 +633,13 @@ if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
     "Comparisons between groups with different run specific criteria\n", 
     "is not recommended.")
 }
-
 ## Combine sampleInfo files
-sample_info <- dplyr::bind_rows(
-  lapply(
-    paste0(
-      sapply(configs, "[[", "Install_Directory"), "/", 
-      sapply(configs, "[[", "Sample_Info")
-    ), 
-    function(x) data.table::fread(x, data.table = FALSE)
-  ), 
-  .id = "run_set"
-)
+
+sample_info <- dplyr::bind_rows(lapply(
+      sapply(configs, "[[", "Sample_Info"), 
+    function(x){
+      data.table::fread(x, data.table = FALSE)
+    }), .id = "run_set")
 
 sample_name_col <- unique(sapply(configs, "[[", "Sample_Name_Column"))
 

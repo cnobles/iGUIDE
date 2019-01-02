@@ -8,10 +8,13 @@ Aligner : "blat"
 UMItags : TRUE
 
 # Sequence files
-R1: "Undetermined_S0_L001_R1_001.fastq.gz"
-R2: "Undetermined_S0_L001_R2_001.fastq.gz"
-I1: "Undetermined_S0_L001_I1_001.fastq.gz"
-I2: "Undetermined_S0_L001_I2_001.fastq.gz"
+R1: "tests/Data/Undetermined_S0_L001_R1_001.fastq.gz"
+R2: "tests/Data/Undetermined_S0_L001_R2_001.fastq.gz"
+I1: "tests/Data/Undetermined_S0_L001_I1_001.fastq.gz"
+I2: "tests/Data/Undetermined_S0_L001_I2_001.fastq.gz"
+
+# Sequence file directory (if already demultiplexed)
+Demult_Dir: "/tests/Data/Demult/"
 
 # SampleInfo formating
 Sample_Name_Column : "sampleName"
@@ -47,7 +50,6 @@ Treatment :
 
 # ------------------------------------------------------------------------------
 # iGUIDE configuration
-Install_Directory : "/path/to/iGUIDE"
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
 
