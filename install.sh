@@ -123,7 +123,7 @@ function install_conda () {
 
 function install_environment () {
     debug_capture conda env update --name=$__iguide_env \
-			  --quiet --file build.v0.2.0.yml
+			  --quiet --file bin/build.v0.3.0.yml
 			  #--quiet --file bin/requirements.yml
 		source activate $__iguide_env
 		Rscript bin/setup.R >> ${__output}

@@ -32,7 +32,7 @@ def main(argv=sys.argv):
     parser.add_argument(
         "--config", help=(
             "name of config file (%(default)s)"),
-        default="configs/simulation.config.yml", metavar="FILE")
+        default=os.getenv("IGUIDE_DIR", os.getcwd())+"/configs/simulation.config.yml", metavar="FILE")
     parser.add_argument(
         "-i", "--iguide_dir", default=os.getenv("IGUIDE_DIR", os.getcwd()),
         help="Path to iGUIDE installation")
@@ -47,7 +47,10 @@ def main(argv=sys.argv):
                 args.iguide_dir))
         sys.exit(1)
 
-    snakemake_args = ['snakemake', '--snakefile', str(snakefile), '--configfile', str(args.config)] + remaining
+    snakemake_args = ['snakemake',
+                      '--snakefile', str(snakefile),
+                      '--configfile', str(args.config),
+                      '--dir', str(args.iguide_dir)] + remaining
     print("Running: "+" ".join(snakemake_args))
 
     cmd = subprocess.run(snakemake_args)

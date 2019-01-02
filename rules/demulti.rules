@@ -5,10 +5,10 @@ rule demultiplex:
   input:
     configFile=ancient("configs/" + RUN + ".config.yml"),
     sampleInfo=config["Sample_Info"],
-    R1=RUN_DIR + "/input_data/" + config["R1"],
-    R2=RUN_DIR + "/input_data/" + config["R2"],
-    I1=RUN_DIR + "/input_data/" + config["I1"],
-    I2=RUN_DIR + "/input_data/" + config["I2"]
+    R1=config["R1"],
+    R2=config["R2"],
+    I1=config["I1"],
+    I2=config["I2"]
   output:
     data=temp(expand(
       RUN_DIR + "/processData/{sample}.{type}.fastq.gz", \
