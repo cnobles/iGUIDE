@@ -635,7 +635,7 @@ if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
 }
 ## Combine sampleInfo files
 
-sample_info <- bind_rows(lapply(
+sample_info <- dplyr::bind_rows(lapply(
       sapply(configs, "[[", "Sample_Info"), 
     function(x){
       data.table::fread(x, data.table = FALSE)
