@@ -132,6 +132,7 @@ dependencies:
   - ratelimiter=1.2.0=py36_1000
   - readline=7.0=0
   - requests=2.13.0=py36_0
+  - ruamel.yaml=0.15.81=py36h470a237_0
   - s3transfer=0.1.13=py36_1001
   - setuptools=40.6.2=py36_0
   - six=1.11.0=py36_1001
