@@ -26,7 +26,7 @@ author = 'Christopher Nobles, Ph.D.'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = 'v0.2.4'
+release = 'v0.2.6'
 
 
 # -- General configuration ---------------------------------------------------
