@@ -1,13 +1,15 @@
 
-
-
 IGUIDE_ENV_NAME=${1-iguide}
 
-conda env list | grep -Fq ${IGUIDE_ENV_NAME} || {
-  bash install.sh
-  exit
+rm -rf analysis/simulation/
+rm -rf tools/seq* tools/blat* tools/dual*
+
+conda env list | grep -Fq ${IGUIDE_ENV_NAME} && {
+  source deactivate
+  conda env remove -y --name iguide
 }
 
-conda env remove --name iguide
-rm -rf tools/seq* tools/blat* tools/dual*
 bash install.sh
+source activate iguide
+iguide setup
+iguide run
