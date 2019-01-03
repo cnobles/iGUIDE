@@ -38,21 +38,18 @@ R2_OVER=choose_sequence_data(config["R2_Overreading_Trim"], sampleInfo)
 
 # Working paths
 RUN = config["Run_Name"]
-
-# TODO
-# Update this section once iguide wrapper is fully functional
 ROOT_DIR = ""
 try:
     ROOT_DIR = os.environ["IGUIDE_DIR"]
 except KeyError:
     raise SystemExit(
-        "IGUIDE_DIR environment variable not defined. Are you sure you're "
-        "running this from the iguide conda env?")
+        "IGUIDE_DIR environment variable not defined. Are you sure you "
+        "activated the iguide conda environment?")
 RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 
-# Check for directory paths !!! Not sure if this is going to work just yet.
-#if not os.path.isdir(ROOT_DIR):
-#    raise SystemExit("Path to iGUIDE is not found. Check configuration file.")
+# Check for directory paths
+if not os.path.isdir(ROOT_DIR):
+    raise SystemExit("Path to iGUIDE is not found. Check environmental variables.")
 
 # Target Rules
 rule all:

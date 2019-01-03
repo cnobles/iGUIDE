@@ -7,6 +7,7 @@ read -r -d '' __usage <<-'EOF'
   -s --iguide_dir   [arg] Location of iguide source code. Default: this directory
   -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
   -u --update [arg]       Update iguide [lib]rary, conda [env], or [all].
+  -t --test               After installation, run test to check functionality.
   -v --verbose            Show subcommand output
   -d --debug              Run in debug mode.
   -h --help               Display this message and exit.
@@ -62,8 +63,17 @@ function installation_error () {
 __conda_path="${arg_c:-${HOME}/miniconda3}"
 __iguide_dir="${arg_s:-$(readlink -f ${__dir})}"
 __iguide_env="${arg_e:-iguide}"
+__run_iguide_tests=false
 __update_lib=false
 __update_env=false
+__req_r_version="3.4.1"
+__old_path=$PATH
+__output=${2-/dev/stdout}
+
+if [[ "${arg_t:?}" = "1" ]]; then
+    __run_iguide_tests=true
+fi
+
 if [[ "${arg_u}" = "all" || "${arg_u}" = "env" ]]; then
     __update_lib=true
     __update_env=true
@@ -71,16 +81,13 @@ elif [[ "${arg_u}" = "lib" ]]; then
     __update_lib=true
 fi
 
-__old_path=$PATH
-__output=${2-/dev/stdout}
-
-
 function __test_conda() {
     command -v conda &> /dev/null && echo true || echo false
 }
 
 function __detect_conda_install() {
     local discovered=$(__test_conda)
+    
     if [[ $discovered = true ]]; then
       	local conda_path="$(which conda)"
         echo ${conda_path%'/bin/conda'}
@@ -98,11 +105,43 @@ function __test_env() {
     fi
 }
 
-function __test_iguide() {
+function __test_r_version () {
+    activate_iguide
+    
+    local sem_version=$(R --version | grep 'R version' | cut -d ' ' -f 3)
+    
+    if (( ${sem_version//./} >= ${__req_r_version//./} )); then
+        echo true
+    else
+        echo false
+    fi
+    
+    deactivate_iguide
+}
+
+function __test_r_packages () {
+    activate_iguide
+    
+    $(Rscript ${__iguide_dir}/etc/check_for_required_packages.R > /dev/null) && \
+        echo true || echo false
+    
+    deactivate_iguide
+}
+
+function __test_iguidelib() {
     if [[ $(__test_env) = true ]]; then
       	activate_iguide
       	command -v iguide &> /dev/null && echo true || echo false
       	deactivate_iguide
+    else
+      	echo false
+    fi
+}
+
+function __test_iguide() {
+    if [[ $(__test_env) = true ]]; then
+      	debug_capture bash ${__iguide_dir}/tests/test.sh &> \
+      	    /dev/null && echo true || echo false
     else
       	echo false
     fi
@@ -136,29 +175,46 @@ function install_environment () {
     debug_capture conda env update --name=$__iguide_env \
 			  --quiet --file etc/build.v0.3.0.yml
 			  #--quiet --file etc/requirements.yml
-		source activate $__iguide_env
-		Rscript etc/setup.R >> ${__output}
-    echo -e "iGUIDE successfully installed.\n" ;
+		
     if [[ $(__test_env) != true ]]; then
       	installation_error "Environment creation"
     fi
+		
+		if [[ $(__test_r_version) != true ]]; then
+        installation_error "Insufficient R-program version"
+    fi
+    
+    if [[ $(__test_r_packages) != true ]]; then
+        installation_error "R-package installation"
+    fi
+    
+    echo -e "iGUIDE installed.\n"
 }
 
 function install_env_vars () {
     activate_iguide
+    
     echo -ne "#/bin/sh\nexport IGUIDE_DIR=${__iguide_dir}" > \
 	      ${CONDA_PREFIX}/etc/conda/activate.d/env_vars.sh
+	  
 	  mkdir -p ${CONDA_PREFIX}/etc/conda/deactivate.d/
+    
     echo -ne "#/bin/sh\nunset IGUIDE_DIR" > \
 	      ${CONDA_PREFIX}/etc/conda/deactivate.d/env_vars.sh
+	 
+	  deactivate_iguide
 }
 
 function install_iguidelib () {
     activate_iguide
+    
     debug_capture pip install --upgrade ${__iguide_dir}/tools/iguidelib/ 2>&1
-    if [[ $(__test_iguide) != true ]]; then
+    
+    if [[ $(__test_iguidelib) != true ]]; then
       	installation_error "Library installation"
     fi
+    
+    deactivate_iguide
 }
 
 info "Starting iguide installation..."
@@ -168,11 +224,15 @@ info "    iguide env:  '${__iguide_env}'"
 
 debug "Components detected:"
 __conda_installed=$(__test_conda)
-debug "    Conda:       ${__conda_installed}"
+debug "    Conda:         ${__conda_installed}"
 __env_exists=$(__test_env)
-debug "    Environment: ${__env_exists}"
-__iguide_installed=$(__test_iguide)
-debug "    Library:     ${__iguide_installed}"
+debug "    Environment:   ${__env_exists}"
+__iguidelib_installed=$(__test_iguidelib)
+debug "    Library:       ${__iguidelib_installed}"
+
+if [[ $__run_iguide_tests = true ]]; then
+    __iguide_installed=$(__test_iguide)
+    debug "    iGUIDE Tests:  ${__iguide_installed}"
 
 __env_changed=false
 
