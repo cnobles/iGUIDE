@@ -11,6 +11,8 @@ dependencies:
   - samtools
   - graphviz
   - pandoc < 2.0
+  - semantic_version
+  - ruamel.yaml
   - r=3.4.1
   - r-base
   - r-argparse
@@ -23,7 +25,6 @@ dependencies:
   - r-igraph
   - r-rmarkdown < 1.9
   - r-knitr < 1.18
-  - r-reshape2
   - r-scales
   - r-rcolorbrewer
   - r-devtools
@@ -36,5 +37,3 @@ dependencies:
   - bioconductor-rsamtools
   - bioconductor-bsgenome
   - bioconductor-bsgenome.hsapiens.ucsc.hg38
-  - semantic_version
-  - ruamel.yaml

@@ -2,7 +2,24 @@
 
 __conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
-source install_init.sh
+read -r -d '' __usage <<-'EOF'
+  -e --environment  [arg] Environment to install to. Default: "iguide"
+  -s --iguide_dir   [arg] Location of iguide source code. Default: this directory
+  -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
+  -u --update [arg]       Update iguide [lib]rary, conda [env], or [all].
+  -v --verbose            Show subcommand output
+  -d --debug              Run in debug mode.
+  -h --help               Display this message and exit.
+EOF
+
+read -r -d '' __helptext <<-'EOF'
+ This script installs or upgrades iguide, including Conda (if not installed).
+ To upgrade, pass the '--upgrade all' option, then be sure to update your config
+ files using 'iguide config update'.
+EOF
+
+# Load BASH3Boilerplate for command-line parsing and logging
+source etc/b3bp.sh
 
 function __err_report() {
     local error_code

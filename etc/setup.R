@@ -4,8 +4,7 @@ options(stringsAsFactors = FALSE)
 
 r_libs <- c(
   "argparse", "data.table", "devtools", "igraph", "knitr", "magrittr", "Matrix",
-  "pander", "RColorBrewer", "reshape2", "rmarkdown", "scales", "tidyverse", 
-  "yaml")
+  "pander", "RColorBrewer", "rmarkdown", "scales", "tidyverse", "yaml")
 bioc_libs <- c(
   "BiocGenerics", "Biostrings", "BSgenome", "BSgenome.Hsapiens.UCSC.hg38",
   "GenomicRanges", "hiAnnotator", "IRanges", "Rsamtools", "ShortRead")

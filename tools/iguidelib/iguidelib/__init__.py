@@ -1,3 +1,6 @@
+from os import getenv, getcwd
+from subprocess import run, PIPE
+
 def import_sample_info(filePath, sampleColName, delim):
     sampleInfo = {}
     with open(filePath, 'r') as info:
@@ -26,3 +29,17 @@ def choose_sequence_data(config_input, sampleInfo):
         samples = list(sampleInfo[initial_col])
         seq = dict(zip(samples, [config_input] * len(samples)))
     return seq
+
+def get_iguide_version(with_hash = False):
+    iguide_version_path = getenv("IGUIDE_DIR", getcwd()) + "/.version"
+    iguide_version = open(iguide_version_path, "r").readlines()[0].rstrip()
+    commit_hash = run(
+      ["git", "rev-parse", "--short", "HEAD"], stdout=PIPE
+      )
+    commit_str = commit_hash.stdout.decode('utf-8').rstrip()
+    if with_hash:
+        return iguide_version + "+" + commit_str
+    else:
+        return iguide_version
+
+__version__ = get_iguide_version( with_hash = True )

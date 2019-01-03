@@ -1,12 +1,13 @@
 import os
 import sys
 import collections
+import ruamel.yaml
+
 from pathlib import Path
 from pkg_resources import resource_stream
-
 from semantic_version import Version
-import ruamel.yaml
 from iguidelib import __version__
+
 
 def makepath(path):
     return Path(path).expanduser()
