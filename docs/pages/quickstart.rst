@@ -8,16 +8,16 @@ Initializing a Run
 ------------------
 
 Once the config and sampleInfo files have been configured, a run directory can 
-be created using the command below where {RunName} is your run name::
+be created using the command below where {ConfigFile} is the path to your configuration file::
 
   cd path/to/iGUIDE
-  snakemake analysis/{RunName} --configfile configs/{RunName}.config.yml
+  iguide setup --configfile {ConfigFile}
 
-The directory should look like this::
+The directory should look like this (RunName is specified in the ConfigFile}::
   
   >tree analysis/{RunName}
   analysis/{RunName}/
-  ├── config.yml -> ../../configs/{RunName}.config.yml
+  ├── config.yml -> {path to ConfigFile}
   ├── input_data
   ├── logs
   ├── output
@@ -58,10 +58,11 @@ Once the input_data directory has the required sequencing files, the run can be
 processed using the following command::
 
   cd path/to/iGUIDE/
-  snakemake --configfile configs/{RunName}.config.yml
+  iguide run --configfile {ConfigFile}
 
 Snakemake offers a great number of resources for managing the processing through 
-the pipeline. I recommend familiarizing yourself with the utility (XXX). Some helpful flags:
+the pipeline. I recommend familiarizing yourself with the utility (XXX).
+Here are some helpful flags that can be passed to snakemake by appending to the iguide command:
 
 * [--configfile X] associate a specific configuration for processing, essential for processing
 * [--cores X] multicored processing, specified cores to use by X
@@ -92,16 +93,14 @@ to ``dot -Tsvg`` will generate a vector graphic of the directed acyclic graph
   source activate iguide
 
   # Create test analysis directory
-  snakemake analysis/simulation --configfile configs/simulation.config.yml -np
-  snakemake analysis/simulation --configfile configs/simulation.config.yml
-
-  # Move test sequence files to analysis directory
-  cp tests/Data/Undetermined_S0_L001_* analysis/simulation/input_data/
+  # (The simulation configuration file is used by default and does not need to be specified)
+  iguide setup -np
+  iguide setup
 
   # Generate test DAG graph
-  snakemake --configfile configs/simulation.config.yml -np
-  snakemake --configfile configs/simulation.config.yml --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
-  snakemake --configfile configs/simulation.config.yml --latency-wait 30
+  iguide run -np
+  iguide run --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
+  iguide run --latency-wait 30
   cat analysis/simulation/output/unique_sites.simulation.csv
 
 ---------
