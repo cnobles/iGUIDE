@@ -7,6 +7,7 @@ read -r -d '' __usage <<-'EOF'
   -s --iguide_dir   [arg] Location of iguide source code. Default: this directory
   -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
   -u --update [arg]       Update iguide [lib]rary, conda [env], or [all].
+  -r --requirements       Install from requirements rather than build (slow).
   -t --test               After installation, run test to check functionality.
   -v --verbose            Show subcommand output
   -d --debug              Run in debug mode.
@@ -14,7 +15,7 @@ read -r -d '' __usage <<-'EOF'
 EOF
 
 read -r -d '' __helptext <<-'EOF'
- This script installs or upgrades iguide, including Conda (if not installed).
+ This script installs or upgrades iGUIDE, including Conda (if not installed).
  To upgrade, pass the '--upgrade all' option, then be sure to update your config
  files using 'iguide config update'.
 EOF
@@ -65,6 +66,7 @@ __conda_path="${arg_c:-${HOME}/miniconda3}"
 __iguide_dir="${arg_s:-$(readlink -f ${__dir})}"
 __iguide_env="${arg_e:-iguide}"
 __run_iguide_tests=false
+__reqs_install=false
 __update_lib=false
 __update_env=false
 __req_r_version="3.4.1"
@@ -73,6 +75,10 @@ __output=${2-/dev/stdout}
 
 if [[ "${arg_t:?}" = "1" ]]; then
     __run_iguide_tests=true
+fi
+
+if [[ "${arg_r:?}" = "1" ]]; then
+    __reqs_install=true
 fi
 
 if [[ "${arg_u}" = "all" || "${arg_u}" = "env" ]]; then
@@ -141,10 +147,12 @@ function __test_iguidelib() {
 
 function __test_iguide() {
     if [[ $(__test_env) = true ]]; then
+      	activate_iguide
       	debug_capture bash ${__iguide_dir}/tests/test.sh &> \
-      	    /dev/null && echo true || echo false
+      	    /dev/null && echo "pass" || echo "fail"
+      	deactivate_iguide
     else
-      	echo false
+      	echo "fail"
     fi
 }
 
@@ -173,10 +181,14 @@ function install_conda () {
 }
 
 function install_environment () {
-    debug_capture conda env update --name=$__iguide_env \
-			  --quiet --file etc/build.v0.3.0.yml
-			  #--quiet --file etc/requirements.yml
-		
+    if [[ $__reqs_install == "true" ]]; then
+        local install_options="--quiet --file etc/requirements.yml"
+    else
+        local install_options="--quiet --file etc/build.v0.3.0.yml"
+    fi
+    
+    debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
+    
     if [[ $(__test_env) != true ]]; then
       	installation_error "Environment creation"
     fi
@@ -218,10 +230,10 @@ function install_iguidelib () {
     deactivate_iguide
 }
 
-info "Starting iguide installation..."
+info "Starting iGUIDE installation..."
 info "    Conda path:  ${__conda_path}"
-info "    iguide src:  ${__iguide_dir}"
-info "    iguide env:  '${__iguide_env}'"
+info "    iGUIDE src:  ${__iguide_dir}"
+info "    iGUIDE env:  '${__iguide_env}'"
 
 debug "Components detected:"
 __conda_installed=$(__test_conda)
@@ -230,11 +242,6 @@ __env_exists=$(__test_env)
 debug "    Environment:   ${__env_exists}"
 __iguidelib_installed=$(__test_iguidelib)
 debug "    Library:       ${__iguidelib_installed}"
-
-if [[ $__run_iguide_tests = true ]]; then
-    __iguide_installed=$(__test_iguide)
-    debug "    iGUIDE Tests:  ${__iguide_installed}"
-fi
 
 __env_changed=false
 
@@ -258,30 +265,44 @@ fi
 if [[ $__env_exists = true && $__update_env = false ]]; then
     info "Specified environment already exists (use '--update env' to update)"
 else
-    info "Creating iguide environment..."
+    if [[ $__reqs_install = "true" ]]; then
+        __build_source="etc/requirements.yml"
+    else
+        __build_source="etc/build.v0.3.0.yml"
+    fi
+
+    info "Creating iGUIDE environment..."
+    info "    Building from: $__build_source"
     install_environment
     __env_changed=true
-    info "iguide environment created."
+    info "$__iguide_env environment created."
 fi
-
 
 # Install iguidelib into environment if changed or requested
 if [[ $__env_changed = true ]]; then
-    info "Environment installed/updated; (re)installing iguide library..."
+    info "Environment installed/updated; (re)installing iGUIDE library..."
     install_iguidelib
-elif [[ $__iguide_installed = false ]]; then
-    info "Installing iguide library..."
+elif [[ $__iguidelib_installed = false ]]; then
+    info "Installing iGUIDE library..."
     install_iguidelib
 elif [[ $__update_lib = true ]]; then
-    info "Updating iguide library..."
+    info "Updating iGUIDE library..."
     install_iguidelib
 else
-    info "iguide library already installed (use '--update lib' to update)"
+    info "iGUIDE library already installed (use '--update lib' to update)"
 fi
 
-# Always update the env_vars.sh in the iguide environment
+# Always update the env_vars.sh in the iGUIDE environment
 debug "Updating \$IGUIDE_DIR variable to point to ${__iguide_dir}"
 install_env_vars
+
+if [[ $__run_iguide_tests = true ]]; then
+    info "Running iGUIDE tests..."
+    __iguide_tested=$(__test_iguide)
+    info "    iGUIDE Tests:  ${__iguide_tested}"
+fi
+
+
 
 # Check if on pre-existing path
 if [[ $__old_path != *"${__conda_path}/bin"* ]]; then

@@ -2,9 +2,9 @@
 set -e
 
 # Test script
-PREFIX=${HOME}/miniconda3
-export PATH=${PATH}:${PREFIX}/bin
-source activate iguide
+#PREFIX=${HOME}/miniconda3
+#export PATH=${PATH}:${PREFIX}/bin
+#source activate iguide
 CORES=${1-1}
 
 # Create test analysis directory
