@@ -8,14 +8,11 @@ source activate iguide
 CORES=${1-1}
 
 # Create test analysis directory
-snakemake analysis/simulation --configfile configs/simulation.config.yml -np
-snakemake analysis/simulation --configfile configs/simulation.config.yml
-
-# Move test sequence files to analysis directory
-cp tests/Data/Undetermined_S0_L001_* analysis/simulation/input_data/
+iguide setup configs/simulation.config.yml -- -np
+iguide setup configs/simulation.config.yml
 
 # Generate test DAG graph
-snakemake --configfile configs/simulation.config.yml -np
-snakemake --configfile configs/simulation.config.yml --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
-snakemake --configfile configs/simulation.config.yml --latency-wait 30 --cores ${CORES}
+iguide run configs/simulation.config.yml -- -np
+iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
+iguide run configs/simulation.config.yml -- --latency-wait 30 --cores ${CORES}
 head analysis/simulation/output/unique_sites.simulation.csv
