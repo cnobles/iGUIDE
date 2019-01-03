@@ -35,20 +35,20 @@ def get_iguide_version(with_hash = False):
     
     if iguide_version_path in ["None"]:
         raise SystemExit(
-          print("\tIGUIDE_DIR cannot be found as an environmental variable.\n"
-                "\tCheck to make sure your iGUIDE environment is active,   \n"
-                "\tyou may need to restart your environment, update, or    \n"
-                "\treinstall iGUIDE with the install.sh script.")
+          print("  IGUIDE_DIR cannot be found as an environmental variable.\n"
+                "  Check to make sure your iGUIDE environment is active,   \n"
+                "  you may need to restart your environment, update, or    \n"
+                "  reinstall iGUIDE with the install.sh script.")
         )
     else:
         iguide_version_path = iguide_version_path + "/.version"
     
     if not path.exists(iguide_version_path):
         raise SystemExit(
-          print("\tiGUIDE version cannot be located. Check environmental\n"
-                "\tvariables, such as IGUIDE_DIR, otherwise you may want\n"
-                "\tto restart your environment, update, or reinstall    \n"
-                "\tiGUIDE using the install.sh script.")
+          print("  iGUIDE version cannot be located. Check environmental\n"
+                "  variables, such as IGUIDE_DIR, otherwise you may want\n"
+                "  to restart your environment, update, or reinstall    \n"
+                "  iGUIDE using the install.sh script.")
         )
     
     iguide_version = open(iguide_version_path, "r").readlines()[0].rstrip()

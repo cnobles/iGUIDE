@@ -5,6 +5,7 @@ import iguidelib
 
 from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
+#from iguidelib.scripts.config import main as Config
 #from iguidelib.scripts.list_samples import main as ListSamples
 
 def main():
@@ -14,8 +15,8 @@ def main():
         "subcommands:\n"
         "  setup        \tCreate a new config file for a project using local data.\n"
         "  run          \tExecute the iGUIDE pipeline.\n"
-        "  config       \tModify or update iGUIDE config files.\n"
-        "  list_samples \tMake a list of samples from a directory.\n"
+        "  config       \t[inDev] Modify or update iGUIDE config files.\n"
+        "  list_samples \t[inDev] Make a list of samples from a directory.\n"
     ).format(version=iguidelib.__version__)
 
     parser = argparse.ArgumentParser(
@@ -43,7 +44,7 @@ def main():
     if not args.command in sub_cmds:
         parser.print_help()
         if not args.command in ['None']:
-            sys.stderr.write("Unrecognized subcommand, '{}'.\n".format(
+            sys.stderr.write("  Unrecognized subcommand, '{}'.\n".format(
                 args.command
             ))
         sys.exit(1)
@@ -53,8 +54,20 @@ def main():
     elif args.command == "run":
         Run(remaining)
     elif args.command == "config":
-        Config(remaining)
+        raise SystemExit(
+          print("  'iguide config' subcommand is currently under development.\n"
+                "  Checkout https://github.com/cnobles/iGUIDE/ for updates   \n"
+                "  and announcements. Thanks for using iGUIDE!               \n"
+          )
+        )
+        #Config(remaining)
     elif args.command == "list_samples":
-        ListSamples(remaining)
+        raise SystemExit(
+          print("  'iguide list_samples' subcommand is currently under       \n"
+                "  development. Checkout https://github.com/cnobles/iGUIDE/  \n"
+                "  for updates and announcements. Thanks for using iGUIDE!   \n"
+          )
+        )
+        #ListSamples(remaining)
     else:
         parser.print_help()
