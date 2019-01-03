@@ -5,6 +5,9 @@ set -e
 __IGUIDE_ENV=${1-iguide}
 __CORES=${2-1}
 
+# Clear test directory
+rm -rf analysis/simulation
+
 # Test script
 PREFIX=${HOME}/miniconda3
 export PATH=${PATH}:${PREFIX}/bin
@@ -16,6 +19,6 @@ iguide setup configs/simulation.config.yml
 
 # Generate test DAG graph
 iguide run configs/simulation.config.yml -- -np
-iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > \
-    analysis/simulation/reports/simulation.dag.svg
+#iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > \
+#    analysis/simulation/reports/simulation.dag.svg
 iguide run configs/simulation.config.yml -- --latency-wait 30 --cores ${__CORES}
