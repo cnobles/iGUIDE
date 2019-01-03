@@ -14,7 +14,7 @@ rule post_align:
     stat=temp(RUN_DIR + "/processData/{sample}.align.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/couple.R",
-    ref=config["RefGenome"],
+    ref=config["Ref_Genome"],
     start=config["maxAlignStart"],
     pct=config["minPercentIdentity"],
     minLen=config["minTempLength"],

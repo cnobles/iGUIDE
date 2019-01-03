@@ -36,10 +36,10 @@ rule demultiplex:
     """
     Rscript {params.tool} -m {ROOT_DIR}/{input.sampleInfo} \
       --read1 {input.R1} --read2 {input.R2} \
-      --index1 {input.I1} --index2 {input.I2} \
-      --barcode1 {params.bc1} --barcode1Length {params.bc1Len} \
-      --barcode2 {params.bc2} --barcode2Length {params.bc2Len} \
-      --bc1Mismatch {params.bc1Mis} --bc2Mismatch {params.bc2Mis} \
+      --idx1 {input.I1} --idx2 {input.I2} \
+      --bc1 {params.bc1} --bc1Len {params.bc1Len} \
+      --bc2 {params.bc2} --bc2Len {params.bc2Len} \
+      --bc1Mis {params.bc1Mis} --bc2Mis {params.bc2Mis} \
       -o {RUN_DIR}/processData --stat {params.statName} -c {threads} \
       --compress > {log} 2>&1
     """

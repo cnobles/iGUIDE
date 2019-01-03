@@ -94,7 +94,7 @@ code_dir <- dirname(sub(
 ))
 
 # Load in supporting functions for the analysis
-source(file.path(code_dir, "post_process_support.R"))
+source(file.path(code_dir, "supporting_scripts/post_process_support.R"))
 
 # Inputs and parameters ----
 # Run parameters and sample parameters
@@ -117,19 +117,19 @@ submat <- banmat()
 # Load a reference genome from a fasta file or a BSGenome reference.
 # Script stops if ref genome is not available
 
-if( grepl(".fa", config$RefGenome) ){
+if( grepl(".fa", config$Ref_Genome) ){
   
-  if( !file.exists(config$RefGenome) ){
+  if( !file.exists(config$Ref_Genome) ){
     stop("Specified reference genome file not found.")
   }
   
-  ref_file_type <- ifelse(grepl(".fastq", config$RefGenome), "fastq", "fasta")
-  ref_genome <- readDNAStringSet(config$RefGenome, format = ref_file_type)
+  ref_file_type <- ifelse(grepl(".fastq", config$Ref_Genome), "fastq", "fasta")
+  ref_genome <- readDNAStringSet(config$Ref_Genome, format = ref_file_type)
   
 }else{
   
   genome <- grep(
-    pattern = config$RefGenome, 
+    pattern = config$Ref_Genome, 
     x = unique(BSgenome::installed.genomes()), 
     value = TRUE
   )
@@ -165,19 +165,19 @@ if( grepl(".fa", config$RefGenome) ){
 ref_genes <- loadRefFiles(
   ref = config$refGenes, 
   type = "GRanges", 
-  freeze = config$RefGenome
+  freeze = config$Ref_Genome
 )
 
 onco_genes <- loadRefFiles(
   ref = config$oncoGeneList, 
   type = "gene.list", 
-  freeze = config$RefGenome
+  freeze = config$Ref_Genome
 )
 
 special_genes <- loadRefFiles(
   ref = config$specialGeneList, 
   type = "gene.list", 
-  freeze = config$RefGenome
+  freeze = config$Ref_Genome
 )
 
 ## Incorporation site parameters ----

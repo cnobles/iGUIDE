@@ -100,7 +100,7 @@ trimLeading <- function(seqs, trim.sequence, phasing = 0L, max.mismatch = 1L,
   
   # Remove seqs that do not have enough sequence for analysis
   # Cutoff = length(trim.sequence)
-  seqs <- seqs[Biostrings::width(seqs) > nchar(trim.sequence)]
+  seqs <- seqs[Biostrings::width(seqs) > IRanges::width(range(trim_seg_ir))]
   
   lead_seqs <- IRanges::narrow(
     seqs, 

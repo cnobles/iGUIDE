@@ -1,14 +1,14 @@
 # iGUIDE : Improved Genome-wide Unbiased Identification of Double-strand DNA brEaks
 #
 # Author : Christopher Nobles, Ph.D.
-# useful modules sys, os, csv
+
 
 import os
 import sys
 import re
 import yaml
 import configparser
-from tools.pytools.defs import *
+from iguidelib import *
 
 if not config:
     raise SystemExit(

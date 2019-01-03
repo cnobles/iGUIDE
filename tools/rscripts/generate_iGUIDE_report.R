@@ -6,7 +6,7 @@
 #' within a data.frame).
 #' Names with ".": arguments / options for functions
 
-options(stringsAsFactors = FALSE, scipen = 99)
+options(stringsAsFactors = FALSE, scipen = 99, width = 999)
 
 
 # Set up and gather command line arguments ----
@@ -50,6 +50,11 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "-g", "--graphic", action = "store_true",
+  help = "Includes an opening graphic on the report."
+)
+
+parser$add_argument(
   "--install_path", nargs = 1, type = "character", default = "IGUIDE_DIR",
   help = "iGUIDE install directory path, do not change for normal applications."
 )
@@ -80,7 +85,7 @@ input_table <- data.frame(
 input_table <- input_table[
   match(
     c("input :", "output :", "config :", "support :", 
-      "figures :", "data :", "format :"),
+      "figures :", "data :", "graphic :", "format :"),
     input_table$Variables),
 ]
 
@@ -123,7 +128,7 @@ code_dir <- dirname(sub(
   x = grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 ))
 
-source(file.path(code_dir, "post_process_support.R"))
+source(file.path(code_dir, "supporting_scripts/post_process_support.R"))
 
 ## Additional supporting functions ----
 generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
@@ -538,29 +543,29 @@ configs <- lapply(args$config, yaml::yaml.load_file)
 names(configs) <- sapply(configs, "[[", "Run_Name")
 
 ## Load reference genome 
-if( grepl(".fa", unique(sapply(configs, "[[", "RefGenome"))) ){
+if( grepl(".fa", unique(sapply(configs, "[[", "Ref_Genome"))) ){
   
-  if( !file.exists(config$RefGenome) ){
+  if( !file.exists(config$Ref_Genome) ){
     stop("Specified reference genome file not found.")
   }
   
   ref_file_type <- ifelse(
-    grepl(".fastq", unique(sapply(configs, "[[", "RefGenome"))), 
+    grepl(".fastq", unique(sapply(configs, "[[", "Ref_Genome"))), 
     "fastq", 
     "fasta"
   )
   
   ref_genome <- Biostrings::readDNAStringSet(
-    filepath = unique(sapply(configs, "[[", "RefGenome")), 
+    filepath = unique(sapply(configs, "[[", "Ref_Genome")), 
     format = ref_file_type
   )
   
 }else{
   
-  RefGenome <- unique(sapply(configs, "[[", "RefGenome"))
+  ref_genome <- unique(sapply(configs, "[[", "Ref_Genome"))
   
   genome <- grep(
-    pattern = RefGenome, 
+    pattern = ref_genome, 
     x = unique(BSgenome::installed.genomes()), 
     value = TRUE
   )
@@ -609,19 +614,19 @@ build_version <- list.files(file.path(root_dir, "bin")) %>%
 ref_genes <- loadRefFiles(
   configs[[1]]$refGenes, 
   type = "GRanges", 
-  freeze = configs[[1]]$RefGenome
+  freeze = configs[[1]]$Ref_Genome
 )
 
 onco_genes <- loadRefFiles(
   configs[[1]]$oncoGeneList, 
   type = "gene.list", 
-  freeze = configs[[1]]$RefGenome
+  freeze = configs[[1]]$Ref_Genome
 )
 
 special_genes <- loadRefFiles(
   configs[[1]]$specialGeneList, 
   type = "gene.list", 
-  freeze = config[[1]]$RefGenome
+  freeze = config[[1]]$Ref_Genome
 )
 
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))

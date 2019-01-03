@@ -1,5 +1,5 @@
 # Options
-options(stringsAsFactors = FALSE)
+options(stringsAsFactors = FALSE, unzip = "internal")
 .libPaths(new = grep("miniconda3/envs/", .libPaths(), value = TRUE))
 
 r_libs <- c(
@@ -9,17 +9,18 @@ bioc_libs <- c(
   "BiocGenerics", "Biostrings", "BSgenome", "BSgenome.Hsapiens.UCSC.hg38",
   "GenomicRanges", "hiAnnotator", "IRanges", "Rsamtools", "ShortRead")
 
-# Install developmental based packages from github
-options(unzip = "internal")
-
 all_required <- c(r_libs, bioc_libs)
+
 is_installed <- suppressMessages(
-  sapply(all_required, require, character.only = TRUE))
+  sapply(all_required, require, character.only = TRUE)
+)
 
 print(data.frame(
   "Loaded" = is_installed,
   "R-Package" = names(is_installed)),
   right = FALSE, row.names = FALSE)
+
+stopifnot(all(is_installed))
 
 q()
 

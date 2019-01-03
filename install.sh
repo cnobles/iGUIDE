@@ -120,12 +120,6 @@ function deactivate_iguide () {
     set -o nounset
 }
 
-function activate_iguide () {
-    set +o nounset
-    source activate $__iguide_env
-    set -o nounset
-}
-
 function install_conda () {
     local tmpdir=$(mktemp -d)
     debug "Downloading miniconda..."
@@ -140,15 +134,10 @@ function install_conda () {
 
 function install_environment () {
     debug_capture conda env update --name=$__iguide_env \
-			  --quiet --file bin/build.v0.3.0.yml
-			  #--quiet --file bin/requirements.yml
+			  --quiet --file etc/build.v0.3.0.yml
+			  #--quiet --file etc/requirements.yml
 		source activate $__iguide_env
-		Rscript bin/setup.R >> ${__output}
-    git clone https://github.com/cnobles/dualDemultiplexR.git tools/dualDemultiplexR >> ${__output}
-    git clone https://github.com/cnobles/seqTrimR.git tools/seqTrimR >> ${__output}
-    git clone https://github.com/cnobles/seqFiltR.git tools/seqFiltR >> ${__output}
-    git clone https://github.com/cnobles/seqConsolidateR.git tools/seqConsolidateR >> ${__output}
-    git clone https://github.com/cnobles/blatCoupleR.git tools/blatCoupleR >> ${__output}
+		Rscript etc/setup.R >> ${__output}
     echo -e "iGUIDE successfully installed.\n" ;
     if [[ $(__test_env) != true ]]; then
       	installation_error "Environment creation"
@@ -166,14 +155,14 @@ function install_env_vars () {
 
 function install_iguidelib () {
     activate_iguide
-    debug_capture pip install --upgrade $__iguide_dir 2>&1
+    debug_capture pip install --upgrade ${__iguide_dir}/tools/iguidelib/ 2>&1
     if [[ $(__test_iguide) != true ]]; then
       	installation_error "Library installation"
     fi
 }
 
 info "Starting iguide installation..."
-info "    Conda path:   ${__conda_path}"
+info "    Conda path:  ${__conda_path}"
 info "    iguide src:  ${__iguide_dir}"
 info "    iguide env:  '${__iguide_env}'"
 
@@ -203,7 +192,7 @@ else
 fi
 
 
-# Create Conda environment for iGuide
+# Create Conda environment for iGUIDE
 if [[ $__env_exists = true && $__update_env = false ]]; then
     info "Specified environment already exists (use '--update env' to update)"
 else
@@ -246,7 +235,7 @@ fi
 
 echo -e "To get started, ensure ${__conda_path}/bin is in your path and\n" \
   "run 'source activate ${__iguide_env}'\n\n" \
-  "To ensure ${__conda_path}/bin is in your path each time you long in,\n" \
+  "To ensure ${__conda_path}/bin is in your path each time you login,\n" \
   "append the following to your .bashrc or .bash_profile:\n\n" \
   "# Append miniconda3/bin to path\n" \
   "export PATH='~/miniconda3/bin:${PATH}'\n"

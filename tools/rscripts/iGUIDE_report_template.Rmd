@@ -146,7 +146,7 @@ if( args$format == "html" ){
 
 This report includes data from the following sequencing runs: `r gsub("_", " ", set_names)`.
 
-```{r title_graphic, fig.width=6, fig.height=6, eval = FALSE}
+```{r title_graphic, fig.width=6, fig.height=6, eval = args$graphic}
 plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)
 ```
 
@@ -192,7 +192,7 @@ pander(
 
 Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. Nested-PCR was used to amplify from incorporated dsODN sequences to the linker sequences with barcoded and linker-specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
 
-DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "RefGenome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 1**, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
+DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "Ref_Genome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 1**, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
 
 Alternatively, random nucleotide sequences are included in the ligated linker sequences. These Unique Molecular Indeces (UMItags) can provide another method of abundance by counting the number of UMItags and breakpoint position combinations for each incorporation sites. This method of quantification has an increased dynamic range, yet can suffer from PCR artifacts leading to inflated abundances.
 

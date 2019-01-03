@@ -1,15 +1,13 @@
 import os
 import sys
 import argparse
-from ruamel.yaml import YAML
 import subprocess
+
+from ruamel.yaml import YAML
 from pathlib import Path
 
-#from .list_samples import build_sample_list, MissingMatePairError, SampleFormatError
-#from sunbeamlib import config
-    
-def main(argv=sys.argv):
-    """Create a new project directory with necessary subdirectories."""
+def main( argv = sys.argv ):
+    """Initiate an iGUIDE project run in Snakemake."""
 
     try:
         conda_prefix = os.environ.get("CONDA_PREFIX")
@@ -18,24 +16,28 @@ def main(argv=sys.argv):
             "Could not determine Conda prefix. Activate your iGUIDE "
             "environment and try this command again.")
 
+    usage_str = "iguide %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
+
     description_str = (
-        "Initialize a new iGUIDE project in a given directory, creating "
-        "a new config file and (optionally) a sample list.")
+        "Initiate the processing of an iGUIDE project givin a configuration "
+        "file. Arguments after '--' are passed to Snakemake asis.")
     
     parser = argparse.ArgumentParser(
-        "run", description=description_str)
-    # TODO
-    # Is the -f option needed?
+      prog = "run", 
+      usage = usage_str,
+      description = description_str
+    )
+
     parser.add_argument(
-        "-f", "--force", help="overwrite files if they already exist",
-        action="store_true")
+        "config", help = ("name of config file (%(default)s)"),
+        default = os.getenv("IGUIDE_DIR", os.getcwd()) + "/configs/simulation.config.yml", 
+        metavar = "CONFIG_FILE"
+    )
+
     parser.add_argument(
-        "--config", help=(
-            "name of config file (%(default)s)"),
-        default=os.getenv("IGUIDE_DIR", os.getcwd())+"/configs/simulation.config.yml", metavar="FILE")
-    parser.add_argument(
-        "-i", "--iguide_dir", default=os.getenv("IGUIDE_DIR", os.getcwd()),
-        help="Path to iGUIDE installation")
+        "-i", "--iguide_dir", default = os.getenv("IGUIDE_DIR", os.getcwd()),
+        help = "Path to iGUIDE installation"
+    )
 
     # The remaining args (after --) are passed to Snakemake
     args, remaining = parser.parse_known_args(argv)
@@ -57,10 +59,8 @@ def main(argv=sys.argv):
     
     sys.exit(cmd.returncode)
     
-
-
         
-def check_existing(path, force=False):
+def check_existing(path, force = False):
     if path.is_dir():
         raise SystemExit(
             "Error: specified file '{}' exists and is a directory".format(path))

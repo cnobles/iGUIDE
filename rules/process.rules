@@ -58,6 +58,8 @@ def report_supp(wildcards):
       supp_str = supp_str + "-d "
   if (config["suppFile"]):
       supp_str = supp_str + "-s " + ROOT_DIR + "/" + config["Supplemental_Info"]
+  if (config["infoGraphic"]):
+      supp_str = supp_str + "-g "
   return supp_str
         
 rule run_report:

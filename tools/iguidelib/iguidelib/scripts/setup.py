@@ -1,14 +1,12 @@
 import os
 import sys
 import argparse
-from ruamel.yaml import YAML
 import subprocess
+
+from ruamel.yaml import YAML
 from pathlib import Path
 
-#from .list_samples import build_sample_list, MissingMatePairError, SampleFormatError
-#from sunbeamlib import config
-    
-def main(argv=sys.argv):
+def main( argv = sys.argv ):
     """Create a new project directory with necessary subdirectories."""
 
     try:
@@ -18,41 +16,49 @@ def main(argv=sys.argv):
             "Could not determine Conda prefix. Activate your iGUIDE "
             "environment and try this command again.")
 
+    usage_str = "iguide %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
+    
     description_str = (
-        "Initialize a new iGUIDE project in a given directory, creating "
-        "a new config file and (optionally) a sample list.")
+        "Setup a new iGUIDE project given a project configuration file. "
+        "Arguments after '--' are passed to Snakemake asis."
+    )
     
     parser = argparse.ArgumentParser(
-        "setup", description=description_str)
-    # TODO
-    # Is the -f option needed?
+      prog = "setup", 
+      usage = usage_str,
+      description = description_str
+    )
+
     parser.add_argument(
-        "-f", "--force", help="overwrite files if they already exist",
-        action="store_true")
+        "config", help = ("name of config file (%(default)s)"),
+        default = os.getenv("IGUIDE_DIR", os.getcwd()) + "/configs/simulation.config.yml", 
+        metavar = "CONFIG_FILE"
+    )
+
     parser.add_argument(
-        "--config", help=(
-            "name of config file (%(default)s)"),
-        default=os.getenv("IGUIDE_DIR", os.getcwd())+"/configs/simulation.config.yml", metavar="FILE")
+        "-i", "--iguide_dir", default = os.getenv("IGUIDE_DIR", os.getcwd()),
+        help = "Path to iGUIDE installation")
+
     parser.add_argument(
-        "-i", "--iguide_dir", default=os.getenv("IGUIDE_DIR", os.getcwd()),
-        help="Path to iGUIDE installation")
-    parser.add_argument(
-        "--skip_demultiplexing",action="count",help="Use this if your data is already demultiplexed."
-        " (Make sure Demult_Dir is set in config file.)")
+        "--skip_demultiplexing", action = "count", 
+        help = "Use this option if your data is already demultiplexed."
+        " (Make sure Demulti_Dir is set in config file.)")
 
     # The remaining args (after --) are passed to Snakemake
     args, remaining = parser.parse_known_args(argv)
 
     snakefile = Path(args.iguide_dir)/"Snakefile"
+    
     if not snakefile.exists():
         sys.stderr.write(
             "Error: could not find a Snakefile in directory '{}'\n".format(
                 args.iguide_dir))
         sys.exit(1)
 
-    yaml=YAML(typ='safe')   # default, if not specfied, is 'rt' (round-trip)
-    config=yaml.load(open(args.config, "r"))
-    analysis_directory=check_existing(Path("analysis/" + config['Run_Name']))
+    yaml = YAML(typ = 'safe')   # default, if not specfied, is 'rt' (round-trip)
+    config = yaml.load(open(args.config, "r"))
+    analysis_directory = check_existing(Path("analysis/" + config['Run_Name']))
+    read_types = config["Read_Types"]
     
     snakemake_args = ['snakemake', str(analysis_directory),
                       '--snakefile', str(snakefile),
@@ -63,33 +69,22 @@ def main(argv=sys.argv):
     cmd = subprocess.run(snakemake_args)
     
     if args.skip_demultiplexing:
-        # TODO
-        # Add use of TYPES argument from config file (i.e. only get I1/I2 if specified)
         try:
-            sampleInfo=open(config['Sample_Info'])
+            sampleInfo = open(config['Sample_Info'])
         except FileNotFoundError:
-            sampleInfo=open(os.getenv("IGUIDE_DIR", os.getcwd())+"/"+config['Sample_Info'])
-        sampleList=get_sample_list(sampleInfo)
-        demultDir=check_existing(Path(config['Demult_Dir']))
+            sampleInfo = open(os.getenv("IGUIDE_DIR", os.getcwd()) + "/" + config['Sample_Info'])
+        sampleList = get_sample_list(sampleInfo)
+        demultiDir = check_existing(Path(config['Demulti_Dir']))
         for sample in sampleList:
-            ln_args = ['ln', '-s', str(demultDir)+'/'+sample+'.R1.fastq.gz',
-                        str(analysis_directory)+'/processData/'+sample+'.R1.fastq.gz']
-            subprocess.run(ln_args)
-            ln_args = ['ln', '-s', str(demultDir)+'/'+sample+'.R2.fastq.gz',
-                        str(analysis_directory)+'/processData/'+sample+'.R2.fastq.gz']
-            subprocess.run(ln_args)
-            ln_args = ['ln', '-s', str(demultDir)+'/'+sample+'.I1.fastq.gz',
-                        str(analysis_directory)+'/processData/'+sample+'.I1.fastq.gz']
-            subprocess.run(ln_args)
-            ln_args = ['ln', '-s', str(demultDir)+'/'+sample+'.I2.fastq.gz',
-                        str(analysis_directory)+'/processData/'+sample+'.I2.fastq.gz']
-            subprocess.run(ln_args)
+            for type in read_types:
+                ln_args = [
+                    'ln', '-s', str(demultiDir) + '/' + sample + '.' + type + '.fastq.gz',
+                    str(analysis_directory) + '/processData/' + sample + '.' + type + '.fastq.gz'
+                ]
+                subprocess.run(ln_args)
     else:
-        check_existing_fastq(Path(config['R1']))
-        check_existing_fastq(Path(config['R2']))
-        check_existing_fastq(Path(config['I1']))
-        check_existing_fastq(Path(config['I2']))
-
+        for type in read_types: 
+            check_existing_fastq(Path(config[type]))
     
     sys.exit(cmd.returncode)
     
