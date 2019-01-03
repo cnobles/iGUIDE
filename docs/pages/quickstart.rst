@@ -86,10 +86,6 @@ entirety of processing can start. Using the ``--dag`` flag and piping the output
 to ``dot -Tsvg`` will generate a vector graphic of the directed acyclic graph 
 (dag) workflow that snakemake will follow given the data provided::
 
-  # Test script
-  PREFIX=${HOME}/miniconda3
-  export PATH=${PATH}:${PREFIX}/bin
-  source activate iguide
 
   # Create test analysis directory
   snakemake analysis/simulation --configfile configs/simulation.config.yml -np
