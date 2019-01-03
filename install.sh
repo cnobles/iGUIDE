@@ -19,6 +19,7 @@ read -r -d '' __helptext <<-'EOF'
  files using 'iguide config update'.
 EOF
 
+
 # Load BASH3Boilerplate for command-line parsing and logging
 source etc/b3bp.sh
 
@@ -122,8 +123,8 @@ function __test_r_version () {
 function __test_r_packages () {
     activate_iguide
     
-    $(Rscript ${__iguide_dir}/etc/check_for_required_packages.R > /dev/null) && \
-        echo true || echo false
+    $(Rscript ${__iguide_dir}/etc/check_for_required_packages.R \
+        > /dev/null) && echo true || echo false
     
     deactivate_iguide
 }
@@ -233,6 +234,7 @@ debug "    Library:       ${__iguidelib_installed}"
 if [[ $__run_iguide_tests = true ]]; then
     __iguide_installed=$(__test_iguide)
     debug "    iGUIDE Tests:  ${__iguide_installed}"
+fi
 
 __env_changed=false
 
@@ -284,7 +286,7 @@ install_env_vars
 # Check if on pre-existing path
 if [[ $__old_path != *"${__conda_path}/bin"* ]]; then
     warning "** Conda was not detected on your PATH. **"
-    warning "This is normal if you haven't installed Conda before."
+    warning "This is normal if you have not installed Conda before."
     warning "To add it to your path, run "
     warning "   'echo \"export PATH=\$PATH:${__conda_path}/bin\" >> ~/.bashrc'"
     warning "and close and re-open your terminal session to apply."
@@ -299,3 +301,4 @@ echo -e "To get started, ensure ${__conda_path}/bin is in your path and\n" \
   "append the following to your .bashrc or .bash_profile:\n\n" \
   "# Append miniconda3/bin to path\n" \
   "export PATH='~/miniconda3/bin:${PATH}'\n"
+
