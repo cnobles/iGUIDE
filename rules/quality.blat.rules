@@ -13,7 +13,7 @@ rule post_align:
     multihit=RUN_DIR + "/processData/{sample}.multihits.rds",
     stat=temp(RUN_DIR + "/processData/{sample}.align.stat")
   params:
-    tool=ROOT_DIR + "/tools/blatCoupleR/blatCouple.R",
+    tool=ROOT_DIR + "/tools/rscripts/couple.R",
     ref=config["RefGenome"],
     start=config["maxAlignStart"],
     pct=config["minPercentIdentity"],

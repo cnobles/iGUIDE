@@ -48,9 +48,11 @@ parser$add_argument(
   "-t", "--format", nargs = 1, type = "character", default = "html",
   help = "Output format for report. Either 'pdf' or 'html' (default)."
 )
+
 parser$add_argument(
   "--install_path", nargs = 1, type = "character", default = "IGUIDE_DIR",
-  help = "iGUIDE install directory path, do not change for normal applications.")
+  help = "iGUIDE install directory path, do not change for normal applications."
+)
 
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))

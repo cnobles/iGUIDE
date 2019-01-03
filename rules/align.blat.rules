@@ -33,5 +33,5 @@ rule generate_2bit:
   output: ROOT_DIR + "/" + config["RefGenomePath"]
   params: config["RefGenome"]
   shell: 
-    "Rscript {ROOT_DIR}/tools/rtools/generate_2bit_genome.R {params} {output}"
+    "Rscript {ROOT_DIR}/tools/rscripts/generate_2bit_genome.R {params} {output}"
 

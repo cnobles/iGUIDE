@@ -8,7 +8,7 @@ rule seq_trim_R1:
     trim=temp(RUN_DIR + "/processData/{sample}.R1.trim.fastq.gz"),
     stat=temp(RUN_DIR + "/processData/{sample}.R1.trim.stat")
   params:
-    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R1_LEAD[wildcards.sample],
     over=lambda wildcards: R1_OVER[wildcards.sample],
     leadMis=config["R1leadMismatch"],
@@ -32,7 +32,7 @@ rule seq_trim_R2_primer:
     trim=temp(RUN_DIR + "/processData/{sample}.R2.primer.trim.fastq.gz"),
     stat=temp(RUN_DIR + "/processData/{sample}.R2.primer.trim.stat")
   params:
-    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD[wildcards.sample],
     over=lambda wildcards: R2_OVER[wildcards.sample],
     leadMis=config["R2leadMismatch"],
@@ -56,7 +56,7 @@ rule seq_trim_R2_odn:
     trim=temp(RUN_DIR + "/processData/{sample}.R2.trim.fastq.gz"),
     stat=temp(RUN_DIR + "/processData/{sample}.R2.trim.stat")
   params:
-    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD_ODN[wildcards.sample],
     leadMis=config["R2leadMismatch"]
   log:

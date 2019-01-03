@@ -9,7 +9,7 @@ rule collect_umitags:
     umi=RUN_DIR + "/processData/{sample}.umitags.fasta.gz",
     stat=temp(RUN_DIR + "/processData/{sample}.umitags.stat")
   params:
-    tool=ROOT_DIR + "/tools/seqTrimR/seqTrim.R",
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
     seq=lambda wildcards: UMIseqs[wildcards.sample],
     mis=config["bc2Mismatch"]
   log:

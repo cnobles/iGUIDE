@@ -9,7 +9,7 @@ rule consolidate:
     key=temp(RUN_DIR + "/processData/{sample}.{read}.key.csv"),
     stat=temp(RUN_DIR + "/processData/{sample}.{read}.consol.stat")
   params:
-    tool=ROOT_DIR + "/tools/seqConsolidateR/seqConsolidate.R"
+    tool=ROOT_DIR + "/tools/rscripts/consol.R"
   log:
     RUN_DIR + "/logs/{sample}.{read}.consol.log"
   shell:

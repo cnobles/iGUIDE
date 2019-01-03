@@ -38,7 +38,7 @@ rule all_edit_sites:
     stat=temp(RUN_DIR + "/processData/" + RUN + ".edit.stat")
   params:
     config = RUN_DIR + "/" + "config.yml",
-    tool = ROOT_DIR + "/tools/processing/post_process.R"
+    tool = ROOT_DIR + "/tools/rscripts/post_process.R"
   log:
     RUN_DIR + "/logs/" + RUN + ".postproc.log"
   run:
@@ -64,7 +64,7 @@ rule run_report:
   input: RUN_DIR + "/output/edited_sites." + RUN + ".rds"
   output: RUN_DIR + "/reports/report." + RUN + ".html"
   params: 
-    tool = ROOT_DIR + "/tools/processing/generate_iGUIDE_report.R",
+    tool = ROOT_DIR + "/tools/rscripts/generate_iGUIDE_report.R",
     config = RUN_DIR + "/" + "config.yml",
     supp = report_supp
   log: RUN_DIR + "/logs/" + RUN + ".report.log"

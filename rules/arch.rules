@@ -46,7 +46,7 @@ rule generate_stat_matrix:
     RUN_DIR + "/output/stats." + RUN + ".csv"
   params:
     dir=RUN_DIR + "/processData",
-    tool=ROOT_DIR + "/tools/rtools/collect_stats.R"
+    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
   shell:
     """
     Rscript {params.tool} {params.dir} -o {output}

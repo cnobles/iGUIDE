@@ -20,7 +20,7 @@ rule demultiplex:
     stat=temp(
       RUN_DIR + "/processData/" + RUN + ".demulti.stat")
   params:
-    tool=ROOT_DIR + "/tools/dualDemultiplexR/dualDemultiplex.R",
+    tool=ROOT_DIR + "/tools/rscripts/demulti.R",
     bc1Len=config["barcode1Length"],
     bc2Len=config["barcode2Length"],
     bc1=config["barcode1"],
@@ -43,4 +43,3 @@ rule demultiplex:
       -o {RUN_DIR}/processData --stat {params.statName} -c {threads} \
       --compress > {log} 2>&1
     """
-
