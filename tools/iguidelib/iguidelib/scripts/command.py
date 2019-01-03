@@ -1,8 +1,8 @@
 import sys
 import argparse
 import subprocess
-import iguidelib
 
+from iguidelib import __version__
 from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
 #from iguidelib.scripts.config import main as Config
@@ -17,7 +17,7 @@ def main():
         "  run          \tExecute the iGUIDE pipeline.\n"
         "  config       \t[inDev] Modify or update iGUIDE config files.\n"
         "  list_samples \t[inDev] Make a list of samples from a directory.\n"
-    ).format(version=iguidelib.__version__)
+    ).format(version=__version__)
 
     parser = argparse.ArgumentParser(
         prog = "iguide",
@@ -34,7 +34,7 @@ def main():
     
     parser.add_argument(
         "-v", "--version", action = "version",
-        version = "%(prog)s {}".format(iguidelib.__version__)
+        version = "%(prog)s {}".format(__version__)
     )
 
     args, remaining = parser.parse_known_args()

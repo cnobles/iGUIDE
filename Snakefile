@@ -8,7 +8,7 @@ import sys
 import re
 import yaml
 import configparser
-from iguidelib import *
+from iguidelib import import_sample_info, choose_sequence_data
 
 if not config:
     raise SystemExit(

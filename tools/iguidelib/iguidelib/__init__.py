@@ -55,7 +55,8 @@ def get_iguide_version(with_hash = False):
     
     commit_hash = run(
       ["git", "rev-parse", "--short", "HEAD"], stdout=PIPE
-      )
+    )
+    
     commit_str = commit_hash.stdout.decode('utf-8').rstrip()
     
     if with_hash:

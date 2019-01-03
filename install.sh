@@ -147,10 +147,8 @@ function __test_iguidelib() {
 
 function __test_iguide() {
     if [[ $(__test_env) = true ]]; then
-      	activate_iguide
-      	debug_capture bash ${__iguide_dir}/tests/test.sh &> \
-      	    /dev/null && echo "pass" || echo "fail"
-      	deactivate_iguide
+      	$(bash ${__iguide_dir}/tests/test.sh ${__iguide_env} &> /dev/null) && \
+      	    echo "pass" || echo "fail"
     else
       	echo "fail"
     fi
