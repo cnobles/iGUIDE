@@ -182,7 +182,7 @@ function install_environment () {
     if [[ $__reqs_install == "true" ]]; then
         local install_options="--quiet --file etc/requirements.yml"
     else
-        local install_options="--quiet --file etc/build.v0.3.0.yml"
+        local install_options="--quiet --file etc/build.v0.9.0.yml"
     fi
     
     debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
@@ -264,7 +264,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.v0.3.0.yml"
+        __build_source="etc/build.v0.9.0.yml"
     fi
 
     info "Creating iGUIDE environment..."
@@ -325,7 +325,7 @@ fi
 echo -e "  To get started, ensure ${__conda_path}/bin is in your path and\n" \
   "  run 'source activate ${__iguide_env}'\n\n"
   
-echo "  To ensure ${__conda_path}/bin is in your path each time you login,\n"\
-  "  append the following to your .bashrc or .bash_profile:\n\n" \
+echo -e "  To ensure ${__conda_path}/bin is in your path each time you \n"\
+  "  login, append the following to your .bashrc or .bash_profile:\n\n" \
   "# Append miniconda3/bin to path\n" \
   "export PATH='~/miniconda3/bin:${PATH}'\n"
