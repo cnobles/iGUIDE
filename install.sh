@@ -276,6 +276,13 @@ else
     info "$__iguide_env environment created."
 fi
 
+
+# Always update the env_vars.sh in the iGUIDE environment
+debug "Updating \$IGUIDE_DIR variable to point to ${__iguide_dir}"
+info "Setting environmental variables..."
+install_env_vars
+
+
 # Install iguidelib into environment if changed or requested
 if [[ $__env_changed = true ]]; then
     info "Environment installed/updated; (re)installing iGUIDE library..."
@@ -290,16 +297,18 @@ else
     info "iGUIDE library already installed (use '--update lib' to update)"
 fi
 
-# Always update the env_vars.sh in the iGUIDE environment
-debug "Updating \$IGUIDE_DIR variable to point to ${__iguide_dir}"
-install_env_vars
 
+# Run tests if requested
 if [[ $__run_iguide_tests = true ]]; then
-    info "Running iGUIDE tests..."
+    info "Running iGUIDE tests...(this may take a few mins)"
     __iguide_tested=$(__test_iguide)
-    info "    iGUIDE Tests:  ${__iguide_tested}"
+    
+    if [[ $__iguide_tested = "pass" ]]; then
+        info "    iGUIDE Tests:  ${__iguide_tested}"
+    else
+        warning "    iGUIDE Tests:  ${__iguide_tested}"
+    fi
 fi
-
 
 
 # Check if on pre-existing path
@@ -314,10 +323,13 @@ else
     info "Done. Run 'source activate ${__iguide_env}' to begin."
 fi
 
+
 echo -e "To get started, ensure ${__conda_path}/bin is in your path and\n" \
-  "run 'source activate ${__iguide_env}'\n\n" \
-  "To ensure ${__conda_path}/bin is in your path each time you login,\n" \
+  "run 'source activate ${__iguide_env}'\n\n"
+  
+if [[ $__old_path != *"${__conda_path}/bin"* ]]; then
+  echo "To ensure ${__conda_path}/bin is in your path each time you login,\n" \
   "append the following to your .bashrc or .bash_profile:\n\n" \
   "# Append miniconda3/bin to path\n" \
   "export PATH='~/miniconda3/bin:${PATH}'\n"
-
+fi
