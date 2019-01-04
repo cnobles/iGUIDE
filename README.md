@@ -14,7 +14,7 @@ Below, this readme gives the reader a overview of the pipeline, including how to
 2) setting up a run directory and acquiring the sequence data
 3) initializing the pipeline and understanding the output
 
-More complete documentation can be found `here https://iguide.readthedocs.io/en/latest/index.html`_.
+More complete documentation can be found on [ReadTheDocs.io](https://iguide.readthedocs.io/en/latest/index.html).
 
 ### Install
 To install iGUIDE, simply clone the repository to the desired destination:
@@ -75,4 +75,4 @@ conda deactivate
 
 * Initial release.
 * Supports setup and analysis of GUIDE-seq and iGUIDE experiments.
-* Documentation on `ReadTheDocs.io https://iguide.readthedocs.io/en/latest/index.html`_.
+* Documentation on [ReadTheDocs.io](https://iguide.readthedocs.io/en/latest/index.html).
