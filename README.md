@@ -44,7 +44,7 @@ PREFIX=${HOME}/miniconda3
 export PATH=${PATH}:${PREFIX}/bin
 
 # Activate iguide environment
-source activate iguide
+conda activate iguide
 
 # Check the setup workflow
 iguide setup configs/simulation.config.yml -- -np
@@ -60,12 +60,18 @@ iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > \
     analysis/simulation/reports/simulation.dag.svg
 
 # Run iGUIDE to analyze simulation dataset
-iguide run configs/simulation.config.yml -- --latency-wait 30cat analysis/simulation/output/unique_sites.simulation.csv
+iguide run configs/simulation.config.yml -- --latency-wait 30
+
+# Output some of the analysis data to check.
+cat analysis/simulation/output/unique_sites.simulation.csv
+
+# Deactivate the environment
+conda deactivate
 ```
 
 ### Changelog:
 
-*v0.9.0 (January 4th, 2019)*
+**v0.9.0 (January 4th, 2019)**
 
 * Initial release.
 * Supports setup and analysis of GUIDE-seq and iGUIDE experiments.
