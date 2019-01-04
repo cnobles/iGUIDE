@@ -148,7 +148,7 @@ function __test_iguidelib() {
 function __test_iguide() {
     if [[ $(__test_env) = true ]]; then
       	$(bash ${__iguide_dir}/tests/test.sh ${__iguide_env} &> /dev/null) && \
-      	    echo "pass" || echo "fail"
+      	    echo true || echo false
     else
       	echo "fail"
     fi
@@ -301,18 +301,18 @@ if [[ $__run_iguide_tests = true ]]; then
     info "Running iGUIDE tests...(this may take a few mins)"
     __iguide_tested=$(__test_iguide)
     
-    if [[ $__iguide_tested = "pass" ]]; then
-        info "    iGUIDE Tests:  ${__iguide_tested}"
+    if [[ $__iguide_tested = true ]]; then
+        info "    iGUIDE Tests:  passed"
     else
-        warning "    iGUIDE Tests:  ${__iguide_tested}"
+        warning "    iGUIDE Tests:  FAILED"
         warning "    Try running the test outside of the install to confirm."
-        warning "    Just run 'bash tests/test.sh ${__iguide_env}'."
+        warning "    Just run 'bash tests/test.sh $__iguide_env'."
     fi
 fi
 
 
 # Check if on pre-existing path
-if [[ $__old_path != *"${__conda_path}/bin"* ]]; then
+if [[ $__old_path != *"$__conda_path/bin"* ]]; then
     warning "** Conda was not detected on your PATH. **"
     warning "This is normal if you have not installed Conda before."
     warning "To add it to your path, run "
@@ -330,5 +330,5 @@ echo -e "\n  To get started, ensure ${__conda_path}/bin is in your path and\n" \
 echo -e "  To ensure ${__conda_path}/bin is in your path each time you\n" \
         "  login, append the following to your .bashrc or .bash_profile:\n"
 
-echo -e '# Append miniconda3/bin to path\n' \
+echo -e '# Append miniconda3/bin to path\n'\
         'export PATH="~/miniconda3/bin:${PATH}"'

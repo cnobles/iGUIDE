@@ -3,6 +3,7 @@
 .. contents::
    :depth: 2
 
+
 ------------------
 Initializing a Run
 ------------------
@@ -11,7 +12,7 @@ Once the config and sampleInfo files have been configured, a run directory can
 be created using the command below where {ConfigFile} is the path to your configuration file::
 
   cd path/to/iGUIDE
-  iguide setup --configfile {ConfigFile}
+  iguide setup {ConfigFile}
 
 The directory should look like this (RunName is specified in the ConfigFile}::
   
@@ -27,7 +28,7 @@ The directory should look like this (RunName is specified in the ConfigFile}::
 Components within the run directory:
 
 * config.yml - This is a symbolic link to the config file for the run
-* input_data - Directory where input fastq.gz files are deposited
+* input_data - Directory where input fastq.gz files can be deposited
 * logs - Directory containing log files from processing steps
 * output - Directory containing output data from the analysis
 * processData - Directory containing intermediate processing files
@@ -38,12 +39,14 @@ The above command will create a file directory under the analysis directory for
 the run specified in by the config ('/iGUIDE/analysis/{RunName}'). At the end of 
 this process, iGUIDE will give the user a note to deposit the input sequence 
 files into the /analysis/{RunName}/input_data directory. Copy the fastq.gz files 
-from the sequencing instrument into this directory.
+from the sequencing instrument into this directory if you do not have paths to
+the files specified in the config file.
 
 Currently, iGUIDE needs each of the sequencing files (R1, R2, I1, and I2) for 
-processing. If I1 and I2 are concatenated into the read names of R1 and R2, it 
-is recommended the you run ``bcl2fastq ... --create-fastq-for-index-reads`` on 
-the machine output directory to generate the I1 and I2 files. 
+processing since it is based on a dual barcoding scheme. If I1 and I2 are 
+concatenated into the read names of R1 and R2, it is recommended the you run 
+``bcl2fastq ... --create-fastq-for-index-reads`` on the machine output 
+directory to generate the I1 and I2 files. 
 
 As iGUIDE has its own demultiplexing, it is recommend to not use the Illumina 
 machine demultiplexing through input of index sequences in the SampleSheet.csv. 
@@ -58,18 +61,19 @@ Once the input_data directory has the required sequencing files, the run can be
 processed using the following command::
 
   cd path/to/iGUIDE/
-  iguide run --configfile {ConfigFile}
+  iguide run {ConfigFile}
 
 Snakemake offers a great number of resources for managing the processing through 
-the pipeline. I recommend familiarizing yourself with the utility (XXX).
-Here are some helpful flags that can be passed to snakemake by appending to the iguide command:
+the pipeline. I recommend familiarizing yourself with the utility 
+(https://snakemake.readthedocs.io/en/stable/). Here are some helpful snakemake
+options that can be passed to iGUIDE by appending to the iguide command after '--':
 
-* [--configfile X] associate a specific configuration for processing, essential for processing
-* [--cores X] multicored processing, specified cores to use by X
-* [--nolock] process multiple runs a the same time, from different sessions
-* [--notemp] keep all temporary files, otherwise removed
-* [--keep-going] will keep processing if one or more job error out
-* [-w X, --latency-wait X] wait X seconds for the output files to appear before erroring out
+* [\-\-configfile X] associate a specific configuration for processing, essential for processing
+* [\-\-cores X] multicored processing, specified cores to use by X
+* [\-\-nolock] process multiple runs a the same time, from different sessions
+* [\-\-notemp] keep all temporary files, otherwise removed
+* [\-\-keep-going] will keep processing if one or more job error out
+* [-w X, \-\-latency-wait X] wait X seconds for the output files to appear before erroring out
 
 --------------
 An Example Run
@@ -90,13 +94,13 @@ to ``dot -Tsvg`` will generate a vector graphic of the directed acyclic graph
 
   # Create test analysis directory
   # (The simulation configuration file is used by default and does not need to be specified)
-  iguide setup -np
-  iguide setup
+  iguide setup configs/simulation.config.yml -- -np
+  iguide setup configs/simulation.config.yml
 
   # Generate test DAG graph
-  iguide run -np
-  iguide run --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
-  iguide run --latency-wait 30
+  iguide run configs/simulation.config.yml -- -np
+  iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
+  iguide run configs/simulation.config.yml -- --latency-wait 30
   cat analysis/simulation/output/unique_sites.simulation.csv
 
 ---------
@@ -109,12 +113,12 @@ directory.
 To remove the environment and channels used with conda::
 
   cd path/to/iGUIDE
-  bash bin/uninstall.sh
+  bash etc/uninstall.sh
 
 Or::
 
   cd path/to/iGUIDE
-  bash bin/uninstall.sh {env_name}
+  bash etc/uninstall.sh {env_name}
 
 If the user would rather remove the environment created for iGUIDE, it is 
 recommended directly use conda. This will leave the channels within the conda 

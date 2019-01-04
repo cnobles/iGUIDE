@@ -597,9 +597,6 @@ if( grepl(".fa", unique(sapply(configs, "[[", "Ref_Genome"))) ){
 
 ## Get versioning
 
-# TODO
-# Clean up this code block
-# root_dir <- configs[[1]]$Install_Directory
 root_dir <- Sys.getenv("IGUIDE_DIR")
 
 soft_version <- as.character(read.delim(

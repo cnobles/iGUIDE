@@ -16,13 +16,13 @@ spontaneous, as produced through DNA replication or ionizing radiation. A
 laboratory bench-side protocol accompanies this software pipeline, and can be 
 found XXX. 
 
-Below, this documentation gives the reader a overview of the pipeline, including
+This documentation gives the reader an overview of the pipeline, including
 how to install and process a sample dataset. Processing a sample data set is 
 broken into a few parts: 
 
-#. developing a configuration file and sample information
-#. setting up a run directory and acquiring the sequence data
-#. initializing the pipeline and understanding the output
+#. Developing a configuration file and sample information
+#. Setting up a run directory and acquiring the sequence data
+#. Initializing the pipeline and understanding the output
 
 .. toctree::
    :hidden:

@@ -24,25 +24,27 @@ def main( argv = sys.argv ):
     )
     
     parser = argparse.ArgumentParser(
-      prog = "setup", 
-      usage = usage_str,
-      description = description_str
+        prog = "setup", 
+        usage = usage_str,
+        description = description_str
     )
 
     parser.add_argument(
-        "config", help = ("name of config file (%(default)s)"),
-        default = os.getenv("IGUIDE_DIR", os.getcwd()) + "/configs/simulation.config.yml", 
+        "config", 
+        help = ("name of config file (%(default)s)"),
         metavar = "CONFIG_FILE"
     )
 
     parser.add_argument(
-        "-i", "--iguide_dir", default = os.getenv("IGUIDE_DIR", os.getcwd()),
+        "-i", "--iguide_dir", 
+        default = os.getenv("IGUIDE_DIR", os.getcwd()),
         help = "Path to iGUIDE installation")
 
     parser.add_argument(
-        "--skip_demultiplexing", action = "count", 
+        "--skip_demultiplexing", 
+        action = "count", 
         help = "Use this option if your data is already demultiplexed."
-        " (Make sure Demulti_Dir is set in config file.)")
+               " (Make sure Demulti_Dir is set in config file.)")
 
     # The remaining args (after --) are passed to Snakemake
     args, remaining = parser.parse_known_args(argv)
@@ -64,7 +66,7 @@ def main( argv = sys.argv ):
                       '--snakefile', str(snakefile),
                       '--configfile', str(args.config),
                       '--dir', str(args.iguide_dir)] + remaining
-    print("Running: "+" ".join(snakemake_args))
+    print("Running: " + " ".join(snakemake_args))
 
     cmd = subprocess.run(snakemake_args)
     

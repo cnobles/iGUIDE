@@ -100,9 +100,6 @@ source(file.path(code_dir, "supporting_scripts/post_process_support.R"))
 # Run parameters and sample parameters
 config <- yaml::yaml.load_file(args$config)
 
-
-# TODO
-# Clean up this chunk of code
 config$Install_Directory <- Sys.getenv("IGUIDE_DIR")
 message(config$Sample_Info)
 

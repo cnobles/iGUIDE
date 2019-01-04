@@ -23,19 +23,20 @@ def main( argv = sys.argv ):
         "file. Arguments after '--' are passed to Snakemake asis.")
     
     parser = argparse.ArgumentParser(
-      prog = "run", 
-      usage = usage_str,
-      description = description_str
+        prog = "run", 
+        usage = usage_str,
+        description = description_str
     )
 
     parser.add_argument(
-        "config", help = ("name of config file (%(default)s)"),
-        default = os.getenv("IGUIDE_DIR", os.getcwd()) + "/configs/simulation.config.yml", 
+        "config", 
+        help = ("name of config file (%(default)s)"),
         metavar = "CONFIG_FILE"
     )
 
     parser.add_argument(
-        "-i", "--iguide_dir", default = os.getenv("IGUIDE_DIR", os.getcwd()),
+        "-i", "--iguide_dir", 
+        default = os.getenv("IGUIDE_DIR", os.getcwd()),
         help = "Path to iGUIDE installation"
     )
 

@@ -2,7 +2,6 @@
 IGUIDE_ENV_NAME=${1-iguide}
 
 rm -rf analysis/simulation/
-rm -rf tools/seq* tools/blat* tools/dual*
 
 conda env list | grep -Fq ${IGUIDE_ENV_NAME} && {
   source deactivate
@@ -11,5 +10,5 @@ conda env list | grep -Fq ${IGUIDE_ENV_NAME} && {
 
 bash install.sh
 source activate iguide
-iguide setup
-iguide run
+iguide setup configs/simulation.config.yml
+iguide run configs/simulation.config.yml

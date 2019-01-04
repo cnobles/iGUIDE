@@ -1,7 +1,7 @@
 .. _configinfo:
 
 .. contents::
-   :depth: 3
+   :depth: 4
 
 Setting up a config file
 ========================
