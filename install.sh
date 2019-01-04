@@ -305,6 +305,8 @@ if [[ $__run_iguide_tests = true ]]; then
         info "    iGUIDE Tests:  ${__iguide_tested}"
     else
         warning "    iGUIDE Tests:  ${__iguide_tested}"
+        warning "    Try running the test outside of the install to confirm."
+        warning "    Just run 'bash tests/test.sh ${__iguide_env}'."
     fi
 fi
 
