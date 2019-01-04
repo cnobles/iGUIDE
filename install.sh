@@ -324,11 +324,11 @@ else
 fi
 
 
-echo -e "  To get started, ensure ${__conda_path}/bin is in your path and\n" \
+echo -e "\n  To get started, ensure ${__conda_path}/bin is in your path and\n" \
   "  run 'source activate ${__iguide_env}'\n"
   
 echo -e "  To ensure ${__conda_path}/bin is in your path each time you\n" \
-        "  login, append the following to your .bashrc or .bash_profile:\n\n"
+        "  login, append the following to your .bashrc or .bash_profile:\n"
 
 echo -e '# Append miniconda3/bin to path\n' \
         'export PATH="~/miniconda3/bin:${PATH}"'
