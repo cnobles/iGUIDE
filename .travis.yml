@@ -4,5 +4,5 @@ before_install:
   - sudo apt-get install xdotool
   - sudo apt-get install texlive-latex-extra
 install:
-  - bash bin/install.sh
-script: source tests/test.sh  
+  - bash install.sh
+script: source tests/test.sh
