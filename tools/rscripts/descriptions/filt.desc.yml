@@ -1,0 +1,19 @@
+# This file contains descriptions for the seqFiltR program and options available for configuring the analysis.
+program_short_description : "R-based tool for filtering a sequence file based on supplied indices, another sequence file, and/or nucleotide sequences."
+
+# The following are descriptions of options.
+seqFile : "Sequence file(s) to filter. Can be fasta or fastq formats."
+output : "File name(s) of output file(s). Can specify different format from input if desired. Must provide same number of output file names as input files."
+index : "A single file containing sequence names to filter for. Each sequence name must match the input file sequence names after extraction of the regex provided by [--readNamePattern]."
+header : "Script assumes no header is given in index file by default. This option changes that behavior to include a header."
+negSelect : "Specify if the filtering process should be negative, positive by default. Negative selection will only return sequences that do not match to input criteria."
+seq : "Filter reads by input nucleotide sequence. DNA, RNA, and ambiguous nucleotide sequences allowed."
+mismatch : "Allowed number of mismatches for sequence matching ([-s]). Ignored if [-s, --seq] is not provided. Default is 0 mismatches."
+any : "If multiple methods of filtering should be used, sequences in output files will need to meet all criteria by default. Using this option will allow for sequences passing any of the criteria to be returned."
+readNamePattern : "Regex pattern applied to sequence names prior to any matching. Also applied to sequence names from index files. Default pattern: '[\\w:-]+'"
+compress : "Output fast(a/q) files are gzip compressed."
+cores : "Number of maximum cores to parallel the processing during certain steps. If 0 or 1 (default), program will not utilize parallel processing."
+quiet : "Silences any log outputs. Will still return sequence output file contents if not given an output option."
+stat : "File name of output file for script stats. Output formats of .csv or .tsv are compatible. Stats will still appear in log output, if not silenced by [-q, --quiet]."
+
+# The following are messages that may appear if deviations from inputs occur due to errors in calculation methods.

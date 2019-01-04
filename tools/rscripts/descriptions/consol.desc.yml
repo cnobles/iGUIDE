@@ -1,0 +1,16 @@
+# This file contains descriptions for the seqConsolidateR program and options available for configuring the analysis.
+program_short_description : "R-based nucleotide sequence consolidater. Consolidate nucleotide sequences down to unique sequences and produce a key to revert back."
+
+# The following are descriptions of options.
+seqFile : "Sequence file to consolidate to unique sequences, either fasta or fastq format."
+output : "Output fasta file name. Ex. sample.consolidated.fasta"
+keyFile : "Key file output name. Ex. sample.r1.csv"
+seqName : "Name to append to unique sequences. Ex. sample.r1."
+stat : "File name for stat file output (CSV format)."
+compress : "Output fasta file is gzipped."
+
+# Some error and other output messages.
+unrecognized_file_type : "Unrecognized output file type, please choose '*.fasta' or '*.fastq'."
+compression_note : "Gzip compression is acceptable as well."
+fastq_input : "Since consolidation of sequences is only based on sequences, quality scores will be dropped. Output file will be in fasta format."
+output_keyfile_type : "Output key file type not supported. Please use csv, tsv, rds, or RData."

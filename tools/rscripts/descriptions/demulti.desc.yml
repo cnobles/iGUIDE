@@ -1,0 +1,26 @@
+# This file contains descriptions for the dualDemultiplexR program and options available for configuring the analysis.
+program_short_description : "R-based demultiplexing for dual-barcoded Illumina sequencing runs."
+
+# The following are descriptions of options.
+manifest : "Manifest file (*.yaml, *.yml, *.csv, *.tsv)."
+read1 : "Path to Illumina R1 file (FASTQ)."
+read2 : "Path to Illumina R2 file (FASTQ)."
+idx1 : "Path to Illumina I1 file (FASTQ)."
+idx2 : "Path to Illumina R2 file (FASTQ)."
+outfolder : "Output folder."
+stat : "File name for stat file output (CSV format)."
+bc1 : "Read type containing barcode 1 sequences. (Default = 'I1', options include 'R1', 'R2', 'I1', and 'I2')"
+bc2 : "Read type containing barcode 2 sequences. (Default is 'I2', same options as --barcode1)"
+bc1Man : "Designation for barcode1 in manifest. (Default = 'barcode1')"
+bc2Man : "Designation for barcode2 in manifest. (Default = 'barcode2')"
+bc1Len : "Length of barcode1, in nucleotides. Default = 8."
+bc2Len : "Length of barcode2, in nucleotides. Default = 8."
+maxMis : "Max mismatch allowed in barcodes (Default = 0). It is recommended to use either ambiguous nucleotide codes or designate mismatch allowance, not both."
+bc1Mis : "Max mismatch allowed for barcode1 (Default = 0)."
+bc2Mis : "Max mismatch allowed for barcode2 (Default = 0)."
+cores : "Max cores to be used. If 0 or 1 (default), program will not utilize parallel processing."
+compress : "Output fastq files are gzipped."
+poolreps : "Pools replicates."
+singleBarcode : "Demultiplex with only a single barcode."
+readNamePattern : "Regular expression for pattern matching read names. Should not contain R1/R2/I1/I2 specific components. Default is [\\w:-]+"
+

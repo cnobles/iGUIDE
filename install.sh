@@ -198,8 +198,6 @@ function install_environment () {
     if [[ $(__test_r_packages) != true ]]; then
         installation_error "R-package installation"
     fi
-    
-    echo -e "iGUIDE installed.\n"
 }
 
 function install_env_vars () {
@@ -324,12 +322,10 @@ else
 fi
 
 
-echo -e "To get started, ensure ${__conda_path}/bin is in your path and\n" \
-  "run 'source activate ${__iguide_env}'\n\n"
+echo -e "  To get started, ensure ${__conda_path}/bin is in your path and\n" \
+  "  run 'source activate ${__iguide_env}'\n\n"
   
-if [[ $__old_path != *"${__conda_path}/bin"* ]]; then
-  echo "To ensure ${__conda_path}/bin is in your path each time you login,\n" \
-  "append the following to your .bashrc or .bash_profile:\n\n" \
+echo "  To ensure ${__conda_path}/bin is in your path each time you login,\n"\
+  "  append the following to your .bashrc or .bash_profile:\n\n" \
   "# Append miniconda3/bin to path\n" \
   "export PATH='~/miniconda3/bin:${PATH}'\n"
-fi
