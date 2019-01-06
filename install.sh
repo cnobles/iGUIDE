@@ -193,7 +193,7 @@ function install_environment () {
       	installation_error "Environment creation"
     fi
 		
-		if [[ $(__test_r_version) != true ]]; then
+    if [[ $(__test_r_version) != true ]]; then
         installation_error "Insufficient R-program version"
     fi
     
