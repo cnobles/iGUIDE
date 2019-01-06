@@ -73,6 +73,8 @@ __req_r_version="3.4.1"
 __old_path=$PATH
 __output=${2-/dev/stdout}
 
+PATH=$PATH:${__conda_path}/bin
+
 if [[ "${arg_t:?}" = "1" ]]; then
     __run_iguide_tests=true
 fi
