@@ -602,7 +602,7 @@ root_dir <- Sys.getenv("IGUIDE_DIR")
 soft_version <- as.character(read.delim(
   file = file.path(root_dir, ".version"), header = FALSE))
 
-build_version <- list.files(file.path(root_dir, "bin")) %>%
+build_version <- list.files(file.path(root_dir, "etc")) %>%
   grep(pattern = "build", x = ., value = TRUE) %>%
   stringr::str_extract(pattern = "v[0-9]+\\.[0-9]+.[0-9]+")
 

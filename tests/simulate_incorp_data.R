@@ -501,5 +501,5 @@ null <- mapply(function(read_seqs, path, fill){
   path = config$seq_files, 
   MoreArgs = list(fill = config$fill_qual))
 
-cat("\n[", paste(Sys.time()), "] Script completed.")
+cat("\n[", paste(Sys.time()), "] Script completed.\n")
 q()
