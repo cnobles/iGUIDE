@@ -1,0 +1,109 @@
+%
+% SimIncorpData Inputs
+
+[ 2019-01-07 13:40:46 ]
+
+Variables     Values          
+------------- ----------------
+config :      sim_config.yml  
+outfolder :   Data            
+seed :        1               
+
+%
+% Configuration
+                            _                                                             
+sample_info                 sampleInfo.csv                                                
+ref_genome                  hg38                                                          
+guide_rna_sequences.B2M     GAGTAGCGCGAGCACAGCTANGG                                       
+guide_rna_sequences.TRAC    TGTGCTAGACATGAGGTCTANGG                                       
+guide_rna_sequences.TRBC    GGAGAATGACGAGTGGACCCNGG                                       
+pam_sequence                NGG                                                           
+on_target_sites.B2M         chr15:-:44711569                                              
+on_target_sites.TRAC        chr14:+:22547664                                              
+on_target_sites.TRBC'1      chr7:+:142792020                                              
+on_target_sites.TRBC'2      chr7:+:142801367                                              
+on_target_params.abund      10                                                            
+off_target_params.num       3                                                             
+off_target_params.abund1    5                                                             
+off_target_params.abund2    3                                                             
+off_target_params.abund3    1                                                             
+off_target_params.mismatch  3                                                             
+false_target_sites.TET2     chr4:+:105272459                                              
+false_target_params.abund   2                                                             
+random_background.num       10                                                            
+random_background.max_abund 1                                                             
+seqs.P5                     AATGATACGGCGACCACCGAGATCTACAC                                 
+seqs.PI2                    ACACTCTTTCCCTACACGACGCTCTTCCGATCT                             
+seqs.P7                     CAAGCAGAAGACGGCATACGAGAT                                      
+seqs.PI1                    GTGACTGGAGTCCTCTCTATGGGCAGTCGGTGATTTGAGTTGTCATATGTTAATAACGGTAT
+seqs.ODNbit                 ACGCGA                                                        
+seqs.R1                     ACACTCTTTCCCTACACGACGCTCTTCCGATCT                             
+seqs.I1                     ATCACCGACTGCCCATAGAGAGGACTCCAGTCAC                            
+seqs.I2                     AATGATACGGCGACCACCGAGATCTACAC                                 
+seqs.R2                     GTGACTGGAGTCCTCTCTATGGGCAGTCGGTGAT                            
+seq_dists.R1                150                                                           
+seq_dists.I1                8                                                             
+seq_dists.I2                16                                                            
+seq_dists.R2                150                                                           
+seq_files.R1                Undetermined_S0_L001_R1_001.fastq.gz                          
+seq_files.I1                Undetermined_S0_L001_I1_001.fastq.gz                          
+seq_files.I2                Undetermined_S0_L001_I2_001.fastq.gz                          
+seq_files.R2                Undetermined_S0_L001_R2_001.fastq.gz                          
+min_length                  35                                                            
+fill_qual                   B                                                             
+instrument                  miseq                                                         
+%
+% Sample Information
+
+
+ sampleName   barcode1       barcode2           gRNA      
+------------ ---------- ------------------ ---------------
+    iGXA      GGACTCCT   AGAGTAGANNWNNWNN       TRAC      
+    iGXB      GGACTCCT   CTCTCTATNNWNNWNN   TRAC;TRBC;B2M 
+
+
+[ 2019-01-07 13:41:00 ] Loaded reference genome:  BSgenome.Hsapiens.UCSC.hg38
+[ 2019-01-07 13:41:00 ] Identifying top potential off-target sites for gRNA(s):  B2M, TRAC, TRBC
+[ 2019-01-07 13:44:57 ] Generating random pool of  20  sites.%
+% Sample from target data set.
+
+
+ class    gRNA        posid         abund 
+-------- ------ ------------------ -------
+   on     B2M    chr15:-:44711569    10   
+   on     TRAC   chr14:+:22547664    10   
+   on     TRBC   chr7:+:142792020    10   
+   on     TRBC   chr7:+:142801367    10   
+  off     B2M    chr9:+:94689940      5   
+ random   all    chr18:-:7994423      1   
+ random   all    chr18:-:25419796     1   
+ random   all    chr19:+:30401105     1   
+ random   all    chr21:-:30922246     1   
+ random   all    chrX:+:63482147      1   
+
+
+[ 2019-01-07 13:45:01 ] Generating incorporation positions from targets.%
+% Sample from incorporation data set.
+
+
+ class    gRNA         posid              incorp       
+-------- ------ ------------------- -------------------
+   on     TRAC   chr14:+:22547664    chr14:-:22547631  
+ random   all     chr18:-:7994423     chr18:-:7994387  
+  off     TRAC    chr5:+:99273655     chr5:+:99273665  
+ random   all    chr3:+:128309163    chr3:+:128309214  
+   on     TRAC   chr14:+:22547664    chr14:+:22547764  
+   on     TRAC   chr14:+:22547664    chr14:+:22547674  
+  off     TRAC    chr4:-:90001289     chr4:-:90001284  
+   on     TRAC   chr14:+:22547664    chr14:-:22547655  
+   on     TRAC   chr14:+:22547664    chr14:-:22547662  
+ random   all    chr12:-:114777960   chr12:+:114778008 
+
+
+[ 2019-01-07 13:45:01 ] Retrieving genomic sequences for template construction.
+[ 2019-01-07 13:45:02 ] Building templates with accessory sequences.
+[ 2019-01-07 13:45:02 ] Simulating  4  reads for sequencing cycles:  R1, I1, I2, R2
+[ 2019-01-07 13:45:03 ] Constructed reads. Saving output to:  Data
+[ 2019-01-07 13:45:03 ] Writing truth files.
+[ 2019-01-07 13:45:03 ] Writing fastq files for reads.
+[ 2019-01-07 13:45:03 ] Script completed.

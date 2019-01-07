@@ -40,7 +40,7 @@ on_target_sites :
 # Additional parameters for on-target sites. Abund determines the number of 
 # unique reads associated with each on-target site.
 on_target_params :
-    abund : 20
+    abund : 10
 
 # Off-target parameters: "num" is the number of off-target sites per guide RNA,
 # "abund" will be the number of unique reads per off-target site, a single 
@@ -51,9 +51,9 @@ on_target_params :
 # request. Off-target sites will be chosen from the those with the lowest 
 # mismatch first.
 off_target_params:
-    num : 5
-    abund : [9, 7, 5, 3, 1]
-    mismatch : 4
+    num : 3
+    abund : [5, 3, 1]
+    mismatch : 3
 
 # False target sites do not have a relation with the guide RNAs. They can be 
 # named whatever you would like. The associated parameters determines how many
@@ -61,7 +61,7 @@ off_target_params:
 false_target_sites :
     TET2 : "chr4:+:105272459"
 false_target_params :
-    abund : 4
+    abund : 2
 
 # Many sites observed in experimental data appear to not be associate with guide
 # RNAs or treatment. These incorporation sites can make up most the data 
@@ -72,7 +72,7 @@ false_target_params :
 # each sample. "max_abund" will be the upper limit on the number of unique reads
 # to include for each random site.
 random_background:
-    num : 40
+    num : 10
     chrs : 
     max_abund : 1
 

@@ -13,13 +13,13 @@ rule align:
     RUN_DIR + "/logs/{sample}.{read}.blat.log"
   shell:
     """
-    input_seq_cnt=$(cat {input.seq} | wc -l)
-    if [[ ${{input_seq_cnt}} -eq 0 ]]
+    if [[ $(cat {input.seq} | wc -l) -eq 0 ]]
         then
             touch {output}
             echo 'Empty input sequences for {input.seq}.' > {log} 2>&1
         else
-            blat {input.genome} {input.seq} {output} {params} > {log} 2>&1
+            blat {input.genome} {input.seq} {output} \
+                {params} > {log} 2>&1
     fi
     """
 

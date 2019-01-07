@@ -1,7 +1,4 @@
 specimen,gRNA,nuclease
 iGXA,TRAC,Cas9v1
-iGXB,B2M,Cas9v1
-iGXC,TRAC;B2M,Cas9v1
-iGXD,TRBC,Cas9v1
-iGXE,TRBC,Cas9v2
-iGXF,Mock,Mock
+iGXB,TRAC;TRBC;B2M,Cas9v1
+iGXC,Mock,Mock

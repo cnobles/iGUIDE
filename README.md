@@ -1,5 +1,6 @@
 ## iGUIDE - improved Genome-wide Unbiased Identification of Double-strand DNA break Events
 [![Build Status](https://travis-ci.org/cnobles/iGUIDE.svg?branch=master)](https://travis-ci.org/cnobles/iGUIDE)
+[![CircleCI](https://circleci.com/gh/cnobles/iGUIDE.svg?style=svg)](https://circleci.com/gh/cnobles/iGUIDE)
 [![Documentation Status](https://readthedocs.org/projects/iguide/badge/?version=latest)](http://iguide.readthedocs.io/en/latest/?badge=latest)
 
 Bioinformatic pipeline for processing iGUIDE and GUIDE-seq samples.
@@ -69,6 +70,10 @@ conda deactivate
 ```
 
 ### Changelog:
+
+**v0.9.2 (January 7th, 2019)**
+
+* Modified test dataset to run tests quicker and implemented CirclCI checking.
 
 **v0.9.1 (January 6th, 2019)**
 

@@ -96,12 +96,12 @@ function __test_conda() {
 
 function __detect_conda_install() {
     local discovered=$(__test_conda)
-    
+
     if [[ $discovered = true ]]; then
       	local conda_path="$(which conda)"
         echo ${conda_path%'/bin/conda'}
     fi
-}    
+}
 
 function __test_env() {
     if [[ $(__test_conda) = true ]]; then
@@ -116,24 +116,24 @@ function __test_env() {
 
 function __test_r_version () {
     activate_iguide
-    
+
     local sem_version=$(R --version | grep 'R version' | cut -d ' ' -f 3)
-    
+
     if (( ${sem_version//./} >= ${__req_r_version//./} )); then
         echo true
     else
         echo false
     fi
-    
+
     deactivate_iguide
 }
 
 function __test_r_packages () {
     activate_iguide
-    
+
     $(Rscript ${__iguide_dir}/etc/check_for_required_packages.R \
         > /dev/null) && echo true || echo false
-    
+
     deactivate_iguide
 }
 
@@ -171,7 +171,7 @@ function deactivate_iguide () {
 function install_conda () {
     local tmpdir=$(mktemp -d)
     debug "Downloading miniconda..."
-    debug_capture wget -nv ${__conda_url} -O ${tmpdir}/miniconda.sh 2>&1
+    debug_capture wget -q ${__conda_url} -O ${tmpdir}/miniconda.sh 2>&1
     debug "Installing miniconda..."
     debug_capture bash ${tmpdir}/miniconda.sh -b -p ${__conda_path} 2>&1
     if [[ $(__test_conda) != true ]]; then
@@ -186,17 +186,17 @@ function install_environment () {
     else
         local install_options="--quiet --file etc/build.v0.9.0.yml"
     fi
-    
+
     debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
-    
+
     if [[ $(__test_env) != true ]]; then
       	installation_error "Environment creation"
     fi
-		
+
     if [[ $(__test_r_version) != true ]]; then
         installation_error "Insufficient R-program version"
     fi
-    
+
     if [[ $(__test_r_packages) != true ]]; then
         installation_error "R-package installation"
     fi
@@ -204,27 +204,27 @@ function install_environment () {
 
 function install_env_vars () {
     activate_iguide
-    
+
     echo -ne "#/bin/sh\nexport IGUIDE_DIR=${__iguide_dir}" > \
 	      ${CONDA_PREFIX}/etc/conda/activate.d/env_vars.sh
-	  
-	  mkdir -p ${CONDA_PREFIX}/etc/conda/deactivate.d/
-    
+
+    mkdir -p ${CONDA_PREFIX}/etc/conda/deactivate.d/
+
     echo -ne "#/bin/sh\nunset IGUIDE_DIR" > \
 	      ${CONDA_PREFIX}/etc/conda/deactivate.d/env_vars.sh
-	 
+
 	  deactivate_iguide
 }
 
 function install_iguidelib () {
     activate_iguide
-    
+
     debug_capture pip install --upgrade ${__iguide_dir}/tools/iguidelib/ 2>&1
-    
+
     if [[ $(__test_iguidelib) != true ]]; then
       	installation_error "Library installation"
     fi
-    
+
     deactivate_iguide
 }
 
