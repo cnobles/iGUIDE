@@ -5,9 +5,8 @@
 version: 2
 jobs:
   build:
-    machine: true
-    #docker:
-    #  - image: circleci/ruby:2.4.1
+    docker:
+      - image: circleci/ruby:2.4.1
 
     steps:
       - checkout
