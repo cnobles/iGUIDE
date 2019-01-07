@@ -15,10 +15,10 @@ source activate ${__IGUIDE_ENV}
 
 # Create test analysis directory
 iguide setup configs/simulation.config.yml -- -np
-iguide setup configs/simulation.config.yml
+iguide setup configs/simulation.config.yml -- --nolock
 
 # Generate test DAG graph
 iguide run configs/simulation.config.yml -- -np
-#iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > \
+#iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
 #    analysis/simulation/reports/simulation.dag.svg
-iguide run configs/simulation.config.yml -- -w 30 --cores ${__CORES}
+iguide run configs/simulation.config.yml -- -w 30 --nolock --cores ${__CORES}

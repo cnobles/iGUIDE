@@ -16,6 +16,7 @@ rule all_uniq_sites:
     done
     """
 
+    
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
@@ -51,6 +52,14 @@ rule all_edit_sites:
         call_str=call_str + "-m {input.multi} "
     call_str=call_str + "-c {params.config} --stat {output.stat} > {log} 2>&1"
     shell(call_str)
+
+rule compress_uniq_sites:
+  input: 
+    sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
+    edits=RUN_DIR + "/output/edited_sites." + RUN + ".rds"
+  output: RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz"
+  shell: "gzip {input.sites}"
+
 
 def report_supp(wildcards):
   supp_str = str()

@@ -13,7 +13,7 @@ rule align:
     RUN_DIR + "/logs/{sample}.{read}.blat.log"
   shell:
     """
-    if [[ $(cat {input.seq} } wc -l) -eq 0 ]]
+    if [[ $(cat {input.seq} | wc -l) -eq 0 ]]
         then
             touch {output}
             echo 'Empty input sequences for {input.seq}.' > {log} 2>&1

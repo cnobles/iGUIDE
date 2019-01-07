@@ -54,6 +54,8 @@ if not os.path.isdir(ROOT_DIR):
 # Target Rules
 rule all:
     input: 
+      incorp_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
+      edit_sites=RUN_DIR + "/output/edited_sites." + RUN + ".rds",
       report=RUN_DIR + "/reports/report." + RUN + ".html",
       stats=RUN_DIR + "/output/stats." + RUN + ".csv"
 
