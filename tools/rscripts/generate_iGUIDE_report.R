@@ -637,6 +637,7 @@ if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
     "Comparisons between groups with different run specific criteria\n", 
     "is not recommended.")
 }
+
 ## Combine sampleInfo files
 
 sample_info <- dplyr::bind_rows(lapply(
@@ -737,12 +738,15 @@ gRNAs <- dplyr::bind_rows(
 
 ## Identify on-target edit sites from config files
 on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites"))
+names(on_targets) <- stringr::str_replace(
+  string = names(on_targets), pattern = stringr::fixed("."), replacement = ":"
+)
 
 names(on_targets) <- stringr::str_extract(
     string = names(on_targets), 
-    pattern = "[\\w\\_\\-\\']+$"
+    pattern = "[\\w\\_\\-\\'\\.]+$"
   ) %>%
-  stringr::str_extract(pattern = "[\\w\\_\\-]+")
+  stringr::str_extract(pattern = "[\\w\\_\\-\\.]+")
 
 on_targets <- structure(
   unique(on_targets), 
@@ -1061,7 +1065,7 @@ on_tar_dists <- dplyr::group_by(
       strand == "+", log(cnt, base = 10), -log(cnt, base = 10))
   )
 
-if( length(unique(on_tar_dists$condition)) == 1 ){
+if( length(unique(cond_overview$condition)) == 1 ){
   on_tar_dists$condition <- " "
 }
 

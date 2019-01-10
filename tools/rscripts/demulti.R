@@ -128,7 +128,7 @@ parser$add_argument(
 parser$add_argument(
   "--readNamePattern", nargs = 1, type = "character", 
   default = "[\\w\\:\\-\\+]+", 
-  help = desc$readNamePatter
+  help = desc$readNamePattern
 )
 
 
@@ -145,15 +145,15 @@ demulti$bc2 <- grepl(args$bc2, demulti$readType)
 
 
 if( demulti$readType[demulti$bc1] == demulti$readType[demulti$bc2] ){
-  stop("Please select different read types for barcodes 1 and 2.")
+  stop("\nPlease select different read types for barcodes 1 and 2.")
 }
 
 if( demulti$readType[demulti$bc1] == "NA" ){
-  stop("Barcode 1 is set to a read type that is not provided.")
+  stop("\nBarcode 1 is set to a read type that is not provided.")
 }
 
 if( demulti$readType[demulti$bc2] == "NA" ){
-  stop("Barcode 2 is set to a read type that is not provided.")
+  stop("\nBarcode 2 is set to a read type that is not provided.")
 }
 
 if( args$singleBarcode ){
@@ -187,7 +187,7 @@ input_table <- input_table[
   ),
 ]
 
-cat("Demultiplex Inputs:")
+cat("\nDemultiplex Inputs:\n")
 print(
   x = data.frame(input_table, row.names = NULL), 
   right = FALSE, 
@@ -208,7 +208,7 @@ present_packs <- required_packs %in% row.names(installed.packages())
 
 if( !all(present_packs) ){
   
-  cat("\nMissing required r-packages:")
+  cat("\nMissing required r-packages:\n")
   print(
     data.frame(
       "R-Packages" = required_packs, 
@@ -216,7 +216,7 @@ if( !all(present_packs) ){
       row.names = NULL
     ), right = FALSE, row.names = FALSE)
 
-  stop("Check dependancies.")
+  stop("\nCheck dependancies.")
 
 }
 
@@ -299,7 +299,7 @@ file_ext <- file_ext[length(file_ext)]
 if( file_ext %in% c("yaml", "yml") ){
   
   if( !"yaml" %in% row.names(installed.packages()) ){
-    stop("Package:yaml not loaded or installed.")
+    stop("\nPackage:yaml not loaded or installed.")
   }
   
   manifest <- yaml::yaml.load_file(args$manifest)
@@ -347,20 +347,24 @@ if( !args$singleBarcode ){
   unique_samples <- nrow(samples_df[,c("bc1", "bc2")]) == 
     nrow(unique(samples_df[,c("bc1", "bc2")]))
   
-  if( !unique_samples ) stop("Ambiguous barcoding of samples. Please correct.")
+  if( !unique_samples ){
+    stop("\nAmbiguous barcoding of samples. Please correct.")
+  }
 
 }else{
 
   unique_samples <- length(samples_df[,c("bc1")]) == 
     length(unique(samples_df[,"bc1"]))
   
-  if( !unique_samples ) stop("Ambiguous barcoding of samples. Please correct.")
+  if( !unique_samples ){
+    stop("\nAmbiguous barcoding of samples. Please correct.")
+  }
 
 }
 
 # Read in barcode sequences ----
 bc1_reads <- ShortRead::readFastq(demulti$path[demulti$bc1])
-cat(paste("Reads to demultiplex : ", length(bc1_reads)))
+cat(paste("\nReads to demultiplex : ", length(bc1_reads), "\n"))
 
 if( args$cores > 1 ){
   
@@ -378,7 +382,7 @@ if( args$cores > 1 ){
   
   names(BC1_parsed) <- unique(samples_df$bc1)
   
-  cat("\nbc1 breakdown:")
+  cat("\nbc1 breakdown:\n")
   print(
     data.frame(
       "bc1" = names(BC1_parsed),
@@ -417,7 +421,7 @@ if( args$cores > 1 ){
 
   names(BC1_parsed) <- unique(samples_df$bc1)
   
-  cat("\nbc1 breakdown:")
+  cat("\nbc1 breakdown:\n")
   print(
     data.frame(
       "bc1" = names(BC1_parsed),
@@ -445,7 +449,7 @@ if( args$cores > 1 ){
 if( !args$singleBarcode ){
 
   names(BC2_parsed) <- unique(samples_df$bc2)
-  cat("\nbc2 breakdown:")
+  cat("\nbc2 breakdown:\n")
   print(
     data.frame(
       "bc2" = names(BC2_parsed),
@@ -493,11 +497,11 @@ demultiplexed_indices <- lapply(demultiplexed_indices, function(x, reads){
 
 # Reads by sample
 samples_df$read_counts <- sapply( demultiplexed_indices, length )
-cat("\nRead counts for each sample.")
+cat("\nRead counts for each sample.\n")
 print(samples_df, split.tables = Inf)
 
 # Ambiguous reads
-cat(paste0("\nAmbiguous reads: ", length(ambiguous_indices)))
+cat(paste0("\nAmbiguous reads: ", length(ambiguous_indices), "\n"))
 
 # Unassigned reads
 all_indices <- seq_along(bc1_reads)
@@ -510,7 +514,7 @@ unassigned_indices <- unassigned_indices[
   !unassigned_indices %in% ambiguous_indices
 ]
 
-print(paste0("\nUnassigned reads: ", length(unassigned_indices)))
+print(paste0("\nUnassigned reads: ", length(unassigned_indices), "\n"))
 
 if( args$stat != FALSE ){
   write.table(
@@ -565,7 +569,7 @@ if( args$poolreps ){
   multiplexed_data$sampleName <- gsub("-\\d+$", "", multiplexed_data$sampleName)
 }
 
-cat(paste0("Reads to be written to files: ", nrow(multiplexed_data)))
+cat(paste0("\nReads to be written to files: ", nrow(multiplexed_data), "\n"))
 
 # Write files to read files to outfolder directory
 if( args$cores > 1 ){
@@ -609,5 +613,5 @@ if( args$cores > 1 ){
 
 }
 
-cat("\nDemultiplexing complete.")
+cat("\nDemultiplexing complete.\n")
 q()

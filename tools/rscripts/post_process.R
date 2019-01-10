@@ -101,7 +101,6 @@ source(file.path(code_dir, "supporting_scripts/post_process_support.R"))
 config <- yaml::yaml.load_file(args$config)
 
 config$Install_Directory <- Sys.getenv("IGUIDE_DIR")
-message(config$Sample_Info)
 
 sample_info <- data.table::fread(
   input = file.path(config$Install_Directory, config$Sample_Info), 
@@ -620,7 +619,11 @@ matched_algns <- probable_algns[
 
 matched_summary <- matched_algns %>%
   dplyr::mutate(
-    guideRNA.match = stringr::str_extract(guideRNA.match, "[\\w]+")
+    guideRNA.match = stringr::str_replace(
+      string = guideRNA.match, 
+      pattern = stringr::fixed(" (rev)"), 
+      replacement = ""
+    )
   ) %>%
   dplyr::group_by(
     specimen, edit.site, aligned.sequence, guideRNA.match, guideRNA.mismatch
