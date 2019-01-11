@@ -726,8 +726,9 @@ if( nrow(paired_regions) > 0 ){
         any(sapply(
           unlist(on_target_sites[
             which(
-              stringr::str_extract(names(on_target_sites), "[\\w\\-\\_]+") %in% 
-                treatment[[specimen]]
+              stringr::str_extract(
+                names(on_target_sites), "[\\w\\-\\_\\.]+") %in% 
+                  treatment[[specimen]]
             )
           ]),
           function(x, seq, st, en){

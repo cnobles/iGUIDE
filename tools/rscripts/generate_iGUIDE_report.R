@@ -606,7 +606,11 @@ build_version <- list.files(file.path(root_dir, "etc")) %>%
   grep(pattern = "build", x = ., value = TRUE) %>%
   stringr::str_extract(pattern = "v[0-9]+\\.[0-9]+.[0-9]+")
 
-
+signature <- paste(
+  unique(sort(unlist(lapply(configs, "[[", "signature")))), 
+  collapse = ", ")
+  
+  
 ## Load reference files
 ref_genes <- loadRefFiles(
   configs[[1]]$refGenes, 

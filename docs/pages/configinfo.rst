@@ -334,3 +334,8 @@ Report
   aesthetically pleasing, the graphic gives the report a unique twist and can 
   provide the knowledgeable user with information about the report at the very
   beginning.
+
+``signature``
+  Character string included at the beginning of reports to denote the author,
+  analyst, laboratory, etc. Make sure you change if you don't want Chris 
+  getting credit for all the work.

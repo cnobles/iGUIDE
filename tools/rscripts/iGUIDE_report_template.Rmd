@@ -4,6 +4,8 @@ date: |
     | report generated : `r Sys.Date()`
     | software version : `r soft_version`
     | environment build : `r build_version`
+    | 
+    | author(s): `r signature`
 output: 
   html_document:
     toc: true

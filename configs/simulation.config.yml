@@ -103,3 +103,4 @@ suppFile : TRUE
 figures : TRUE
 reportData : FALSE
 infoGraphic : FALSE
+signature : "Christopher L. Nobles, Ph.D. [Bushman Lab]"
