@@ -71,6 +71,11 @@ conda deactivate
 
 ### Changelog:
 
+**v0.9.3 (January 11th, 2019)**
+
+* Added 'list_samples' subcommand to list samples within a project.
+* Caught a few bugs and worked them out for smoother processing and reports.
+
 **v0.9.2 (January 7th, 2019)**
 
 * Modified test dataset to run tests quicker and implemented CirclCI checking.

@@ -4,7 +4,7 @@
    :depth: 2
 
 
-------------------
+
 Initializing a Run
 ------------------
 
@@ -16,7 +16,7 @@ be created using the command below where {ConfigFile} is the path to your config
 
 The directory should look like this (RunName is specified in the ConfigFile}::
   
-  >tree analysis/{RunName}
+  > tree analysis/{RunName}
   analysis/{RunName}/
   ├── config.yml -> {path to ConfigFile}
   ├── input_data
@@ -53,7 +53,28 @@ machine demultiplexing through input of index sequences in the SampleSheet.csv.
 See SampleSheet example in XXX. If sequence files are demultiplexed, they can be 
 concatenated together into one file for each type of read using 'zcat'.
 
-----------------
+
+List Samples for a Run
+----------------------
+
+As long as the config and sampleInfo files are present and in their respective 
+locations, you can get a quick view of what samples are related to the project.
+Using the 'list_samples' subcommand will produce an overview table on the 
+console or write the table to a file (specified by the output option). 
+Additionally, if a supplemental information file is associated with the run, the
+data will be combined with the listed table.::
+
+  > iguide list_samples configs/simulation.config.yml
+  
+  Specimen Info for : simulation.
+
+   specimen   replicates       gRNA        nuclease
+  ---------- ------------ --------------- ----------
+     iGXA         1            TRAC         Cas9v1
+     iGXB         1        TRAC;TRBC;B2M    Cas9v1
+     iGXD         1             NA            NA
+
+
 Processing a Run
 ----------------
 
@@ -75,7 +96,7 @@ options that can be passed to iGUIDE by appending to the iguide command after '-
 * [\-\-keep-going] will keep processing if one or more job error out
 * [-w X, \-\-latency-wait X] wait X seconds for the output files to appear before erroring out
 
---------------
+
 An Example Run
 --------------
 
@@ -103,7 +124,7 @@ to ``dot -Tsvg`` will generate a vector graphic of the directed acyclic graph
   iguide run configs/simulation.config.yml -- --latency-wait 30
   cat analysis/simulation/output/unique_sites.simulation.csv
 
----------
+
 Uninstall
 ---------
 
