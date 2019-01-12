@@ -37,7 +37,7 @@ def main( argv = sys.argv ):
     parser.add_argument(
         "-i", "--iguide_dir", 
         default = os.getenv("IGUIDE_DIR", os.getcwd()),
-        help = "Path to iGUIDE installation"
+        help = "Path to iGUIDE installation."
     )
 
     # The remaining args (after --) are passed to Snakemake

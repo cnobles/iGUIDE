@@ -6,7 +6,7 @@ from iguidelib import __version__
 from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
 #from iguidelib.scripts.config import main as Config
-#from iguidelib.scripts.list_samples import main as ListSamples
+from iguidelib.scripts.list_samples import main as ListSamples
 
 def main():
 
@@ -15,8 +15,8 @@ def main():
         "subcommands:\n"
         "  setup        \tCreate a new config file for a project using local data.\n"
         "  run          \tExecute the iGUIDE pipeline.\n"
+        "  list_samples \tOutput a list of samples from a project.\n"
         "  config       \t[inDev] Modify or update iGUIDE config files.\n"
-        "  list_samples \t[inDev] Make a list of samples from a directory.\n"
     ).format(version=__version__)
 
     parser = argparse.ArgumentParser(
@@ -62,12 +62,6 @@ def main():
         )
         #Config(remaining)
     elif args.command == "list_samples":
-        raise SystemExit(
-          print("  'iguide list_samples' subcommand is currently under       \n"
-                "  development. Checkout https://github.com/cnobles/iGUIDE/  \n"
-                "  for updates and announcements. Thanks for using iGUIDE!   \n"
-          )
-        )
-        #ListSamples(remaining)
+        ListSamples(remaining)
     else:
         parser.print_help()
