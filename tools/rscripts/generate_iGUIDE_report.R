@@ -68,7 +68,10 @@ parser$add_argument(
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
-root_dir <- Sys.getenv("IGUIDE_DIR")
+if( !dir.exists(args$install_path) ){
+  root_dir <- Sys.getenv(args$install_path)
+}
+
 if( !dir.exists(root_dir) ){
   stop(paste0("\n  Cannot find install path to iGUIDE: ", root_dir, ".\n"))
 }else{
