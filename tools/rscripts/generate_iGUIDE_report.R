@@ -591,9 +591,11 @@ names(configs) <- sapply(configs, "[[", "Run_Name")
 ## Load reference genome 
 if( grepl(".fa", unique(sapply(configs, "[[", "Ref_Genome"))) ){
   
-  if( !(file.exists(file.path(root_dir, config$Ref_Genome)) |
-      file.exists(config$Ref_Genome))
-    ){
+  if( !(
+    file.exists(
+      file.path(root_dir, unique(sapply(configs, "[[", "Ref_Genome")))
+    ) | file.exists(unique(sapply(configs, "[[", "Ref_Genome")))
+  ) ){
     stop("Specified reference genome file not found.")
   }
   
@@ -603,10 +605,24 @@ if( grepl(".fa", unique(sapply(configs, "[[", "Ref_Genome"))) ){
     "fasta"
   )
   
-  ref_genome <- Biostrings::readDNAStringSet(
-    filepath = unique(sapply(configs, "[[", "Ref_Genome")), 
-    format = ref_file_type
-  )
+  if( file.exists(
+    file.path(root_dir, unique(sapply(configs, "[[", "Ref_Genome"))) 
+    ) ){
+
+    ref_genome <- Biostrings::readDNAStringSet(
+      filepath = file.path(
+        root_dir, unique(sapply(configs, "[[", "Ref_Genome"))
+      ),
+      format = ref_file_type
+    )
+    
+  }else{
+    
+    ref_genome <- Biostrings::readDNAStringSet(
+      filepath = unique(sapply(configs, "[[", "Ref_Genome")), 
+      format = ref_file_type
+    )
+  }
   
 }else{
   
