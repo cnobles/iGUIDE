@@ -5,6 +5,7 @@
 .Ruserdata
 *.RData
 *.Rproj
+*.Rmd
 .snakemake
 output
 *.yml

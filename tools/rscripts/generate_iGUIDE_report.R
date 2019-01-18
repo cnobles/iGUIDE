@@ -55,12 +55,25 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "--template", nargs = 1, type = "character", 
+  default = "tools/rscript/iGUIDE_report_template.Rmd",
+  help = "File path to standard or custom iGUIDE report template."
+)
+
+parser$add_argument(
   "--install_path", nargs = 1, type = "character", default = "IGUIDE_DIR",
   help = "iGUIDE install directory path, do not change for normal applications."
 )
 
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
+
+root_dir <- Sys.getenv("IGUIDE_DIR")
+if( !dir.exists(root_dir) ){
+  stop(paste0("\n  Cannot find install path to iGUIDE: ", root_dir, ".\n"))
+}else{
+  args$install_path <- root_dir
+}
 
 if( length(args$input) != length(args$config) ){
   stop("Must supply one config file for each input.")
@@ -75,6 +88,23 @@ if( !args$format %in% names(report_formats) ){
 
 output_format <- report_formats[args$format]
 
+## Resolve template file path.
+if( file.exists(file.path(root_dir, args$template)) ){
+  
+  template_path <- normalizePath(file.path(root_dir, args$template))
+  
+}else if( file.exists(file.path(args$template)) ){
+  
+  template_path <- normalizePath(file.path(args$template))
+  
+}else{
+  
+  stop("\nCannot find template file: ", args$template, ".\n")
+  
+}
+
+
+## Construct input table and print to terminal
 input_table <- data.frame(
   "Variables" = paste0(names(args), " :"), 
   "Values" = sapply(seq_along(args), function(i){
@@ -85,11 +115,12 @@ input_table <- data.frame(
 input_table <- input_table[
   match(
     c("input :", "output :", "config :", "support :", 
-      "figures :", "data :", "graphic :", "format :"),
+      "figures :", "data :", "graphic :", "format :", 
+      "template :", "install_path :"),
     input_table$Variables),
 ]
 
-cat("\niGUIDE Report Inputs:")
+cat("\niGUIDE Report Inputs:\n")
 
 print(
   data.frame(input_table),
@@ -99,7 +130,7 @@ print(
 
 
 # Load dependancies ----
-cat("\nLoading dependencies.")
+cat("\nLoading dependencies.\n")
 
 add_packs <- c("magrittr", "knitr")
 
@@ -118,7 +149,7 @@ if( !all(add_packs_loaded) ){
     row.names = FALSE
   )
   
-  stop("Check dependancies.")
+  stop("Check dependancies.\n")
   
 }
 
@@ -129,6 +160,7 @@ code_dir <- dirname(sub(
 ))
 
 source(file.path(code_dir, "supporting_scripts/post_process_support.R"))
+
 
 ## Additional supporting functions ----
 generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
@@ -245,7 +277,7 @@ vcollapse <- function(d, sep, fill = "NA"){
   
 }
 
-plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2, 
+plot_genomic_density <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2, 
                                  drop.alt.chr = TRUE, clean = FALSE){
   
   if( class(grl) == "GRanges" ) grl <- GenomicRanges::GRangesList(grl)
@@ -259,7 +291,9 @@ plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2,
     
   }
   
-  ref_len <- GenomeInfoDb::seqlengths(GenomicRanges::seqinfo(grl))
+  ref_len <- res * ceiling(
+    GenomeInfoDb::seqlengths(GenomicRanges::seqinfo(grl)) / res
+  )
   
   ref_cum_len <- structure(
     c(0, cumsum(as.numeric(ref_len))), names = c("start", names(ref_len))
@@ -287,6 +321,9 @@ plot_genomic_density <- function(grl, res, grp.col = NULL, cutoff = 2,
             cum_adj_pos <- ref_cum_len[
               match(df$seqnames, names(ref_cum_len)) - 1
             ]
+            
+            df$end <- res * ceiling(df$end / res)
+            df$width <- df$end - df$start + 1
             
             df$adj.start <- cum_adj_pos + df$start
             df$adj.end <- cum_adj_pos + df$end
@@ -536,16 +573,27 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
 
 
 # Import metadata and consolidate into report objects ----
-message("Importing experimental data and configurations.")
+cat("Importing experimental data and configurations.\n\n")
 
 ## Load config files
-configs <- lapply(args$config, yaml::yaml.load_file)
+configs <- lapply(args$config, function(x){
+  if( file.exists(file.path(root_dir, x)) ){
+    return(yaml::yaml.load_file(file.path(root_dir, x)))
+  }else if( file.exists(x) ){
+    return(yaml::yaml.load_file(x))
+  }else{
+    stop("\n  Cannot find config file: ", x, ".\n")
+  }
+})
+
 names(configs) <- sapply(configs, "[[", "Run_Name")
 
 ## Load reference genome 
 if( grepl(".fa", unique(sapply(configs, "[[", "Ref_Genome"))) ){
   
-  if( !file.exists(config$Ref_Genome) ){
+  if( !(file.exists(file.path(root_dir, config$Ref_Genome)) |
+      file.exists(config$Ref_Genome))
+    ){
     stop("Specified reference genome file not found.")
   }
   
@@ -597,8 +645,6 @@ if( grepl(".fa", unique(sapply(configs, "[[", "Ref_Genome"))) ){
 
 ## Get versioning
 
-root_dir <- Sys.getenv("IGUIDE_DIR")
-
 soft_version <- as.character(read.delim(
   file = file.path(root_dir, ".version"), header = FALSE))
 
@@ -615,19 +661,22 @@ signature <- paste(
 ref_genes <- loadRefFiles(
   configs[[1]]$refGenes, 
   type = "GRanges", 
-  freeze = configs[[1]]$Ref_Genome
+  freeze = configs[[1]]$Ref_Genome,
+  root = root_dir
 )
 
 onco_genes <- loadRefFiles(
   configs[[1]]$oncoGeneList, 
   type = "gene.list", 
-  freeze = configs[[1]]$Ref_Genome
+  freeze = configs[[1]]$Ref_Genome,
+  root = root_dir
 )
 
 special_genes <- loadRefFiles(
   configs[[1]]$specialGeneList, 
   type = "gene.list", 
-  freeze = config[[1]]$Ref_Genome
+  freeze = config[[1]]$Ref_Genome,
+  root = root_dir
 )
 
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
@@ -647,7 +696,15 @@ if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
 sample_info <- dplyr::bind_rows(lapply(
       sapply(configs, "[[", "Sample_Info"), 
     function(x){
-      data.table::fread(x, data.table = FALSE)
+      
+      if( file.exists(file.path(root_dir, x)) ){
+        return(data.table::fread(file.path(root_dir, x), data.table = FALSE))
+      }else if( file.exists(x) ){
+        return(data.table::fread(x, data.table = FALSE))
+      }else{
+        stop("\n  Cannot find Sample_Info: ", x, ".\n")
+      }
+
     }), .id = "run_set")
 
 sample_name_col <- unique(sapply(configs, "[[", "Sample_Name_Column"))
@@ -816,7 +873,15 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
 ## Load in supporting information ----
 if( length(args$support) > 0 ){
   
-  supp_data <- data.table::fread(args$support, data.table = FALSE)
+  if( file.exists(file.path(root_dir, args$support)) ){
+    support_path <- file.path(root_dir, args$support)
+  }else if( file.exists(args$support) ){
+    support_path <- args$support
+  }else{
+    stop("\n  Cannot find supporting data file: ", args$support, ".\n")
+  }
+  
+  supp_data <- data.table::fread(support_path, data.table = FALSE)
   specimen_levels <- supp_data$specimen[supp_data$specimen %in% specimen_levels]
   
   supp_data <- dplyr::filter(supp_data, specimen %in% specimen_levels) %>%
@@ -862,7 +927,16 @@ cond_overview <- spec_overview %>%
 
 
 ## Read in experimental data and contatenate different sets ----
-input_data <- lapply(args$input, readRDS)
+input_data <- lapply(args$input, function(x){
+  if( file.exists(file.path(root_dir, x)) ){
+    return(readRDS(file.path(root_dir, x)))
+  }else if( file.exists(x) ){
+    return(readRDS(x))
+  }else{
+    stop("\n  Cannot find input file: ", x, ".\n")
+  }
+})
+
 names(input_data) <- names(configs)
 data_type_names <- names(input_data[[1]])
 
@@ -879,7 +953,7 @@ input_data <- lapply(
 )
 
 
-cat("\nStarting analysis.")
+cat("Starting analysis...\n")
 
 # Opening graphic ----
 graphic_order <- c("algnmts", "pile_up_algns", "paired_algns", "matched_algns")
@@ -1019,11 +1093,12 @@ ot_tbl_summary <- Reduce(
     init = ot_tbl_summary
   ) %>%
   dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-  dplyr::arrange(specimen)
+  dplyr::arrange(specimen) %>%
+  dplyr::select(-treatment)
 
 
 names(ot_tbl_summary) <- c(
-  "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 
+  "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
   "Flanking\nPairs", "gRNA\nMatched")
 
 
@@ -1168,10 +1243,11 @@ ft_tbl_summary <- Reduce(
     init = ft_tbl_summary
   ) %>%
   dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-  dplyr::arrange(specimen)
+  dplyr::arrange(specimen) %>%
+  dplyr::select(-treatment)
 
 names(ft_tbl_summary) <- c(
-  "Specimen", "Treatment", "Condition", "All\nAlign.", "Align.\nPileups", 
+  "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
   "Flanking\nPairs", "gRNA\nMatched")
 
 
@@ -1415,7 +1491,7 @@ if( is.null(args$support) ){
   
 }
 
-cat("\nAnalysis complete. Starting report generation.")
+cat("Analysis complete.\nStarting report generation...\n")
 
 # Data passed to Rmd for report generation ----
 set_names <- ifelse(
@@ -1465,10 +1541,6 @@ if( args$data ){
 
 if( args$format == "html" ){
   
-  template_path <- normalizePath(
-    file.path(code_dir, "iGUIDE_report_template.Rmd")
-  )
-  
   css_path <- normalizePath(file.path(code_dir, "iguide.css"))
   
   rmarkdown::render(
@@ -1480,10 +1552,6 @@ if( args$format == "html" ){
   )
   
 }else{
-  
-  template_path <- normalizePath(
-    file.path(code_dir, "iGUIDE_report_template.Rmd")
-  )
   
   rmarkdown::render(
     input = template_path,

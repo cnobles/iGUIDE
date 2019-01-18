@@ -1,5 +1,6 @@
 ---
-title: iGUIDE Summary Report
+title: |
+    | iGUIDE Summary Report
 date: |
     | report generated : `r Sys.Date()`
     | software version : `r soft_version`
@@ -252,6 +253,7 @@ pander(
   ot_tbl_summary, 
   caption = tbl_caps[3], 
   digits = 4, 
+  round = 2,
   style = "multiline", 
   missing = 0,
   justify = ifelse(
