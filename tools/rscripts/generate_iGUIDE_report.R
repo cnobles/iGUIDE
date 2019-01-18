@@ -56,7 +56,7 @@ parser$add_argument(
 
 parser$add_argument(
   "--template", nargs = 1, type = "character", 
-  default = "tools/rscript/iGUIDE_report_template.Rmd",
+  default = "tools/rscripts/iGUIDE_report_template.Rmd",
   help = "File path to standard or custom iGUIDE report template."
 )
 

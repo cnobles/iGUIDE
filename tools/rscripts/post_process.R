@@ -78,7 +78,7 @@ input_table <- input_table[
 ]
 
 # Log inputs
-cat("\nPost-processing Inputs")
+cat("\nPost-processing Inputs:\n")
 print(
   x = data.frame(input_table),
   right = FALSE, 
@@ -115,12 +115,35 @@ submat <- banmat()
 
 if( grepl(".fa", config$Ref_Genome) ){
   
-  if( !file.exists(config$Ref_Genome) ){
-    stop("Specified reference genome file not found.")
+  if( !(
+    file.exists(file.path(config$Install_Directory, config$Ref_Genome)) | 
+      file.exists(config$Ref_Genome)
+  ) ){
+    stop(
+      "Specified reference genome file not found: ", config$Ref_Genome, ".\n"
+    )
   }
   
   ref_file_type <- ifelse(grepl(".fastq", config$Ref_Genome), "fastq", "fasta")
-  ref_genome <- readDNAStringSet(config$Ref_Genome, format = ref_file_type)
+  
+  
+  if( file.exists(
+    file.path(config$Install_Directory, config$Ref_Genome) 
+  ) ){
+    
+    ref_genome <- Biostrings::readDNAStringSet(
+      filepath = file.path(config$Install_Directory, config$Ref_Genome),
+      format = ref_file_type
+    )
+    
+  }else{
+    
+    ref_genome <- Biostrings::readDNAStringSet(
+      filepath = config$Ref_Genome,
+      format = ref_file_type
+    )
+    
+  }
   
 }else{
   
@@ -161,19 +184,22 @@ if( grepl(".fa", config$Ref_Genome) ){
 ref_genes <- loadRefFiles(
   ref = config$refGenes, 
   type = "GRanges", 
-  freeze = config$Ref_Genome
+  freeze = config$Ref_Genome,
+  root = config$Install_Directory
 )
 
 onco_genes <- loadRefFiles(
   ref = config$oncoGeneList, 
   type = "gene.list", 
-  freeze = config$Ref_Genome
+  freeze = config$Ref_Genome,
+  root = config$Install_Directory
 )
 
 special_genes <- loadRefFiles(
   ref = config$specialGeneList, 
   type = "gene.list", 
-  freeze = config$Ref_Genome
+  freeze = config$Ref_Genome,
+  root = config$Install_Directory
 )
 
 ## Incorporation site parameters ----
