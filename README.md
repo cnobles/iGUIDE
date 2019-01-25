@@ -42,8 +42,8 @@ To perform a local test of running the iGUIDE informatic pipeline, run the below
 
 ```
 # If conda is not in your path ...
-PREFIX=${HOME}/miniconda3
-export PATH=${PATH}:${PREFIX}/bin
+# Source conda into path
+source ${HOME}/miniconda3/etc/profile.d/conda.sh
 
 # Activate iguide environment
 conda activate iguide
@@ -72,6 +72,11 @@ conda deactivate
 ```
 
 ### Changelog:
+
+**v0.9.4 (January XXXX, 2019)**
+
+* Updated install and test to be consistent with latest conda practices
+* Added 'report' subcommand to generate reports with default or custom templates
 
 **v0.9.3 (January 11th, 2019)**
 

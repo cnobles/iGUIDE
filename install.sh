@@ -73,7 +73,7 @@ __req_r_version="3.4.1"
 __old_path=$PATH
 __output=${2-/dev/stdout}
 
-PATH=$PATH:${__conda_path}/bin
+#PATH=$PATH:${__conda_path}/bin
 
 if [[ "${arg_t:?}" = "1" ]]; then
     __run_iguide_tests=true
@@ -158,25 +158,31 @@ function __test_iguide() {
 
 function activate_iguide () {
     set +o nounset
-    source activate $__iguide_env
+    conda activate $__iguide_env
     set -o nounset
 }
 
 function deactivate_iguide () {
     set +o nounset
-    source deactivate
+    conda deactivate
     set -o nounset
 }
 
 function install_conda () {
     local tmpdir=$(mktemp -d)
+
     debug "Downloading miniconda..."
     debug_capture wget -q ${__conda_url} -O ${tmpdir}/miniconda.sh 2>&1
     debug "Installing miniconda..."
     debug_capture bash ${tmpdir}/miniconda.sh -b -p ${__conda_path} 2>&1
+
+    # Source conda into path
+    source ${__conda_path}/etc/profile.d/conda.sh
+
     if [[ $(__test_conda) != true ]]; then
       	installation_error "Environment creation"
     fi
+
     rm ${tmpdir}/miniconda.sh
 }
 
@@ -258,6 +264,8 @@ else
     __env_changed=true
 fi
 
+# Source conda into path
+source ${__conda_path}/etc/profile.d/conda.sh
 
 # Create Conda environment for iGUIDE
 if [[ $__env_exists = true && $__update_env = false ]]; then
@@ -317,20 +325,12 @@ fi
 if [[ $__old_path != *"$__conda_path/bin"* ]]; then
     warning "** Conda was not detected on your PATH. **"
     warning "This is normal if you have not installed Conda before."
-    warning "To add it to your path, run "
-    warning "   'echo \"export PATH=\$PATH:${__conda_path}/bin\" >> ~/.bashrc'"
+    warning "To add it to your current .bashrc to be sourced during shell"
+    warning "startup, run:"
+    warning "   'echo \"# Added to activate conda within shell\" >> ~/.bashrc"
+    warning "   'echo \"source ${__conda_path}/etc/profile.d/conda.sh\" >> ~/.bashrc"
     warning "and close and re-open your terminal session to apply."
-    warning "When finished, run 'source activate ${__iguide_env}' to begin."
+    warning "When finished, run 'conda activate ${__iguide_env}' to begin."
 else
-    info "Done. Run 'source activate ${__iguide_env}' to begin."
+    info "Done. Run 'conda activate ${__iguide_env}' to begin."
 fi
-
-
-echo -e "\n  To get started, ensure ${__conda_path}/bin is in your path and\n" \
-  "  run 'source activate ${__iguide_env}'\n"
-  
-echo -e "  To ensure ${__conda_path}/bin is in your path each time you\n" \
-        "  login, append the following to your .bashrc or .bash_profile:\n"
-
-echo -e '# Append miniconda3/bin to path\n'\
-        'export PATH="~/miniconda3/bin:${PATH}"'
