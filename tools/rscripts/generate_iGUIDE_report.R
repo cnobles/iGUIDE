@@ -512,7 +512,6 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
     as.data.frame() %>%
     dplyr::mutate(pos.y = -(seq_len(n()))) %>%
     tidyr::gather(key = "var", value = "value", -pos.y) %>%
-    #reshape2::melt(id.vars = "pos.y") %>%
     dplyr::mutate(
       pos.x = as.numeric(stringr::str_extract(var, "[0-9]+$")),
       color = nucleotide_colors[value],      
@@ -539,12 +538,19 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
     dplyr::mutate(pos.y = -(seq_len(n())))
   
   sup_melt <- tidyr::gather(sup_df, key = "var", value = "value", -pos.y) %>%
-    #melt(sup_df, id.vars = "pos.y") %>%
     dplyr::mutate(
-      pos.x = nuc_len + (match(var, names(sup_df))) * padding,
+      pos.x = nuc_len + (match(var, names(sup_df))) * padding - padding * 0.25,
       color = "#FFFFFF"
     ) %>%
-    dplyr::select(pos.x, pos.y, value, color)
+    dplyr::select(pos.x, pos.y, value, color) %>%
+    dplyr::bind_rows(
+      data.frame(
+        pos.x = max(.$pos.x) + padding,
+        pos.y = -1,
+        value = " ",
+        color = "#FFFFFF"
+      )
+    )
   
   plot_melt <- dplyr::bind_rows(nuc_melt, sup_melt)
   
@@ -713,7 +719,7 @@ if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
 ## Combine sampleInfo files
 
 sample_info <- dplyr::bind_rows(lapply(
-      sapply(configs, "[[", "Sample_Info"), 
+    sapply(configs, "[[", "Sample_Info"), 
     function(x){
       
       if( file.exists(file.path(root_dir, x)) ){
@@ -724,7 +730,10 @@ sample_info <- dplyr::bind_rows(lapply(
         stop("\n  Cannot find Sample_Info: ", x, ".\n")
       }
 
-    }), .id = "run_set")
+    }
+  ), 
+  .id = "run_set"
+)
 
 sample_name_col <- unique(sapply(configs, "[[", "Sample_Name_Column"))
 
@@ -940,7 +949,7 @@ cond_overview <- spec_overview %>%
       sep = " - ", 
       fill = "NA"
     ),
-    condition = factor(condition, levels = c(unique(condition), "Mock"))
+    condition = factor(condition, levels = c(unique(c(condition, "Mock"))))
   ) %>%
   dplyr::select(specimen, condition)
 
@@ -971,6 +980,10 @@ input_data <- lapply(
   function(x) x[x$specimen %in% spec_overview$specimen,] 
 )
 
+## Updating associated data
+# on_targets, gRNAs
+gRNAs <- dplyr::filter(gRNAs, Guide %in% unique(treatment_df$treatment))
+on_targets <- on_targets[names(on_targets) %in% unique(treatment_df$treatment)]
 
 cat("Starting analysis...\n")
 
@@ -1540,6 +1553,11 @@ if( args$format == "pdf" & !stringr::str_detect(output_file, ".pdf$") ){
   output_file <- paste0(output_file, ".pdf")
 }
 
+figure_path <- file.path(
+  output_dir, gsub("[\\w]+$", "figures", output_file, perl = TRUE)
+)
+null <- dir.create(figure_path)
+
 if( args$data ){
 
   if( args$format == "html" ){
@@ -1578,6 +1596,30 @@ if( args$format == "html" ){
     output_file = output_file,
     output_dir = output_dir
   )
+  
+}
+
+if( !args$figures ){
+  
+  tmp_fig_paths <- sapply(
+    seq_along(ft_seqs_list),
+    function(i, fp){
+      
+      file <- c(
+        sprintf("off_target_seqs-%s.pdf", i),
+        sprintf("off_target_seqs-%s.png", i)
+      )
+      
+      path <- file.path(fp, file)
+      
+    },
+    fp = figure_path
+  )
+  
+  cat(sprintf("Removing temporary files: %s\n", tmp_fig_paths), sep = "")
+  null <- file.remove(tmp_fig_paths)
+  cat("Removing temorary directory:", figure_path, "\n")
+  null <- file.remove(figure_path)
   
 }
 

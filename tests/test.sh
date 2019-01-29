@@ -10,8 +10,6 @@ rm -rf analysis/simulation
 
 # Test script
 source ${HOME}/miniconda3/etc/profile.d/conda.sh
-#PREFIX=${HOME}/miniconda3
-#export PATH=${PATH}:${PREFIX}/bin
 conda activate ${__IGUIDE_ENV}
 
 # Create test analysis directory
