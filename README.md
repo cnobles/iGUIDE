@@ -75,8 +75,13 @@ conda deactivate
 
 **v0.9.4 (January XXth, 2019)**
 
-* Reports now compatible with html and pdf
-* Introduced the 'report' and 'clean' subcommands
+* Updated 'report' utility and formating
+  + custom templates now accepted
+  + included as subcommand 'iguide report -h'
+  + pdf and html options report 'nicely' even when printed from either
+* Updated build to v0.9.1 to support new formating in report
+* Included the 'clean' subcommand to reduce size of processed projects
+  + after cleaning a project, only terminal data files will remain
 
 **v0.9.3 (January 11th, 2019)**
 

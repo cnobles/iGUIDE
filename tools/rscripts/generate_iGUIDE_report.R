@@ -56,7 +56,7 @@ parser$add_argument(
 
 parser$add_argument(
   "--template", nargs = 1, type = "character", 
-  default = "tools/rscripts/iGUIDE_report_template.Rmd",
+  default = "tools/rscripts/report_templates/iGUIDE_report_template.Rmd",
   help = "File path to standard or custom iGUIDE report template."
 )
 
@@ -1579,7 +1579,7 @@ if( args$data ){
 
 if( args$format == "html" ){
   
-  css_path <- normalizePath(file.path(code_dir, "iguide.css"))
+  css_path <- normalizePath(file.path(code_dir, "report_templates/iguide.css"))
   
   rmarkdown::render(
     input = template_path,
