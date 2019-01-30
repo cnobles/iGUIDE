@@ -35,10 +35,18 @@ bash install.sh
 
 cd path/to/iGUIDE
 bash install.sh -e {env_name}
+
+# Or include simulation test
+cd path/to/iGUIDE
+bash install.sh -t
+
+# For help with install options:
+cd path/to/iGUIDE
+bash install.sh -h
 ```
 
 ### An Example Run
-To perform a local test of running the iGUIDE informatic pipeline, run the below code after installing. This block first activates your conda environment, 'iguide' by default, and then creates a test directory within the analysis directory. The run information is stored in the run specific configuration file (config file). Using the '-np' flag with the snakemake call will perform a dry-run (won't actually process anything) and print the commands to the terminal, so you can see what snakemake is about to perform. Next, the test data is moved to the input directory underneath the new test run directory. Then the entirety of processing can start. 
+To perform a local test of running the iGUIDE informatic pipeline, run the below code after installing. This block first activates your conda environment, 'iguide' by default, and then creates a test directory within the analysis directory. The run information is stored in the run specific configuration file (config file). Using the '-np' flag with the snakemake call will perform a dry-run (won't actually process anything) and print the commands to the terminal, so you can see what snakemake is about to perform. Next, the test data can be moved to the input directory underneath the new test run directory or the path to the input data needs to be included in the config file. Then the entirety of processing can start. 
 
 ```
 # If conda is not in your path ...
