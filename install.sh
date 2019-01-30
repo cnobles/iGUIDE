@@ -274,7 +274,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.v0.9.0.yml"
+        __build_source="etc/build.v0.9.1.yml"
     fi
 
     info "Creating iGUIDE environment..."

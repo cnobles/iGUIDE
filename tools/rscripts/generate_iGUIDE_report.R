@@ -674,7 +674,7 @@ soft_version <- as.character(read.delim(
   file = file.path(root_dir, ".version"), header = FALSE))
 
 build_version <- list.files(file.path(root_dir, "etc")) %>%
-  grep(pattern = "build", x = ., value = TRUE) %>%
+  grep(pattern = "build.v[0-9\\.]+.yml", x = ., value = TRUE) %>%
   stringr::str_extract(pattern = "v[0-9]+\\.[0-9]+.[0-9]+")
 
 signature <- paste(
@@ -982,8 +982,9 @@ input_data <- lapply(
 
 ## Updating associated data
 # on_targets, gRNAs
-gRNAs <- dplyr::filter(gRNAs, Guide %in% unique(treatment_df$treatment))
-on_targets <- on_targets[names(on_targets) %in% unique(treatment_df$treatment)]
+considered_gRNAs <- unique(unlist(treatment))
+gRNAs <- dplyr::filter(gRNAs, Guide %in% considered_gRNAs)
+on_targets <- on_targets[names(on_targets) %in% considered_gRNAs]
 
 cat("Starting analysis...\n")
 

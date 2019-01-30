@@ -31,7 +31,7 @@ quiet <- any(grepl("-q", cmd_args))
 # Check installed packages for dependencies ----
 r_packs <- c(
   "argparse", "data.table", "devtools", "igraph", "knitr", "magrittr", "Matrix",
-  "pander", "RColorBrewer", "rmarkdown", "scales", "tidyverse", , "ggforce", "yaml")
+  "pander", "RColorBrewer", "rmarkdown", "scales", "tidyverse", "ggforce", "yaml")
 
 bioc_packs <- c(
   "BiocGenerics", "Biostrings", "BSgenome", "BSgenome.Hsapiens.UCSC.hg38",

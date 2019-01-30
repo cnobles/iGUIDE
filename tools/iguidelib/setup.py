@@ -20,5 +20,6 @@ setup(
     packages = find_packages(),
     entry_points = { 'console_scripts': [
         'iguide = iguidelib.scripts.command:main',
+        "ig = iguidelib.scripts.command:main"
     ] }
 )
