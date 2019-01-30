@@ -42,30 +42,38 @@ To perform a local test of running the iGUIDE informatic pipeline, run the below
 
 ```
 # If conda is not in your path ...
-PREFIX=${HOME}/miniconda3
-export PATH=${PATH}:${PREFIX}/bin
+source ${HOME}/miniconda3/etc/profile.d/conda.sh
 
 # Activate iguide environment
 conda activate iguide
 
-# Check the setup workflow
-iguide setup configs/simulation.config.yml -- -np
+# After constructing the config file and having reference files (i.e. sampleinfo)
+# You can check the samples associated with the run.
+iguide list_samples configs/simulation.config.yml
 
 # Create test analysis directory
+# (The simulation configuration file is used by default and does not need to be specified)
+iguide setup configs/simulation.config.yml -- -np
 iguide setup configs/simulation.config.yml
 
-# Check the run workflow
+# Process a simulation dataset
 iguide run configs/simulation.config.yml -- -np
-
-# Generate test DAG graph
-iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > \
-    analysis/simulation/reports/simulation.dag.svg
-
-# Run iGUIDE to analyze simulation dataset
 iguide run configs/simulation.config.yml -- --latency-wait 30
-
-# Output some of the analysis data to check.
 cat analysis/simulation/output/unique_sites.simulation.csv
+
+# After run completion, generate a report in a different format than standard
+iguide report analysis/simulation/output/edited_sites.simulation.rds \
+  -c configs/simulation.config.yml \
+  -o analysis/simulation/reports/report.simulation.pdf \
+  -s sampleInfo/simulation.supp.csv \
+  -t pdf
+
+# When all finished and ready to archive / remove excess files, a minimal configuration
+# can be achived with the 'clean' subcommand.
+iguide clean configs/simulation.config.yml
+
+# Or you realized you messed all input up and need to restart
+iguide clean configs/simulation.config.yml --remove_proj
 
 # Deactivate the environment
 conda deactivate
@@ -73,11 +81,11 @@ conda deactivate
 
 ### Changelog:
 
-**v0.9.4 (January XXth, 2019)**
+**v0.9.4 (January 30th, 2019)**
 
 * Updated 'report' utility and formating
   + custom templates now accepted
-  + included as subcommand 'iguide report -h'
+  + included as subcommand, check with 'iguide report -h'
   + pdf and html options report 'nicely' even when printed from either
 * Updated build to v0.9.1 to support new formating in report
 * Included the 'clean' subcommand to reduce size of processed projects
