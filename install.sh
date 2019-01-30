@@ -190,7 +190,7 @@ function install_environment () {
     if [[ $__reqs_install == "true" ]]; then
         local install_options="--quiet --file etc/requirements.yml"
     else
-        local install_options="--quiet --file etc/build.v0.9.0.yml"
+        local install_options="--quiet --file etc/build.v0.9.1.yml"
     fi
 
     debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
