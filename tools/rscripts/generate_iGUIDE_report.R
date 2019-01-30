@@ -11,7 +11,8 @@ options(stringsAsFactors = FALSE, scipen = 99, width = 999)
 
 # Set up and gather command line arguments ----
 parser <- argparse::ArgumentParser(
-  description = "Generate an iGUIDE report for input run(s)."
+  description = "Generate an iGUIDE report for input run(s).",
+  usage = "iguide report <input(s)> -o <output> -c <config(s)> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
@@ -20,18 +21,18 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "-o", "--output", nargs = 1, type = "character", 
+  "-o", "--output", nargs = 1, type = "character", required = TRUE,
   help = "Output report file, extension not required."
 )
 
 parser$add_argument(
-  "-c", "--config", nargs = "+", type = "character",
+  "-c", "--config", nargs = "+", type = "character", required = TRUE,
   help = "Run specific config file(s) in yaml format."
 )
 
 parser$add_argument(
   "-s", "--support", nargs = "+", type = "character",
-  help = "Supplementary data input, csv or tsv format."
+  help = "Supplementary data input, csv or tsv format. Only one file."
 )
 
 parser$add_argument(
