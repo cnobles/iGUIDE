@@ -156,6 +156,10 @@ function __test_iguide() {
     fi
 }
 
+function __test_bashrc () {
+  grep conda.sh ~/.bashrc > /dev/null && echo true || echo false
+}
+
 function activate_iguide () {
     set +o nounset
     conda activate $__iguide_env
@@ -189,11 +193,11 @@ function install_conda () {
 function install_environment () {
     if [[ $__reqs_install == "true" ]]; then
         local install_options="--quiet --file etc/requirements.yml"
+        debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --file etc/build.v0.9.1.yml"
+        local install_options="--quiet --yes --file etc/build.v0.9.2.txt"
+        debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
-
-    debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
 
     if [[ $(__test_env) != true ]]; then
       	installation_error "Environment creation"
@@ -274,7 +278,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.v0.9.1.yml"
+        __build_source="etc/build.v0.9.2.txt"
     fi
 
     info "Creating iGUIDE environment..."
@@ -321,8 +325,9 @@ if [[ $__run_iguide_tests = true ]]; then
 fi
 
 
-# Check if on pre-existing path
-if [[ $__old_path != *"$__conda_path/bin"* ]]; then
+# Check if sourcing conda in .bashrc
+
+if [[  $(__test_bashrc) = false ]]; then
     warning "** Conda was not detected on your PATH. **"
     warning "This is normal if you have not installed Conda before."
     warning "To add it to your current .bashrc to be sourced during shell"
