@@ -95,7 +95,8 @@ conda deactivate
   + custom templates now accepted
   + included as subcommand, check with 'iguide report -h'
   + pdf and html options report 'nicely' even when printed from either
-* Updated build to v0.9.1 to support new formating in report
+* Updated build to v0.9.2 to support new formating in report
+* Builds are constructed from spec files rather than yaml requirements
 * Included the 'clean' subcommand to reduce size of processed projects
   + after cleaning a project, only terminal data files will remain
 

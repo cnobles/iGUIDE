@@ -675,7 +675,7 @@ soft_version <- as.character(read.delim(
   file = file.path(root_dir, ".version"), header = FALSE))
 
 build_version <- list.files(file.path(root_dir, "etc")) %>%
-  grep(pattern = "build.v[0-9\\.]+.yml", x = ., value = TRUE) %>%
+  grep(pattern = "build.v[0-9\\.]+.*", x = ., value = TRUE) %>%
   stringr::str_extract(pattern = "v[0-9]+\\.[0-9]+.[0-9]+")
 
 signature <- paste(
