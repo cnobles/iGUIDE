@@ -131,11 +131,11 @@ entirety of processing can start.::
     -s sampleInfo/simulation.supp.csv \
     -t pdf
 
-  # When all finished and ready to archive / remove excess files, a minimal configuration
+  # When you are all finished and ready to archive / remove excess files, a minimal configuration
   # can be achived with the 'clean' subcommand.
   iguide clean configs/simulation.config.yml
 
-  # Or you realized you messed all input up and need to restart
+  # Or you realized you messed up all the input and need to restart
   iguide clean configs/simulation.config.yml --remove_proj
 
 
