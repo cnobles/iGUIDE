@@ -26,6 +26,6 @@ iguide run configs/simulation.config.yml -- -w 30 --nolock --cores ${__CORES}
 
 iguide report analysis/simulation/output/edited_sites.simulation.rds \
     -c configs/simulation.config.yml \
-    -o analysis/simulation/reports/report.simulation.pdf \
+    -o analysis/simulation/reports/report.simulation.html \
     -s sampleInfo/simulation.supp.csv \
-    -t pdf
+    -t html
