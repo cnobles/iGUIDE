@@ -8,7 +8,7 @@
 Bioinformatic pipeline for processing iGUIDE and GUIDE-seq samples.
 
 ### Description
-iGUIDE is a pipeline written in [snakemake](http://snakemake.readthedocs.io/) for processing and analyzing double-strand DNA break events. These events may be induced, such as by designer nucleases like Cas9, or spontaneous, as produced through DNA replication or ionizing radiation. A laboratory bench-side protocol accompanies this software pipeline, and can be found XXX. 
+iGUIDE is a pipeline written in [snakemake](http://snakemake.readthedocs.io/) for processing and analyzing double-strand DNA break events. These events may be induced, such as by designer nucleases like Cas9, or spontaneous, as produced through DNA replication or ionizing radiation. A laboratory bench-side protocol accompanies this software pipeline, and can be found [**https://doi.org/10.1186/s13059-019-1625-3**](https://doi.org/10.1186/s13059-019-1625-3). 
 
 Below, this readme gives the reader a overview of the pipeline, including how to install and process a sample dataset. Processing a sample data set is broken into three parts: 
 
