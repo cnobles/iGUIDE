@@ -18,9 +18,7 @@ rule setup_working_dir:
     mkdir reports
     cd ../
 
-    echo "{RUN} run has been set up."
-    echo "Please place input fastq.gz files into the following directory:"
-    echo "${{WORK_DIR}}/input_data"
+    echo "'{RUN}' setup has completed."
     """
 
 rule generate_stat_matrix:

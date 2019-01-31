@@ -7,6 +7,8 @@ from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
 #from iguidelib.scripts.config import main as Config
 from iguidelib.scripts.list_samples import main as ListSamples
+from iguidelib.scripts.report import main as Report
+from iguidelib.scripts.clean import main as Clean
 
 def main():
 
@@ -15,8 +17,10 @@ def main():
         "subcommands:\n"
         "  setup        \tCreate a new config file for a project using local data.\n"
         "  run          \tExecute the iGUIDE pipeline.\n"
+        "  report       \tGenerate a custom report from iGUIDE output files."
         "  list_samples \tOutput a list of samples from a project.\n"
         "  config       \t[inDev] Modify or update iGUIDE config files.\n"
+        "  clean        \tCleanup project directory to reduce size. Keeps terminal files."
     ).format(version=__version__)
 
     parser = argparse.ArgumentParser(
@@ -39,7 +43,7 @@ def main():
 
     args, remaining = parser.parse_known_args()
     
-    sub_cmds = ["setup", "run", "config", "list_samples"]
+    sub_cmds = ["setup", "run", "config", "list_samples", "report", "clean"]
     
     if not args.command in sub_cmds:
         parser.print_help()
@@ -63,5 +67,9 @@ def main():
         #Config(remaining)
     elif args.command == "list_samples":
         ListSamples(remaining)
+    elif args.command == "report":
+        Report(remaining)
+    elif args.command == "clean":
+        Clean(remaining)
     else:
         parser.print_help()

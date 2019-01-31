@@ -20,6 +20,7 @@ dependencies:
   - r-yaml
   - r-tidyverse
   - r-magrittr
+  - r-ggforce
   - r-data.table
   - r-matrix
   - r-igraph

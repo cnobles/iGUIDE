@@ -108,21 +108,35 @@ directory. The run information is stored in the run specific configuration file
 dry-run (won't actually process anything) and print the commands to the 
 terminal, so you can see what snakemake is about to perform. Next, the test data 
 is moved to the input directory underneath the new test run directory. Then the 
-entirety of processing can start. Using the ``--dag`` flag and piping the output 
-to ``dot -Tsvg`` will generate a vector graphic of the directed acyclic graph 
-(dag) workflow that snakemake will follow given the data provided::
+entirety of processing can start.::
 
+  # After constructing the config file and having reference files (i.e. sampleinfo)
+  # You can check the samples associated with the run.
+  iguide list_samples configs/simulation.config.yml
 
   # Create test analysis directory
   # (The simulation configuration file is used by default and does not need to be specified)
   iguide setup configs/simulation.config.yml -- -np
   iguide setup configs/simulation.config.yml
 
-  # Generate test DAG graph
+  # Process a simulation dataset
   iguide run configs/simulation.config.yml -- -np
-  iguide run configs/simulation.config.yml -- --dag | dot -Tsvg > analysis/simulation/reports/simulation.dag.svg
   iguide run configs/simulation.config.yml -- --latency-wait 30
   cat analysis/simulation/output/unique_sites.simulation.csv
+
+  # After run completion, generate a report in a different format than standard
+  iguide report analysis/simulation/output/edited_sites.simulation.rds \
+    -c configs/simulation.config.yml \
+    -o analysis/simulation/reports/report.simulation.pdf \
+    -s sampleInfo/simulation.supp.csv \
+    -t pdf
+
+  # When you are all finished and ready to archive / remove excess files, a minimal configuration
+  # can be achived with the 'clean' subcommand.
+  iguide clean configs/simulation.config.yml
+
+  # Or you realized you messed up all the input and need to restart
+  iguide clean configs/simulation.config.yml --remove_proj
 
 
 Uninstall

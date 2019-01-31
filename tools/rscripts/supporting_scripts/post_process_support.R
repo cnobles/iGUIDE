@@ -285,23 +285,49 @@ pNums <- function(x, ...){
   format(x, big.mark = ",", ...)
 }
 
-loadRefFiles <- function(ref, type = "gene.list", freeze = NULL){
+loadRefFiles <- function(ref, type = "gene.list", freeze = NULL, root = NULL){
   
   stopifnot(type %in% c("gene.list", "GRanges", "data.frame"))
+  
+  if( !is.null(root) ) stopifnot(dir.exists(root))
 
   if( grepl(".rds$", ref$file) ){
     
-    ref_set <- readRDS(ref$file)
+    if( file.exists(file.path(root, ref$file)) ){
+      ref_set <- readRDS(file.path(root, ref$file))
+    }else if( file.exists(ref$file) ){
+      ref_set <- readRDS(ref$file)
+    }else{
+      stop("\n  Cannot find file: ", ref$file, ".\n")
+    }
     
   }else if( grepl(".RData$", ref$file) ){
     
+    if( file.exists(file.path(root, ref$file)) ){
+      rdata_path <- file.path(root, ref$file)
+    }else if( file.exists(ref$file) ){
+      rdata_path <- ref$file
+    }else{
+      stop("\n  Cannot find file: ", ref$file, ".\n")
+    }
+    
     ref_env <- new.env()
-    load(config$refGenes, envir = refs)
+    load(rdata_path, envir = refs)
     ref_set <- ref_env[[ls(ref_env)]]
     
-  }else if( file.exists(ref$file) | grepl("^http", ref$file) ){
+  }else if( 
+    file.exists(file.path(root, ref$file)) | 
+      file.exists(ref$file) | 
+        grepl("^http", ref$file) 
+    ){
     
-    ref_set <- data.table::fread(ref$file, data.table = FALSE)
+    if( file.exists(file.path(root, ref$file)) ){
+      ref_set <- data.table::fread(
+        file.path(root, ref$file), data.table = FALSE
+      )
+    }else{
+      ref_set <- data.table::fread(ref$file, data.table = FALSE)
+    }
     
   }else{
     

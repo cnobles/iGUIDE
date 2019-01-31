@@ -1,5 +1,6 @@
 ---
-title: iGUIDE Summary Report
+title: |
+    | iGUIDE Summary Report
 date: |
     | report generated : `r Sys.Date()`
     | software version : `r soft_version`
@@ -34,7 +35,10 @@ geometry: margin=0.5in
 ---
 
 ```{r setup, include=FALSE}
-packs <- c("magrittr", "knitr", "scales", "RColorBrewer", "tidyverse", "pander")
+packs <- c(
+  "magrittr", "knitr", "scales", "RColorBrewer", 
+  "tidyverse", "ggforce", "pander"
+)
 
 packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
 
@@ -75,13 +79,7 @@ knitr::opts_chunk$set(
 )
 
 if( args$figures != FALSE ){
-  
-  knitr::opts_chunk$set(
-    fig.path = file.path(
-      output_dir, gsub("[\\w]+$", "figures/", output_file, perl = TRUE)
-    )
-  )
-  
+  knitr::opts_chunk$set(fig.path = paste0(figure_path, "/"))
 }
 
 
@@ -140,13 +138,15 @@ fig_caps <- c(
 
 if( args$format == "html" ){
   tbl_caps <- paste0("Table ", 1:5, ". ", tbl_caps)
-  fig_caps <- paste0("Figure ", 1:3, ". ", fig_caps)
 }
+
+fig_caps <- paste0("**Figure ", 1:3, "**. ", fig_caps)
+
 ```
 
 ***
 
-This report includes data from the following sequencing runs: `r gsub("_", " ", set_names)`.
+This report includes data from the following sequencing runs: `r gsub("_", "-", set_names)`.
 
 ```{r title_graphic, fig.width=6, fig.height=6, eval = args$graphic}
 plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)
@@ -162,7 +162,7 @@ if( args$format == "pdf" ){
 
 # Summary
 
-The following document summarizes the results of processing `r gsub("_", " ", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(input_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(input_data$algnmts$contrib)))` inferred cells sampled.
+The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(input_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(input_data$algnmts$contrib)))` inferred cells sampled.
 
 ```{r} 
 if( args$format == "pdf" ){
@@ -252,6 +252,7 @@ pander(
   ot_tbl_summary, 
   caption = tbl_caps[3], 
   digits = 4, 
+  round = 2,
   style = "multiline", 
   missing = 0,
   justify = ifelse(
@@ -266,11 +267,27 @@ pander(
 )
 ```
 
+```{r} 
+if( args$format == "pdf" ){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
 ## Editing near known genomic sites
 
 **Figure 1** displays the distribution of dsODN incorporations around on-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of incorporation sites to search for nuclease edited sequences. 
 
-```{r incorp_dist, fig.cap=fig_caps[1], fig.width=7.5, fig.height=max(2.5*(ceiling(nrow(sites_included) / 2)), 2.5)}
+```{r}
+incorp_len <- ifelse(
+  !is.null(args$support), 
+  length(unique(paste(on_tar_dists$condition, on_tar_dists$gRNA))), 
+  length(unique(on_tar_dists$gRNA))
+)
+```
+
+```{r incorp_dist, fig.width=ifelse(incorp_len == 1, 3.75, 7.5), fig.height=3}
 incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
   geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
   geom_col(aes(fill = factor(strand)), width = 1) +
@@ -288,13 +305,43 @@ incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
   custom_theme +
   theme(strip.text.y = element_text(angle = 0))
 
-if( !is.null(args$support) ){
-  incorp_plot + facet_wrap(condition ~ gRNA, ncol = 2, scales = "free")
-}else{
-  incorp_plot + facet_wrap(~ gRNA, ncol = 2, scales = "free")
+for( i in unique(ceiling(seq_len(incorp_len) / 2)) ){
+  
+  if( i%%3 == 0 ){
+    if( args$format == "pdf" ){
+      cat("\\newpage")
+    }else{
+      cat('<P style="page-break-before: always">')
+    }
+  }
+  
+  if( !is.null(args$support) ){
+  
+      p <- incorp_plot + 
+        facet_wrap_paginate(
+          condition ~ gRNA, ncol = 2, nrow = 1, page = i, scales = "free"
+        )
+      
+      print(p)
+    
+  }else{
+    
+      p <- incorp_plot + 
+        facet_wrap_paginate(
+          ~ gRNA, ncol = 2, nrow = 1, page = i, scales = "free"
+        )
+      
+      print(p)
+    
+  }
 }
 
 ```
+
+```{r} 
+cat(fig_caps[1]) 
+```
+
 
 ```{r} 
 if( args$format == "pdf" ){
@@ -373,9 +420,18 @@ if( args$format == "pdf" ){
 
 The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent rings plot the alignments associated with Pileups, Flanking Pairs, and gRNA Matched groups. The height of the bar within its associated ring is correlated to the number of incorporations identified within the **10 Mb window** (normalized logarithm base 10 of incorporation sites).
 
-```{r genomic_distribution, fig.cap=fig_caps[2], fig.width=7.5, fig.height=ifelse(length(unique(genomic_grl[[1]]$condition)) < 2, 5, 4.25*ceiling(length(unique(genomic_grl[[1]]$condition))/2))}
-plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
-  facet_wrap(~ cond, ncol = 2) +
+```{r}
+gen_den_len <- length(unique(genomic_grl[[1]]$condition))
+plots_per_row <- 2
+row_idx <- ceiling(seq_len(gen_den_len) / plots_per_row)
+layout_list <- split(seq_len(gen_den_len), row_idx)
+```
+
+```{r genomic_distribution, fig.width=ifelse(length(layout_list[[1]]) > 1, 7.5, 3.25), fig.height=4.8}
+
+genomic_den_plot <- plot_genomic_density(
+    genomic_grl, res = 1E7, grp.col = "condition"
+  ) +
   custom_theme +
   theme(
     panel.background = element_blank(),
@@ -383,6 +439,29 @@ plot_genomic_density(genomic_grl, res = 1E7, grp.col = "condition") +
     axis.ticks = element_blank(), 
     legend.position = "top"
   )
+
+for( i in seq_along(layout_list) ){
+  
+  if( i %% 2 == 0 ){
+
+    if( args$format == "pdf" ){
+      cat("\\newpage")
+    }else{
+      cat('<P style="page-break-before: always">')
+    }
+    
+  }
+  
+  p <- genomic_den_plot + 
+    facet_wrap_paginate(~ cond, ncol = 2, nrow = 1, page = i)
+
+  print(p)
+  
+}
+```
+
+```{r} 
+cat(fig_caps[2]) 
 ```
 
 ```{r} 
@@ -397,7 +476,7 @@ if( args$format == "pdf" ){
 
 Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the gRNA matched sites are displayed below in Figure 3 along with the number of mismatches to the gRNA sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`gene_id`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate `*`) that the site is within the transcription unit of the gene, `~`) the gene appears on the cancer-association list, `!`) and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
 
-```{r off-target_seqs, fig.cap=fig_caps[3], fig.width=8, fig.height=0.25*sum(sapply(ft_seqs_list, function(x) min(nrow(x), 10)) + 4)}
+```{r off_target_seqs, out.width="100%"}
 ft_seq_plots <- lapply(
   ft_seqs_list, 
   function(x){
@@ -414,11 +493,13 @@ ft_seq_plots <- lapply(
     
     y <- head(x, n = 10)
     
-    dplyr::select(y, aligned.sequence, mismatch, target, aligns, MESL, gene_id) %>%
+    dplyr::select(
+        y, aligned.sequence, mismatch, target, aligns, MESL, gene_id
+      ) %>%
       dplyr::mutate(MESL = format(round(MESL, digits = 1))) %>%
       seq_diverge_plot(
-        ref = ref_gRNA, padding = 6, text.size = 4, 
-        font.family = "Courier", font.face = "plain") +
+        ref = ref_gRNA, padding = 7, text.size = 3.5, 
+        font.family = "Courier", font.face = "plain", force.sq = TRUE) +
       labs(title = title) +
       blank_theme +
       theme(
@@ -428,14 +509,75 @@ ft_seq_plots <- lapply(
   }
 )
 
-layout_mat <- matrix(
-  c(rep(seq_along(ft_seqs_list), sapply(
+layout_seq <- c(
+  rep(seq_along(ft_seqs_list), sapply(
     ft_seqs_list, 
     function(x) min(nrow(x), 10)
-  ) + 4)),
-  ncol = 1
+  ) + 4)
 )
 
-gridExtra::grid.arrange(grobs = ft_seq_plots, layout_matrix = layout_mat)
+lines_per_page <- 42
+layout_list <- split(layout_seq, layout_seq)
+
+null <- mapply(
+  function(seq, ft_plot, fp){
+    
+    len <- length(seq) * 10 / lines_per_page
+    file_pdf <- sprintf("off_target_seqs-%s.pdf", unique(seq))
+    file_png <- sprintf("off_target_seqs-%s.png", unique(seq))
+    
+    ggsave(
+      filename = file_pdf, 
+      plot = ft_plot, 
+      device = "pdf", 
+      path = fp, 
+      width = 7.5, 
+      height = len, 
+      units = "in"
+    )
+    
+    ggsave(
+      filename = file_png, 
+      plot = ft_plot, 
+      device = "png", 
+      path = fp, 
+      width = 7.5,
+      height = len, 
+      units = "in",
+      dpi = 300
+    )
+
+    
+  },
+  seq = layout_list,
+  ft_plot = ft_seq_plots,
+  MoreArgs = list(fp = figure_path)
+)
+
+if( args$format == "pdf"){
+  
+  knitr::include_graphics(
+    path = sprintf(
+      file.path(figure_path, "off_target_seqs-%s.pdf"), 
+      seq_along(layout_list)
+    )
+  )
+  
+  
+}else{
+  
+  knitr::include_graphics(
+    path = sprintf(
+      file.path(figure_path, "off_target_seqs-%s.png"), 
+      seq_along(layout_list)
+    )
+  )
+  
+}
+
+```
+
+```{r} 
+cat(fig_caps[3]) 
 ```
 

@@ -6,7 +6,6 @@
 Welcome to iGUIDE's documentation
 ==================================
 
-===========
 Description
 ===========
 
@@ -14,7 +13,7 @@ Software pipeline for processing and analyzing double-strand DNA break events.
 These events may be induced, such as by designer nucleases like Cas9, or 
 spontaneous, as produced through DNA replication or ionizing radiation. A 
 laboratory bench-side protocol accompanies this software pipeline, and can be 
-found XXX. 
+found (https://doi.org/10.1186/s13059-019-1625-3). 
 
 This documentation gives the reader an overview of the pipeline, including
 how to install and process a sample dataset. Processing a sample data set is 
