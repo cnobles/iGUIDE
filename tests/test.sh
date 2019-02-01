@@ -29,3 +29,6 @@ iguide report analysis/simulation/output/edited_sites.simulation.rds \
     -o analysis/simulation/reports/report.simulation.html \
     -s sampleInfo/simulation.supp.csv \
     -t html
+    
+# Test for precise outputs
+Rscript tools/rscripts/check_file_digests.R tests/simulation.digests.yml -v

@@ -28,6 +28,7 @@ dependencies:
   - r-knitr < 1.18
   - r-scales
   - r-rcolorbrewer
+  - r-digest
   - r-devtools
   - bioconductor-biocgenerics
   - bioconductor-iranges
