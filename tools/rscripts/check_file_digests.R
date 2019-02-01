@@ -92,7 +92,7 @@ readFile <- function(path, root){
   # Check additional extension if compressed
   if( ext == "gz" ){
     ext2 <- stringr::str_extract(path, "[\\w]+.gz")
-    ext2 <- stringr::str_remove(ext2, ".gz")
+    ext2 <- gsub(".gz", "", ext2)
     stopifnot( ext2 %in% supported_ext )
   }else{
     ext2 <- NA
