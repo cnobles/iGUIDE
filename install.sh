@@ -268,8 +268,10 @@ else
     __env_changed=true
 fi
 
-# Source conda into path
-source ${__conda_path}/etc/profile.d/conda.sh
+# Source conda into shell
+if [[ $__test_conda = false ]]; then
+    source ${__conda_path}/etc/profile.d/conda.sh
+fi
 
 # Create Conda environment for iGUIDE
 if [[ $__env_exists = true && $__update_env = false ]]; then
