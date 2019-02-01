@@ -269,7 +269,7 @@ else
 fi
 
 # Source conda into shell
-if [[ $__test_conda = false ]]; then
+if [[ $(__test_conda) = false ]]; then
     source ${__conda_path}/etc/profile.d/conda.sh
 fi
 
