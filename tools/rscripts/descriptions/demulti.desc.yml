@@ -1,5 +1,5 @@
 # This file contains descriptions for the dualDemultiplexR program and options available for configuring the analysis.
-program_short_description : "R-based demultiplexing for dual-barcoded Illumina sequencing runs."
+program_short_description : "R-based demultiplexing for dual-barcoded Illumina sequencing files."
 
 # The following are descriptions of options.
 manifest : "Manifest file (*.yaml, *.yml, *.csv, *.tsv)."
@@ -18,6 +18,7 @@ bc2Len : "Length of barcode2, in nucleotides. Default = 8."
 maxMis : "Max mismatch allowed in barcodes (Default = 0). It is recommended to use either ambiguous nucleotide codes or designate mismatch allowance, not both."
 bc1Mis : "Max mismatch allowed for barcode1 (Default = 0)."
 bc2Mis : "Max mismatch allowed for barcode2 (Default = 0)."
+maxN : "Maximal number of degenerate bases to allow before assigning the read as degenerate."
 cores : "Max cores to be used. If 0 or 1 (default), program will not utilize parallel processing."
 compress : "Output fastq files are gzipped."
 poolreps : "Pools replicates."
