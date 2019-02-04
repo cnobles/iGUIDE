@@ -228,8 +228,7 @@ if( !all(present_packs) ){
 # Operating functions ----
 parseIndexReads <- function(barcode.seqs, reads, indices = NULL, 
                             barcode.length = NULL, max.mismatch = 1L, 
-                            max.N.count = 1L, 
-                            read.name.pattern = "[\\w\\:\\-\\+]+"){
+                            max.N.count = 1L){
   
   if( is.null(indices) ) indices <- seq_along(reads)
   if( is.null(barcode.length) ) barcode.length <- max(width(reads))
@@ -440,8 +439,7 @@ if( args$cores > 1 ){
         indices = idx,
         barcode.length = args$bc1Len,
         max.mismatch = args$bc1Mis,
-        max.N.count = args$maxN,
-        read.name.pattern = args$readNamePattern
+        max.N.count = args$maxN
       )
     },
     reads = bc1_proc_grps,
@@ -509,8 +507,7 @@ if( args$cores > 1 ){
           indices = idx,
           barcode.length = args$bc2Len,
           max.mismatch = args$bc2Mis,
-          max.N.count = args$maxN,
-          read.name.pattern = args$readNamePattern
+          max.N.count = args$maxN
         )
       },
       reads = bc2_proc_grps,
@@ -546,8 +543,7 @@ if( args$cores > 1 ){
     indices = all_indices,
     barcode.length = args$bc1Len,
     max.mismatch = args$bc1Mis,
-    max.N.count = args$maxN,
-    read.name.pattern = args$readNamePattern
+    max.N.count = args$maxN
   )
   
   cat("\nbc1 breakdown:\n")
@@ -581,8 +577,7 @@ if( args$cores > 1 ){
       indices = bc2_indices,
       barcode.length = args$bc2Len,
       max.mismatch = args$bc2Mis,
-      max.N.count = args$maxN,
-      read.name.pattern = args$readNamePattern
+      max.N.count = args$maxN
     )
     
   }
@@ -760,11 +755,11 @@ if( args$cores > 1 ){
       reads <- ShortRead::readFastq(read.file.path)
       reads@id <- Biostrings::BStringSet(
         stringr::str_extract(
-          as.character(ShortRead::id(reads)), read.name.pattern
+          as.character(ShortRead::id(reads)), args$readNamePattern
         )
       )
       
-      reads <- reads[multiplexed.data$index]
+      reads <- reads[match(multiplexed.data$index, as.character(reads@id))]
       reads <- split(reads, multiplexed.data$sampleName)
     
       demultiplex <- parallel::clusterMap(
@@ -773,7 +768,7 @@ if( args$cores > 1 ){
         reads = reads,
         samplename = names(reads),
         MoreArgs = list(
-          type = read_list,
+          type = read.type,
           outfolder = args$outfolder,
           compress = args$compress
         )

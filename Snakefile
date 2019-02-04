@@ -50,6 +50,10 @@ RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 # Check for directory paths
 if not os.path.isdir(ROOT_DIR):
     raise SystemExit("Path to iGUIDE is not found. Check environmental variables.")
+    
+# Default params if not included in config
+if not "maxNcount" in config:
+    config["maxNcount"] = 1
 
 # Target Rules
 rule all:

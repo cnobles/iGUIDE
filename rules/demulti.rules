@@ -15,6 +15,8 @@ rule demultiplex:
       sample=SAMPLES, type=TYPES)),
     ambi=temp(expand(
       RUN_DIR + "/processData/ambiguous.{type}.fastq.gz", type=TYPES)),
+    dgen=temp(expand(
+      RUN_DIR + "/processData/degenerate.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
       RUN_DIR + "/processData/unassigned.{type}.fastq.gz", type=TYPES)),
     stat=temp(
@@ -27,6 +29,7 @@ rule demultiplex:
     bc2=config["barcode2"],
     bc1Mis=config["bc1Mismatch"],
     bc2Mis=config["bc2Mismatch"],
+    maxN=config["maxNcount"],
     statName=RUN + ".demulti.stat"
   log: 
     RUN_DIR + "/logs/demultiplex." + RUN + ".log"
@@ -39,7 +42,7 @@ rule demultiplex:
       --idx1 {input.I1} --idx2 {input.I2} \
       --bc1 {params.bc1} --bc1Len {params.bc1Len} \
       --bc2 {params.bc2} --bc2Len {params.bc2Len} \
-      --bc1Mis {params.bc1Mis} --bc2Mis {params.bc2Mis} \
+      --bc1Mis {params.bc1Mis} --bc2Mis {params.bc2Mis} --maxN {params.maxN} \
       -o {RUN_DIR}/processData --stat {params.statName} -c {threads} \
       --compress > {log} 2>&1
     """

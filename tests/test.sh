@@ -22,7 +22,7 @@ iguide run configs/simulation.config.yml -- -np
 #iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
 #    analysis/simulation/reports/simulation.dag.svg
 
-iguide run configs/simulation.config.yml -- -w 30 --nolock --cores ${__CORES}
+iguide run configs/simulation.config.yml -- -p -w 30 --nolock --cores ${__CORES}
 
 iguide report analysis/simulation/output/edited_sites.simulation.rds \
     -c configs/simulation.config.yml \
