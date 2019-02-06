@@ -13,9 +13,9 @@ jobs:
       - checkout
 
       # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "etc/build.v0.9.3.txt" }}
+      #- restore_cache:
+      #    keys:
+      #    - v1-dependencies-{{ checksum "etc/build.v0.9.3.txt" }}
 
       - run:
           name: install
@@ -27,7 +27,7 @@ jobs:
           command: |
             bash tests/test.sh
 
-      - save_cache:
-          paths:
-            - ~/miniconda3
-          key: v1-dependencies-{{ checksum "etc/build.v0.9.3.txt" }}
+      #- save_cache:
+      #    paths:
+      #      - ~/miniconda3
+      #    key: v1-dependencies-{{ checksum "etc/build.v0.9.3.txt" }}
