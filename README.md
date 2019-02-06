@@ -92,6 +92,8 @@ conda deactivate
 **v0.9.5 (February XXth, 2019)**
 
 * Updated demultiplexing to be more efficient and better HPC compatible.
+* Added RefSeq Extended* reference gene set
+  + Includeds curated, predicted, and other RefSeq sets
 
 **v0.9.4 (January 30th, 2019)**
 

@@ -31,4 +31,5 @@ broken into a few parts:
    pages/install.rst
    pages/quickstart.rst
    pages/configinfo.rst
-   pages/sampleinfo.rst   
+   pages/sampleinfo.rst
+   pages/changelog.rst   
