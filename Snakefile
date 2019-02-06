@@ -55,6 +55,14 @@ if not os.path.isdir(ROOT_DIR):
 if not "maxNcount" in config:
     config["maxNcount"] = 1
 
+if not "demultiCores" in config: 
+    demulti_cores = snakemake.utils.available_cpu_count()
+else:
+    demulti_cores = min(
+        config["demultiCores"], snakemake.utils.available_cpu_count()
+    )
+ 
+
 # Target Rules
 rule all:
     input: 

@@ -33,8 +33,7 @@ rule demultiplex:
     statName=RUN + ".demulti.stat"
   log: 
     RUN_DIR + "/logs/demultiplex." + RUN + ".log"
-  threads: 
-    config["demultiCores"]
+  threads: demulti_cores
   shell:
     """
     Rscript {params.tool} -m {ROOT_DIR}/{input.sampleInfo} \
