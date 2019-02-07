@@ -14,6 +14,8 @@ rule collect_umitags:
     mis=config["bc2Mismatch"]
   log:
     RUN_DIR + "/logs/{sample}.umitag.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:
     """
     Rscript {params.tool} {input} -o {output.seq} \

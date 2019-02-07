@@ -8,6 +8,7 @@ import sys
 import re
 import yaml
 import configparser
+from pathlib import Path
 from iguidelib import import_sample_info, choose_sequence_data
 
 if not config:
@@ -50,7 +51,12 @@ RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 # Check for directory paths
 if not os.path.isdir(ROOT_DIR):
     raise SystemExit("Path to iGUIDE is not found. Check environmental variables.")
+
+# Check for sequence file paths
+if not os.path.isdir(config["Seq_Path"]):
+    raise SystemExit("Path to sequencing files is not found (Seq_Path). Check your config file.")
     
+
 # Default params if not included in config
 if not "maxNcount" in config:
     config["maxNcount"] = 1
@@ -61,7 +67,32 @@ else:
     demulti_cores = min(
         config["demultiCores"], snakemake.utils.available_cpu_count()
     )
- 
+
+## Memory params
+if not "demultiMB" in config:
+    config["demultiMB"] = 16000
+    
+if not "trimMB" in config:
+    config["trimMB"] = 4000
+
+if not "filtMB" in config:
+    config["filtMB"] = 4000
+    
+if not "consolMB" in config:
+    config["consolMB"] = 4000
+
+if not "alignMB" in config:
+    config["alignMB"] = 4000
+
+if not "coupleMB" in config:
+    config["coupleMB"] = 4000
+    
+if not "processMB" in config:
+    config["processMB"] = 4000
+    
+if not "reportMB" in config:
+    config["reportMB"] = 4000
+  
 
 # Target Rules
 rule all:

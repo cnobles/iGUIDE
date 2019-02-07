@@ -16,6 +16,8 @@ rule seq_trim_R1:
     overLen=config["R1overMaxLength"]
   log:
     RUN_DIR + "/logs/{sample}.R1.trim.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:
     """
     Rscript {params.tool} {input} -o {output.trim} \
@@ -40,6 +42,8 @@ rule seq_trim_R2_primer:
     overLen=config["R2overMaxLength"]
   log:
     RUN_DIR + "/logs/{sample}.R2.primer.trim.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:
     """
     Rscript {params.tool} {input} -o {output.trim} \
@@ -61,6 +65,8 @@ rule seq_trim_R2_odn:
     leadMis=config["R2leadMismatch"]
   log:
     RUN_DIR + "/logs/{sample}.R2.odn.trim.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:
     """
     Rscript {params.tool} {input} -o {output.trim} \

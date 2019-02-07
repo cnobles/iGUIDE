@@ -12,6 +12,8 @@ rule consolidate:
     tool=ROOT_DIR + "/tools/rscripts/consol.R"
   log:
     RUN_DIR + "/logs/{sample}.{read}.consol.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["consolMB"]
   shell:
     """
     Rscript {params.tool} {input} -o {output.consol} -k {output.key} \

@@ -11,6 +11,8 @@ ChangeLog
 * Updated demultiplexing to be more efficient and better HPC compatible.
 * Added RefSeq Extended* reference gene set
   + Includeds curated, predicted, and other RefSeq sets
+* Incorporated resource allocation for job dependent memory consumption
+  + Works great with HPC to specify memory requirements
 
 **v0.9.4 (January 30th, 2019)**
 

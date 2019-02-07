@@ -8,10 +8,11 @@ Aligner : "blat"
 UMItags : TRUE
 
 # Sequence files
-R1: "tests/Data/Undetermined_S0_L001_R1_001.fastq.gz"
-R2: "tests/Data/Undetermined_S0_L001_R2_001.fastq.gz"
-I1: "tests/Data/Undetermined_S0_L001_I1_001.fastq.gz"
-I2: "tests/Data/Undetermined_S0_L001_I2_001.fastq.gz"
+Seq_Path : "tests/Data/"
+R1: "Undetermined_S0_L001_R1_001.fastq.gz"
+R2: "Undetermined_S0_L001_R2_001.fastq.gz"
+I1: "Undetermined_S0_L001_I1_001.fastq.gz"
+I2: "Undetermined_S0_L001_I2_001.fastq.gz"
 
 # Sequence file directory (if already demultiplexed)
 Demulti_Dir: "/tests/Data/Demult/"
@@ -52,6 +53,16 @@ Treatment :
 # iGUIDE configuration
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
+
+# Memory Management (in MB units)
+demultiMB : 16000
+trimMB : 4000
+filtMB : 4000
+consolMB : 4000
+alignMB : 4000
+coupleMB : 4000
+processMB : 4000
+reportMB : 4000
 
 # Demultiplexing parameters
 barcode1Length : 8

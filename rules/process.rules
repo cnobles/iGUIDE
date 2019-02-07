@@ -44,6 +44,8 @@ rule all_edit_sites:
     tool = ROOT_DIR + "/tools/rscripts/post_process.R"
   log:
     RUN_DIR + "/logs/" + RUN + ".postproc.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["processMB"]
   run:
     call_str="Rscript {params.tool} {input.sites} -o {output.edit} "
     if (config["UMItags"]):
@@ -52,6 +54,7 @@ rule all_edit_sites:
         call_str=call_str + "-m {input.multi} "
     call_str=call_str + "-c {params.config} --stat {output.stat} > {log} 2>&1"
     shell(call_str)
+
 
 rule compress_uniq_sites:
   input: 
@@ -81,6 +84,8 @@ rule run_report:
     config = RUN_DIR + "/" + "config.yml",
     supp = report_supp
   log: RUN_DIR + "/logs/" + RUN + ".report.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
   shell:
     """
     Rscript {params.tool} {input} -o {output} \

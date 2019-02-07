@@ -13,6 +13,8 @@ rule seq_filter:
     tool=ROOT_DIR + "/tools/rscripts/filt.R"
   log:
     RUN_DIR + "/logs/{sample}.filt.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["filtMB"]
   shell:
     """
     Rscript {params.tool} {input.R1} {input.R2} -o {output.R1} {output.R2} \
