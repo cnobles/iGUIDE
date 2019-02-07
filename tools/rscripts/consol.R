@@ -14,7 +14,7 @@ desc <- desc <- yaml::yaml.load_file(
 #' Set up and gather command line arguments
 parser <- argparse::ArgumentParser(
   description = desc$program_short_description,
-  usage = "Rscript consol.R <seqFile> [-h/--help, -v/--version] [optional args]"
+  usage = "nuc consol <seqFile> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
@@ -47,7 +47,9 @@ parser$add_argument(
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
-if( args$seqFile == "NA" ) stop("No sequence file specified. Please provide.")
+if( args$seqFile == "NA" ){
+  stop("\n  No sequence file specified. Please provide.\n")
+}
 
 # Check I/O file types
 seq_type <- unlist(strsplit(args$seqFile, "/"))
@@ -82,7 +84,7 @@ if( args$output != "NA" ){
   
 }else{
   
-  stop("No output file name given. Please provide.")
+  stop("\n  No output file name given. Please provide.\n")
   
 }
 
@@ -96,7 +98,7 @@ if( args$keyFile != "NA" ){
   
 }else{
   
-  stop("No key file name given. Please provide.")
+  stop("\n  No key file name given. Please provide.\n")
   
 }
   
@@ -127,7 +129,7 @@ input_table <- input_table[
     input_table$Variables)
 ,]
 
-cat("Consolidate Inputs:")
+cat("\nConsolidate Inputs:\n")
 print(
   data.frame(input_table, row.names = NULL), 
   right = FALSE, row.names = FALSE

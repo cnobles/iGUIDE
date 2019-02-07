@@ -311,7 +311,7 @@ parseIndexReads <- function(barcode.seqs, reads, indices = NULL,
   
 }
 
-writeDemultiplexedSequences <- function(reads, samplename, type, 
+writeDemultiplexedSequences <- function(reads, quals, samplename, type, 
                                         outfolder, compress){
   
   if( compress ){  
@@ -324,7 +324,13 @@ writeDemultiplexedSequences <- function(reads, samplename, type,
       
   if( file.exists(file_path) ) unlink(file_path)
   
-  ShortRead::writeFastq(reads, file = file_path, compress = compress)
+  Biostrings::writeXStringSet(
+    x = reads, 
+    filepath = file_path, 
+    compress = compress, 
+    format = "fastq", 
+    qualities = quals
+  )
   
   cat(
     paste0("Wrote ", length(reads), " reads to:\n  ", file_path, ".\n")
@@ -753,20 +759,35 @@ if( args$cores > 1 ){
              multiplexed.data, writeDemultiplexedSequences){
       
       reads <- ShortRead::readFastq(read.file.path)
-      reads@id <- Biostrings::BStringSet(
+      
+      seqs <- reads@sread
+      
+      ids <- Biostrings::BStringSet(
         stringr::str_extract(
-          as.character(ShortRead::id(reads)), args$readNamePattern
+          as.character(reads@id), args$readNamePattern
         )
       )
       
-      reads <- reads[match(multiplexed.data$index, as.character(reads@id))]
-      reads <- split(reads, multiplexed.data$sampleName)
+      names(seqs) <- ids
+      
+      quals <- reads@quality@quality
+      
+      seqs <- split(
+        seqs[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
+      
+      quals <- split(
+        quals[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
     
       demultiplex <- parallel::clusterMap(
         cluster,
         writeDemultiplexedSequences,
-        reads = reads,
-        samplename = names(reads),
+        reads = seqs,
+        quals = quals,
+        samplename = names(seqs),
         MoreArgs = list(
           type = read.type,
           outfolder = args$outfolder,

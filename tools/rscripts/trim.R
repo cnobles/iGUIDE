@@ -14,7 +14,7 @@ desc <- yaml::yaml.load_file(
 #' Set up and gather command line arguments
 parser <- argparse::ArgumentParser(
   description = desc$program_short_description,
-  usage = "Rscript trim.R <seqFile> [-h/--help, -v/--version] [optional args]"
+  usage = "nuc trim <seqFile> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
@@ -112,10 +112,11 @@ parser$add_argument(
 )
 
 
+
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
 if( is.null(args$seqFile) ){
-  stop("Please choose a sequence file (fasta or fastq).")
+  stop("\n  Please choose a sequence file (fasta or fastq).\n")
 }
 
 if( !is.null(args$maxMismatch) ){
@@ -129,7 +130,10 @@ if( args$overMaxLength == 0 ){
 
 if( all(args$collectRandomIDs != FALSE) ){
   if( !grepl("N", args$leadTrimSeq) ){
-    message("No random nucleotides (Ns) found in leadTrimSeq. Turning off collection of randomIDs.")
+    cat(
+      "\n  No random nucleotides (Ns) found in leadTrimSeq.",
+      "Turning off collection of randomIDs.\n"
+    )
     args$collectRandomIDs <- FALSE
   }
 }
@@ -165,7 +169,7 @@ input_table <- input_table[
     input_table$Variables)
   ,]
 
-cat("Trim Inputs:")
+cat("\nTrim Inputs:\n")
 print(
   data.frame(input_table, row.names = NULL), 
   right = FALSE, 
@@ -175,7 +179,10 @@ print(
 # Reduce number of requested cores if needed.
 if( args$cores > 1 ){
   if( args$cores > parallel::detectCores() ){
-    message("Requested cores is greater than availible for system. Changing cores to max allowed.")
+    cat(
+      "\n  Requested cores is greater than availible for system.",
+      "Changing cores to max allowed."
+    )
     args$cores <- detectCores()
   }
 }
@@ -194,7 +201,10 @@ if( !all(
     "serialAppendS4") %in% 
   ls()
 )){
-  stop("Cannot load supporting scripts. You may need to clone from github again.")
+  stop(
+    "\n  Cannot load supporting scripts. ",
+    "You may need to clone from github again.\n"
+  )
 }
 
 # Determine sequence file types
@@ -215,19 +225,19 @@ if( seq_type == "fasta" ){
 
 # Log info
 input_tbl <- logSeqData(seqs)
-cat("\nInput sequence information:")
+cat("\nInput sequence information:\n")
 print(input_tbl, row.names = FALSE)
 
 # If no reads remaining, terminate and write output
 if( length(seqs) == 0 ){
   
-  message(
-    "\nNo reads remaining to trim. Terminating script after writing output."
+  cat(
+    "\n  No reads remaining to trim. Terminating script after writing output.\n"
   )
   
   writeNullFile(
     file = args$output, 
-    write.random = args$collectRandomIDs, 
+    writeRandom = args$collectRandomIDs, 
     stat = args$stat,
     compress = args$compress
   )
@@ -252,7 +262,7 @@ if( !args$noQualTrimming & seq_type == "fastq" ){
   
   # Log info
   qual_trimmed_tbl <- logSeqData(seqs)
-  cat("\nSequence information remaining after quality trimming:")
+  cat("\nSequence information remaining after quality trimming:\n")
   print(qual_trimmed_tbl, row.names = FALSE)
   
 }
@@ -260,13 +270,13 @@ if( !args$noQualTrimming & seq_type == "fastq" ){
 # If no reads remaining, terminate and write output
 if( length(seqs) == 0 ){
 
-  message(
-    "No reads remaining to trim. Terminating script after writing output."
+  cat(
+    "\n  No reads remaining to trim. Terminating script after writing output.\n"
   )
   
   writeNullFile(
     file = args$output, 
-    write.random = args$collectRandomIDs, 
+    writeRandom = args$collectRandomIDs, 
     stat = args$stat,
     compress = args$compress
   )
@@ -283,7 +293,7 @@ seqs <- seqs[
 ]
 
 len_trimmed_tbl <- logSeqData(seqs)
-cat("\nSequence information remaining after minimum length trimming:")
+cat("\nSequence information remaining after minimum length trimming:\n")
 print(len_trimmed_tbl, row.names = FALSE)
 
 # Trim sequences, either on a single core or multiple cores
@@ -316,7 +326,7 @@ if( args$cores <= 1 ){
   
   # Log info
   lead_trimmed_tbl <- logSeqData(trimmed_seqs)
-  cat("\nSequence information remaining after lead trimming:")
+  cat("\nSequence information remaining after lead trimming:\n")
   print(lead_trimmed_tbl, row.names = FALSE)
   
   # Overread trimming
@@ -337,7 +347,7 @@ if( args$cores <= 1 ){
     
     # Log info
     over_trimmed_tbl <- logSeqData(trimmed_seqs)
-    cat("\nSequence information remaining after overreading trimming:")
+    cat("\nSequence information remaining after overreading trimming:\n")
     print(over_trimmed_tbl, row.names = FALSE)
     
   }
@@ -393,7 +403,7 @@ if( args$cores <= 1 ){
   
   # Log info
   lead_trimmed_tbl <- logSeqData(trimmed_seqs)
-  cat("\nSequence information remaining after lead trimming:")
+  cat("\nSequence information remaining after lead trimming:\n")
   print(lead_trimmed_tbl, row.names = FALSE)
   
   # The method for overread trimming sequentially aligns shorter fragments of 
@@ -425,7 +435,7 @@ if( args$cores <= 1 ){
     
     # Log info
     over_trimmed_tbl <- logSeqData(trimmed_seqs)
-    cat("\nSequence information remaining after overreading trimming:")
+    cat("\nSequence information remaining after overreading trimming:\n")
     print(over_trimmed_tbl, row.names = FALSE)
     
   }
@@ -439,13 +449,13 @@ if( args$cores <= 1 ){
 # If no reads remaining, terminate and write output
 if( length(seqs) == 0 ){
   
-  message(
-    "\nNo reads remaining to trim. Terminating script after writing output."
+  cat(
+    "\n  No reads remaining to trim. Terminating script after writing output.\n"
   )
   
   writeNullFile(
     file = args$output, 
-    write.random = args$collectRandomIDs, 
+    writeRandom = args$collectRandomIDs, 
     stat = args$stat,
     compress = args$compress
   )
@@ -484,7 +494,7 @@ if( args$noFiltering ){
 
 # Log info
 final_trimmed_tbl <- logSeqData(output_seqs)
-cat("\nSequence information remaining:")
+cat("\nSequence information remaining:\n")
 print(final_trimmed_tbl, row.names = FALSE)
 
 

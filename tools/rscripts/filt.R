@@ -24,7 +24,7 @@ desc <- yaml::yaml.load_file(
 ## Argument parser =============================================================
 parser <- argparse::ArgumentParser(
   description = desc$program_short_description,
-  usage = "Rscript filt.R <seqFile(s)> [-h/--help, -v/--version] [optional args]"
+  usage = "nuc filt <seqFile(s)> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
@@ -90,12 +90,14 @@ args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 if( args$cores > 1 ){
   
   # Stop code since parallel operation has not been constructed yet
-  stop("Parallel options have not yet been implemented.")
+  stop("\n  Parallel options have not yet been implemented.\n")
   
   if( args$cores > parallel::detectCores() ){
   
-    message(paste("Requested cores is greater than availible for system.",
-      "Changing cores to max allowed."))
+    cat(
+      "\n  Requested cores is greater than availible for system.",
+      "Changing cores to max allowed.\n"
+    )
     args$cores <- detectCores()
     
   }
@@ -107,11 +109,15 @@ if( args$cores > 1 ){
 }
 
 if( length(args$seqFile) != length(args$output) ){
-  stop("The same number of input and output file names need to be provided.")
+  stop(
+    "\n  The same number of input and output file names need to be provided.\n")
 }
 
 if( length(args$index) > 1 ){
-  stop("Only one index file can be used at a time. Please consolidate indices.")
+  stop(
+    "\n  Only one index file can be used at a time. ",
+    "Please consolidate indices.\n"
+  )
 }
 
 if( length(args$mismatch) != length(args$seq) ){
@@ -126,7 +132,7 @@ if( length(args$seq) > 0 ){
     any(!unlist(strsplit(paste(args$seq, collapse = ""), "")) %in% 
       names(Biostrings::IUPAC_CODE_MAP)) 
   ){
-    stop("Unknown nucleotides detected in input filtering sequence(s).")
+    stop("\n  Unknown nucleotides detected in input filtering sequence(s).\n")
   }
   
 }
@@ -138,10 +144,10 @@ seq_type <- stringr::str_extract(seq_type, ".fa[\\w]*")
 
 if( any(!seq_type %in% c(".fa", ".fq", ".fasta", ".fastq")) ){
   
-  stop(paste(
-    "Unrecognized sequence file type, please convert to '*.fasta' or", 
-    "'*.fastq'. Gzip compression is acceptable as well."
-  ))
+  stop(
+    "\n  Unrecognized sequence file type, please convert to '*.fasta' or ", 
+    "'*.fastq'. Gzip compression is acceptable as well.\n"
+  )
   
 }
 
@@ -156,10 +162,10 @@ if( length(args$output) > 0 ){
   
   if( any(!out_type %in% c(".fa", ".fq", ".fasta", ".fastq")) ){
     
-    stop(paste(
-      "Unrecognized output sequence file type, please change to", 
-      "'*.fasta' or '*.fastq'."
-    ))
+    stop(
+      "\n  Unrecognized output sequence file type, please change to ", 
+      "'*.fasta' or '*.fastq'.\n"
+    )
     
   }
   
@@ -201,13 +207,13 @@ input_table <- input_table[
 
 if( !args$quiet ){
   
-  cat("Filter Inputs:")
+  cat("\nFilter Inputs:\n")
   print(
     data.frame(input_table, row.names = NULL), 
     right = FALSE, 
     row.names = FALSE
   )
-  cat(paste0("\nFiltering methods include ", filt_type))
+  cat("\nFiltering methods include ", filt_type, "\n")
   
 }
 
