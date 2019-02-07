@@ -22,7 +22,7 @@ desc <- yaml::yaml.load_file(
 # Set up and gather command line arguments
 parser <- argparse::ArgumentParser(
   description = desc$program_short_description,
-  usage = "nuc couple <anchorPSL> <adriftPSL> [-h/--help, -v/--version] [optional args]"
+  usage = "Rscript couple.R <anchorPSL> <adriftPSL> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(

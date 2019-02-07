@@ -24,7 +24,7 @@ desc <- yaml::yaml.load_file(
 ## Argument parser =============================================================
 parser <- argparse::ArgumentParser(
   description = desc$program_short_description,
-  usage = "nuc filt <seqFile(s)> [-h/--help, -v/--version] [optional args]"
+  usage = "Rscript filt.R <seqFile(s)> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
