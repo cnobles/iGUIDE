@@ -820,25 +820,38 @@ if( args$cores > 1 ){
       
       reads <- ShortRead::readFastq(read.file.path)
       
-      reads@id <- Biostrings::BStringSet(
+      seqs <- reads@sread
+      
+      ids <- Biostrings::BStringSet(
         stringr::str_extract(
-          as.character(ShortRead::id(reads)), args$readNamePattern
+          as.character(reads@id), args$readNamePattern
         )
       )
       
-      reads <- reads[match(multiplexed.data$index, as.character(reads@id))]
-      reads <- split(reads, multiplexed.data$sampleName)
+      names(seqs) <- ids
+      
+      quals <- reads@quality@quality
+      
+      seqs <- split(
+        seqs[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
+      
+      quals <- split(
+        quals[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
       
       demultiplex <- mapply(
         writeDemultiplexedSequences,
-        reads = reads,
-        samplename = names(reads),
+        reads = seqs,
+        quals = quals,
+        samplename = names(seqs),
         MoreArgs = list(
           type = read.type,
           outfolder = args$outfolder,
           compress = args$compress
-        ),
-        SIMPLIFY = FALSE
+        )
       )
       
     },
@@ -848,8 +861,9 @@ if( args$cores > 1 ){
       multiplexed.data = multiplexed_data,
       writeDemultiplexedSequences = writeDemultiplexedSequences,
       args = args
-    )
-  )  
+    ),
+    SIMPLIFY = FALSE
+  )
 }
 
 cat("Demultiplexing complete.\n")
