@@ -237,7 +237,7 @@ if( length(seqs) == 0 ){
   
   writeNullFile(
     file = args$output, 
-    writeRandom = args$collectRandomIDs, 
+    write.random = args$collectRandomIDs, 
     stat = args$stat,
     compress = args$compress
   )
@@ -276,7 +276,7 @@ if( length(seqs) == 0 ){
   
   writeNullFile(
     file = args$output, 
-    writeRandom = args$collectRandomIDs, 
+    write.random = args$collectRandomIDs, 
     stat = args$stat,
     compress = args$compress
   )
@@ -455,7 +455,7 @@ if( length(seqs) == 0 ){
   
   writeNullFile(
     file = args$output, 
-    writeRandom = args$collectRandomIDs, 
+    write.random = args$collectRandomIDs, 
     stat = args$stat,
     compress = args$compress
   )
