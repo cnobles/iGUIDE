@@ -113,25 +113,26 @@ if( file.exists(config$Sample_Info) ){
 }
 
 ## Supplemental Info
-if( file.exists(config$Supplemental_Info) ){
-  
-  supp_info <- data.table::fread(config$Supplemental_Info)
-  
-}else if( file.exists(file.path(root_dir, config$Supplemental_Info)) ){
-  
-  supp_info <- data.table::fread(
-    input = file.path(root_dir, config$Supplemental_Info), 
-    data.table = FALSE
-  )
-  
-}else{
-  
-  warning(
-    "Cannot find Supplemental Info file: ", configs$Supplemental_Info, ".\n"
-  )
-  
+if( config$Supplemental_Info != "." ){
+  if( file.exists(config$Supplemental_Info) ){
+    
+    supp_info <- data.table::fread(config$Supplemental_Info)
+    
+  }else if( file.exists(file.path(root_dir, config$Supplemental_Info)) ){
+    
+    supp_info <- data.table::fread(
+      input = file.path(root_dir, config$Supplemental_Info), 
+      data.table = FALSE
+    )
+    
+  }else{
+    
+    warning(
+      "Cannot find Supplemental Info file: ", configs$Supplemental_Info, ".\n"
+    )
+    
+  }
 }
-
 
 # Join appropriate tables together and / or format for output ----
 
