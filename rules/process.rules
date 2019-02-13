@@ -88,6 +88,5 @@ rule run_report:
     mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
   shell:
     """
-    Rscript {params.tool} {input} -o {output} \
-      -c {params.config} {params.supp} > {log} 2>&1
+    Rscript {params.tool} {params.config} -o {output} {params.supp} > {log} 2>&1
     """

@@ -12,22 +12,17 @@ options(stringsAsFactors = FALSE, scipen = 99, width = 999)
 # Set up and gather command line arguments ----
 parser <- argparse::ArgumentParser(
   description = "Generate an iGUIDE report for input run(s).",
-  usage = "iguide report <input(s)> -o <output> -c <config(s)> [-h/--help, -v/--version] [optional args]"
+  usage = "iguide report <config(s)> -o <output> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
-  "input", nargs = "+", type = "character",
-  help = "Post-processing output .rds file(s)."
+  "config", nargs = "+", type = "character",
+  help = "Run specific config file(s) in yaml format."
 )
 
 parser$add_argument(
   "-o", "--output", nargs = 1, type = "character", required = TRUE,
   help = "Output report file, extension not required."
-)
-
-parser$add_argument(
-  "-c", "--config", nargs = "+", type = "character", required = TRUE,
-  help = "Run specific config file(s) in yaml format."
 )
 
 parser$add_argument(
@@ -79,10 +74,6 @@ if( !dir.exists(root_dir) ){
   args$install_path <- root_dir
 }
 
-if( length(args$input) != length(args$config) ){
-  stop("Must supply one config file for each input.")
-}
-
 report_formats <- c("html" = "html_document", "pdf" = "pdf_document")
 
 if( !args$format %in% names(report_formats) ){
@@ -118,9 +109,10 @@ input_table <- data.frame(
 
 input_table <- input_table[
   match(
-    c("input :", "output :", "config :", "support :", 
-      "figures :", "data :", "graphic :", "format :", 
-      "template :", "install_path :"),
+    c(
+      "config :", "output :", "support :", "figures :", "data :", 
+      "graphic :", "format :", "template :", "install_path :"
+    ),
     input_table$Variables),
 ]
 
@@ -956,13 +948,20 @@ cond_overview <- spec_overview %>%
 
 
 ## Read in experimental data and contatenate different sets ----
-input_data <- lapply(args$input, function(x){
+input_data_paths <- lapply(configs, function(x){
+  name <- x$Run_Name
+  file.path(
+    "analysis", name, paste0("output/edited_sites.", name ,".rds")
+  )
+})
+
+input_data <- lapply(input_data_paths, function(x){
   if( file.exists(file.path(root_dir, x)) ){
     return(readRDS(file.path(root_dir, x)))
   }else if( file.exists(x) ){
     return(readRDS(x))
   }else{
-    stop("\n  Cannot find input file: ", x, ".\n")
+    stop("\n  Cannot find edited_sites file: ", x, ".\n")
   }
 })
 
