@@ -96,7 +96,7 @@ maxTempLength : 2500
 
 # Post-processing
 refGenes :
-    file : "genomes/hg38.refSeq.ext.rds"
+    file : "genomes/hg38.refSeq.ext.nomodel.rds"
     symbolCol : "name2"
 oncoGeneList : 
     file : "http://bushmanlab.org/assets/doc/allOnco_Feb2017.tsv"
