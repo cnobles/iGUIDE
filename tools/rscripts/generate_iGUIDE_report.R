@@ -986,9 +986,11 @@ considered_gRNAs <- unique(unlist(treatment))
 gRNAs <- dplyr::filter(gRNAs, Guide %in% considered_gRNAs)
 on_targets <- on_targets[names(on_targets) %in% considered_gRNAs]
 
+
+# Beginnin analysis ----
 cat("Starting analysis...\n")
 
-# Opening graphic ----
+## Info graphic data
 graphic_order <- c("algnmts", "pile_up_algns", "paired_algns", "matched_algns")
 graphic_data <- input_data[graphic_order]
 
