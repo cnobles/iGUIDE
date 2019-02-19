@@ -88,19 +88,27 @@ Run configuration
 Sequence files
 """"""""""""""
 
+``Seq_Path``
+  This is the file path to the sequence files. Rather than repeating the path
+  for each below, just include the path to the directory containing the files.
+
 ``R1 / R2 / I1 / I2``
   These parameters should be the file names of the sequence files to be 
   analyzed by the iGUIDE software. It is recommened to pass complete sequencing
   files to iGUIDE rather than demultiplexing prior to analysis.
+
+``Demulti_Dir``
+  Path to the directory containing demultiplexed sequence data. This is still
+  under development and may present with bugs.
 
 SampleInfo formating
 """"""""""""""""""""
 
 ``Sample_Name_Column``
   This is the name of the column in the sample information file which contains 
-  information about samples. An appropriate format for the sample names is 
-  "{specimen}-{rep}" where 'specimen' is an alpha-numeric designator for the 
-  specimen and 'rep' is a numeric identifier for technical or biological 
+  identifiable information about samples. An appropriate format for the sample 
+  names is "{specimen}-{rep}" where 'specimen' is an alpha-numeric designator for 
+  the specimen and 'rep' is a numeric identifier for technical or biological 
   replicates, separated by a dash (``-``).
 
 Sequence information
@@ -194,6 +202,23 @@ iGUIDE configuration
   This parameter is similar to the ``Read_Types`` but only indicates which reads
   contain genomic information rather than indexing.
 
+Memory Management
+"""""""""""""""""
+
+``demultiMB / trimMB / filtMB / consolMB / alignMB / coupleMB / processMB / reportMB``
+  Controls the amount of memory allocated to each of these processes during 
+  snakemake processing. While working on a server or multicored machine, these
+  parameters will work internally to help schedule jobs. Each value will act as
+  an upper limit for the amount of MB of RAM to expect the process to take, and 
+  schedule jobs appropriately using the ``--resources mem_mb={limitMB}`` flag with
+  snakemake. During HPC use, these parameters can be combined with the cluster config
+  to schedule specific memory requirements for jobs. Additionally, if the 
+  ``--restart-times {x}`` is used where "x" is the number of times to restart a job
+  if it fails, then the amount of memory for the job will increase by a unit of the 
+  parameter. For example, if a trimming job fails because it runs out of memory, then
+  restarting the job will try to allocate 2 times the memory for the second attempt.
+  All parameters should be in megabytes (MB).
+
 Demultiplexing parameters
 """""""""""""""""""""""""
 
@@ -208,11 +233,6 @@ Demultiplexing parameters
 ``bc{1/2}Mismatch``
   An integer value indicating the number of tolarated mismatches in the barcode
   sequences for either barcode 1 or 2.
-
-``demultiCores``
-  The number of core to be requested during demultiplexing. This can be a 
-  memory intensive process and therefore can be limited here by using a smaller
-  value than given the the ``iguide run`` command.
 
 Sequence trimming
 """""""""""""""""
@@ -338,4 +358,4 @@ Report
 ``signature``
   Character string included at the beginning of reports to denote the author,
   analyst, laboratory, etc. Make sure you change if you don't want Chris 
-  getting credit for all the work.
+  getting credit for your work.
