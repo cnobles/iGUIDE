@@ -70,8 +70,7 @@ iguide run configs/simulation.config.yml -- --latency-wait 30
 cat analysis/simulation/output/unique_sites.simulation.csv
 
 # After run completion, generate a report in a different format than standard
-iguide report analysis/simulation/output/edited_sites.simulation.rds \
-  -c configs/simulation.config.yml \
+iguide report configs/simulation.config.yml \
   -o analysis/simulation/reports/report.simulation.pdf \
   -s sampleInfo/simulation.supp.csv \
   -t pdf
@@ -89,13 +88,15 @@ conda deactivate
 
 ### Changelog:
 
-**v0.9.5 (February XXth, 2019)**
+**v0.9.5 (February 19th, 2019)**
 
 * Updated demultiplexing to be more efficient and better HPC compatible.
-* Added RefSeq Extended* reference gene set
-  + Includeds curated, predicted, and other RefSeq sets
+* Added RefSeq Extended* reference gene sets
+  + 'ext' includes curated, predicted, and other RefSeq sets
+  + 'ext.nomodel' includes only curated and other RefSeq sets
 * Incorporated resource allocation for job dependent memory consumption
   + Works great with HPC to specify memory requirements
+* Streamlined input for report generation by only requiring config(s)
 
 
 **v0.9.4 (January 30th, 2019)**
