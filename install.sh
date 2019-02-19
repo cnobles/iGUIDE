@@ -99,7 +99,7 @@ function __detect_conda_install() {
 
     if [[ $discovered = true ]]; then
       	local conda_path="$(which conda)"
-        echo ${conda_path%'/bin/conda'}
+        echo ${conda_path%'/condabin/conda'}
     fi
 }
 
@@ -195,7 +195,7 @@ function install_environment () {
         local install_options="--quiet --file etc/requirements.yml"
         debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --yes --file etc/build.v0.9.2.txt"
+        local install_options="--quiet --yes --file etc/build.v0.9.3.txt"
         debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
 
@@ -268,7 +268,7 @@ else
     __env_changed=true
 fi
 
-# Source conda into path
+# Source conda into shell
 source ${__conda_path}/etc/profile.d/conda.sh
 
 # Create Conda environment for iGUIDE
@@ -278,7 +278,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.v0.9.2.txt"
+        __build_source="etc/build.v0.9.3.txt"
     fi
 
     info "Creating iGUIDE environment..."

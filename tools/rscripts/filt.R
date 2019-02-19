@@ -24,7 +24,7 @@ desc <- yaml::yaml.load_file(
 ## Argument parser =============================================================
 parser <- argparse::ArgumentParser(
   description = desc$program_short_description,
-  usage = "Rscript filt.R <seqFile(s)> [-h/--help, -v/--version] [optional args]"
+  usage = "nuc filt <seqFile(s)> [-h/--help, -v/--version] [optional args]"
 )
 
 parser$add_argument(
@@ -46,6 +46,45 @@ parser$add_argument(
 parser$add_argument(
   "-m", "--mismatch", nargs = "+", type = "integer", default = 0, 
   help = desc$mismatch
+)
+
+parser$add_argument(
+  "-r", "--refseqs", nargs = "+", type = "character", help = desc$refseqs
+)
+
+parser$add_argument(
+  "--aligntype", nargs = 1, type = "character", default = "ov",
+  help = desc$aligntype
+)
+
+parser$add_argument(
+  "--pctID", nargs = 1, type = "integer", default = 95,
+  help = desc$pctID
+)
+
+parser$add_argument(
+  "--pctIDtype", nargs = 1, type = "character", default = "global", 
+  help = desc$pctIDtype
+)
+
+parser$add_argument(
+  "--subMatAdj", nargs = "+", type = "character", default = FALSE,
+  help = desc$subMatAdj
+)
+
+parser$add_argument(
+  "--gapOpen", nargs = 1, type = "integer", default = 10,
+  help = desc$gapOpen
+)
+
+parser$add_argument(
+  "--gapExt", nargs = 1, type = "integer", default = 4,
+  help = desc$gapExt
+)
+
+parser$add_argument(
+  "--minAlignLength", nargs = 1, type = "integer", default = 20,
+  help = desc$minAlignLength
 )
 
 parser$add_argument(
@@ -90,12 +129,14 @@ args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 if( args$cores > 1 ){
   
   # Stop code since parallel operation has not been constructed yet
-  stop("Parallel options have not yet been implemented.")
+  stop("\n  Parallel options have not yet been implemented.\n")
   
   if( args$cores > parallel::detectCores() ){
   
-    message(paste("Requested cores is greater than availible for system.",
-      "Changing cores to max allowed."))
+    cat(
+      "\n  Requested cores is greater than availible for system.",
+      "Changing cores to max allowed.\n"
+    )
     args$cores <- detectCores()
     
   }
@@ -107,11 +148,15 @@ if( args$cores > 1 ){
 }
 
 if( length(args$seqFile) != length(args$output) ){
-  stop("The same number of input and output file names need to be provided.")
+  stop(
+    "\n  The same number of input and output file names need to be provided.\n")
 }
 
 if( length(args$index) > 1 ){
-  stop("Only one index file can be used at a time. Please consolidate indices.")
+  stop(
+    "\n  Only one index file can be used at a time. ",
+    "Please consolidate indices.\n"
+  )
 }
 
 if( length(args$mismatch) != length(args$seq) ){
@@ -126,9 +171,13 @@ if( length(args$seq) > 0 ){
     any(!unlist(strsplit(paste(args$seq, collapse = ""), "")) %in% 
       names(Biostrings::IUPAC_CODE_MAP)) 
   ){
-    stop("Unknown nucleotides detected in input filtering sequence(s).")
+    stop("\n  Unknown nucleotides detected in input filtering sequence(s).\n")
   }
   
+}
+
+if( !args$pctIDtype %in% c("global", "local") ){
+  stop("\n  Input '--pctIDtype' must be either 'local' or 'global' [default].")
 }
 
 # Determine input sequence file type(s)
@@ -138,10 +187,10 @@ seq_type <- stringr::str_extract(seq_type, ".fa[\\w]*")
 
 if( any(!seq_type %in% c(".fa", ".fq", ".fasta", ".fastq")) ){
   
-  stop(paste(
-    "Unrecognized sequence file type, please convert to '*.fasta' or", 
-    "'*.fastq'. Gzip compression is acceptable as well."
-  ))
+  stop(
+    "\n  Unrecognized sequence file type, please convert to '*.fasta' or ", 
+    "'*.fastq'. Gzip compression is acceptable as well.\n"
+  )
   
 }
 
@@ -156,10 +205,10 @@ if( length(args$output) > 0 ){
   
   if( any(!out_type %in% c(".fa", ".fq", ".fasta", ".fastq")) ){
     
-    stop(paste(
-      "Unrecognized output sequence file type, please change to", 
-      "'*.fasta' or '*.fastq'."
-    ))
+    stop(
+      "\n  Unrecognized output sequence file type, please change to ", 
+      "'*.fasta' or '*.fastq'.\n"
+    )
     
   }
   
@@ -172,10 +221,12 @@ select_methods <- c()
 if( length(args$index) == 1 ) select_methods <- c(select_methods, 1)
 if( length(args$seqFile) > 1 ) select_methods <- c(select_methods, 2)
 if( length(args$seq) > 0 ) select_methods <- c(select_methods, 3)
+if( length(args$refseqs) > 0 ) select_methods <- c(select_methods, 4)
 
 methods <- c(
-  "input indices", "multiple file input indices", "sequence content"
-  )[select_methods]
+  "input indices", "multiple file input indices", 
+  "sequence content", "sequence matching reference(s)"
+)[select_methods]
 
 filt_type <- paste0(
   ifelse(args$negSelect, "negative", "positive"), 
@@ -195,26 +246,29 @@ input_table <- data.frame(
 input_table <- input_table[
   match(
     c("seqFile :", "output :", "index :", "header :", "negSelect :", "seq :", 
-      "mismatch :", "readNamePattern :", "compress :", "cores :"), 
+      "mismatch :", "refseqs :", "aligntype :", "pctID :", "pctIDtype :", 
+      "subMatAdj :", "gapOpen :", "gapExt :", "minAlignLength :", 
+      "readNamePattern :", "compress :", "cores :"), 
     input_table$Variables)
   ,]
 
 if( !args$quiet ){
   
-  cat("Filter Inputs:")
+  cat("\nFilter Inputs:\n")
   print(
     data.frame(input_table, row.names = NULL), 
     right = FALSE, 
     row.names = FALSE
   )
-  cat(paste0("\nFiltering methods include ", filt_type))
+  cat("\n  Filtering methods include", filt_type, "\n")
   
 }
 
 
 # Additional supporting functions ----------------------------------------------
 source(file.path(code_dir, "supporting_scripts", "writeSeqFiles.R"))
-
+source(file.path(code_dir, "supporting_scripts", "nucleotideScoringMatrices.R"))
+source(file.path(code_dir, "supporting_scripts", "substituteAdjustments.R"))
 source(file.path(code_dir, "supporting_scripts", "utility_funcs.R"))
 
 #' Filter sequences based on input arguments
@@ -327,6 +381,161 @@ filterSeqFile <- function(input.seqs, args){
   }
   
   
+  ## Identify sequence that match to reference sequence(s)
+  if( length(args$refseqs) > 0 ){
+    
+    ref_filter_idx <- lapply(
+      input.seqs,
+      function(seqs, refs, alntype, pctID, idtype, subadj, gapOpen, gapExt, 
+               minAlignLength, neg){
+        
+        # Load reference sequences
+        ref_types <- unlist(strsplit(refs, "/"))
+        ref_types <- ref_types[length(ref_types)]
+        ref_types <- stringr::str_extract(ref_types, ".fa[\\w]*")
+        
+        if( any(!ref_types %in% c(".fa", ".fq", ".fasta", ".fastq")) ){
+          
+          stop(
+            "\n  Unrecognized sequence file type, please convert to '*.fasta' or ", 
+            "'*.fastq'. Gzip compression is acceptable as well.\n"
+          )
+          
+        }
+        
+        ref_types <- ifelse(ref_types %in% c(".fa", ".fasta"), "fasta", "fastq")
+        
+        refs <- mapply(
+          function(file, file_type){
+            
+            if( file_type == "fasta" ){
+              return(ShortRead::readFasta(file))
+            }else{
+              return(ShortRead::readFastq(file))
+            }
+            
+          }, 
+          file = refs, 
+          file_type = ref_types, 
+          SIMPLIFY = FALSE
+        )
+        
+        if( length(refs) > 1 ){
+          refs <- serialAppendS4(refs)
+        }else{
+          refs <- refs[[1]]
+        }
+
+        # Alignment type
+        align_types <- structure(
+          c("global", "local", "overlap", "global-local", "local-global"),
+          names = c("gg", "ll", "ov", "gl", "lg")
+        )
+        
+        alntype <- align_types[alntype]
+        
+        # Score only?
+        SO <- idtype == 'global'
+        
+        # Interpret adjustment if any
+        input_adjs <- stringr::str_extract(
+          subadj[grep("^i", subadj)], "[\\w]{2}$"
+        )
+        
+        refer_adjs <- stringr::str_extract(
+          subadj[grep("^r", subadj)], "[\\w]{2}$"
+        )
+        
+        # Apply adjustments and convert to character vectors
+        seqs <- substituteAdjustments(ShortRead::sread(seqs), input_adjs)
+        refs <- substituteAdjustments(ShortRead::sread(refs), refer_adjs)
+        
+        alignments <- lapply(
+          refs, 
+          function(ref, seqs, alntype, gapOpen, gapExt, SO){
+            
+            Biostrings::pairwiseAlignment(
+              pattern = seqs, 
+              subject = ref, 
+              type = alntype, 
+              gapOpening = gapOpen,
+              gapExtension = gapExt,
+              substitutionMatrix = usanmat(),
+              scoreOnly = SO
+            )
+            
+          },
+          seqs = Biostrings::DNAStringSet(seqs),
+          alntype = alntype,
+          gapOpen = gapOpen,
+          gapExt = gapExt,
+          SO = SO
+        )
+        
+        if( idtype == "global" ){
+          
+          max_score <- 100 * apply(
+            matrix(unlist(alignments), ncol = length(refs)), 1, max
+          ) / nchar(seqs)
+          
+        }else if( idtype == "local" ){
+          
+          local_score <- matrix(
+            unlist(lapply(alignments, function(x) Biostrings::score(x))), 
+            ncol = length(refs)
+          )
+          
+          local_size <- matrix(
+            unlist(lapply(alignments, function(x) x@pattern@range@width)),
+            ncol = length(refs)
+          )
+          
+          top_score_idx <- apply(100 * local_score / local_size, 1, function(x){ 
+            which(x == max(x)) 
+          })
+          
+          top_score_len <- unlist(lapply(
+            seq_along(top_score_idx), 
+            function(i){ 
+              unique(local_size[i, top_score_idx[[i]], drop = TRUE])
+            }
+          ))
+          
+          top_score <- unlist(lapply(
+            seq_along(top_score_idx), 
+            function(i){ 
+              unique(local_score[i, top_score_idx[[i]], drop = TRUE])
+            }
+          ))
+          
+          max_score <- 100 * top_score / top_score_len
+          
+        }else{
+          
+          stop("\n  Input error, pctIDtype must be either 'local' or 'global'.")
+          
+        }
+        
+        if( neg ){
+          return( which(max_score < pctID | top_score_idx < minAlignLength) )
+        }else{
+          return( which(max_score >= pctID & top_score_len >= minAlignLength) )
+        }
+        
+      },
+      refs = args$refseqs,
+      alntype = args$aligntype,
+      pctID = args$pctID,
+      idtype = args$pctIDtype,
+      subadj = args$subMatAdj,
+      gapOpen = args$gapOpen,
+      gapExt = args$gapExt,
+      minAlignLength = args$minAlignLength,
+      neg = args$negSelect
+    )
+    
+  }
+  
   # Consolidate indices from each method employed 
   lapply(seq_along(input_seqs), function(i){
     
@@ -346,6 +555,11 @@ filterSeqFile <- function(input.seqs, args){
     if( exists("seq_filter_idx") ){ 
       cnt <- cnt + 1
       idx <- c(idx, seq_filter_idx[[i]]) 
+    }
+    
+    if( exists("ref_filter_idx") ){
+      cnt <- cnt + 1
+      idx <- c(idx, ref_filter_idx[[i]]) 
     }
     
     if( args$any ){

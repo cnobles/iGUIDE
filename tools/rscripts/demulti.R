@@ -101,6 +101,11 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "--maxN", nargs = 1, type = "integer", default = 1,
+  help = desc$maxN
+)
+
+parser$add_argument(
   "--stat", nargs = 1, type = "character", default = FALSE, 
   help = desc$stat
 )
@@ -128,7 +133,7 @@ parser$add_argument(
 parser$add_argument(
   "--readNamePattern", nargs = 1, type = "character", 
   default = "[\\w\\:\\-\\+]+", 
-  help = desc$readNamePattern
+  help = desc$readNamePatter
 )
 
 
@@ -145,15 +150,15 @@ demulti$bc2 <- grepl(args$bc2, demulti$readType)
 
 
 if( demulti$readType[demulti$bc1] == demulti$readType[demulti$bc2] ){
-  stop("\nPlease select different read types for barcodes 1 and 2.")
+  stop("Please select different read types for barcodes 1 and 2.\n")
 }
 
 if( demulti$readType[demulti$bc1] == "NA" ){
-  stop("\nBarcode 1 is set to a read type that is not provided.")
+  stop("Barcode 1 is set to a read type that is not provided.\n")
 }
 
 if( demulti$readType[demulti$bc2] == "NA" ){
-  stop("\nBarcode 2 is set to a read type that is not provided.")
+  stop("Barcode 2 is set to a read type that is not provided.\n")
 }
 
 if( args$singleBarcode ){
@@ -185,9 +190,9 @@ input_table <- input_table[
     ),
     input_table$Variables
   ),
-]
+  ]
 
-cat("\nDemultiplex Inputs:\n")
+cat("Demultiplex Inputs:\n")
 print(
   x = data.frame(input_table, row.names = NULL), 
   right = FALSE, 
@@ -198,8 +203,8 @@ print(
 if( !file.exists(args$outfolder) ){
   
   attempt <- try(system(paste0("mkdir ", args$outfolder)))
-  if(attempt == 1) stop("Cannot create output folder.")
-
+  if(attempt == 1) stop("Cannot create output folder.\n")
+  
 }
 
 # Check for required packages ----
@@ -208,87 +213,130 @@ present_packs <- required_packs %in% row.names(installed.packages())
 
 if( !all(present_packs) ){
   
-  cat("\nMissing required r-packages:\n")
+  cat("Missing required r-packages:\n")
   print(
     data.frame(
       "R-Packages" = required_packs, 
       "Installed" = present_packs, 
       row.names = NULL
     ), right = FALSE, row.names = FALSE)
-
-  stop("\nCheck dependancies.")
-
+  
+  stop("Check dependancies.\n")
+  
 }
 
 # Operating functions ----
-parseIndexReads <- function(barcode, index.file.path, barcode.length, 
-                            max.mismatch, read.name.pattern){
+parseIndexReads <- function(barcode.seqs, reads, indices = NULL, 
+                            barcode.length = NULL, max.mismatch = 1L, 
+                            max.N.count = 1L){
+  
+  if( is.null(indices) ) indices <- seq_along(reads)
+  if( is.null(barcode.length) ) barcode.length <- max(width(reads))
   
   # Load index file sequences and sequence names
-  index <- ShortRead::readFastq(index.file.path)
-  index <- ShortRead::narrow(index, start = 1, end = barcode.length)
-  index@id <- Biostrings::BStringSet(
-    stringr::str_extract(
-      as.character(ShortRead::id(index)), 
-      read.name.pattern)
-  )
+  n_reads <- ShortRead::narrow(reads, start = 1, end = barcode.length)
+  unique_index_seqs <- unique(ShortRead::sread(n_reads))
   
   # Trim barcode if necessary
-  barcode <- as.character(
-    Biostrings::DNAStringSet(barcode, start = 1, end = barcode.length)
+  barcode_seqs <- as.character(
+    Biostrings::DNAStringSet(
+      unique(barcode.seqs), 
+      start = 1, 
+      end = barcode.length
+    )
   )
   
   # Identify read names with sequences above or equal to the minscore
-  vmp <- Biostrings::vmatchPattern(
-    barcode, ShortRead::sread(index), max.mismatch = max.mismatch, fixed = FALSE
+  bc_to_unique_idxs <- lapply(
+    barcode_seqs, 
+    function(x){
+      
+      vmp <- Biostrings::vmatchPattern(
+        pattern = x,
+        subject = unique_index_seqs, 
+        max.mismatch = max.mismatch, 
+        fixed = FALSE
+      )
+      
+      which(lengths(vmp) == 1)
+      
+    }
   )
   
-  return( which(lengths(vmp) == 1) )
+  # Lookup frame to match barcode sequences to index sequences
+  # Sequence variability accounted for and ambiguous, degenerate, and unassigned
+  # sequences identified
+  degenerate_idxs <- which(
+    stringr::str_count(unique_index_seqs, "N") > max.N.count
+  )
+  
+  ambiguous_idxs <- as.numeric(names(table(unlist(bc_to_unique_idxs)))[
+    table(unlist(bc_to_unique_idxs)) > 1
+    ])
+  
+  ambiguous_idxs <- ambiguous_idxs[!ambiguous_idxs %in% degenerate_idxs]
+  
+  unassigned_idxs <- seq_along(unique_index_seqs)[
+    !seq_along(unique_index_seqs) %in% unlist(bc_to_unique_idxs)
+    ]
+  
+  unassigned_idxs <- unassigned_idxs[!unassigned_idxs %in% degenerate_idxs]
+  
+  bc_to_unique_idxs <- lapply(bc_to_unique_idxs, function(x){
+    x[!x %in% c(ambiguous_idxs, unassigned_idxs, degenerate_idxs)]
+  })
+  
+  lookup_frame <- data.frame(
+    bc_seqs = factor(S4Vectors::Rle(
+      values = c(unique(barcode.seqs), "ambiguous", "degenerate", "unassigned"),
+      lengths = c(
+        lengths(bc_to_unique_idxs), length(ambiguous_idxs), 
+        length(degenerate_idxs), length(unassigned_idxs)
+      )
+    ), 
+    levels = c(unique(barcode.seqs), "ambiguous", "degenerate", "unassigned")
+    ),
+    index_seqs = unique_index_seqs[
+      c(unlist(bc_to_unique_idxs), ambiguous_idxs, 
+        degenerate_idxs, unassigned_idxs)
+      ]
+  )
+  
+  return(split(
+    indices, 
+    lookup_frame$bc_seqs[
+      match(as.character(ShortRead::sread(n_reads)), lookup_frame$index_seqs)
+    ]
+  ))
   
 }
 
-writeDemultiplexedSequences <- function(read.file.path, type, multiplexed.data, 
-                                        read.name.pattern, out.folder, compress){
+writeDemultiplexedSequences <- function(reads, quals, samplename, type, 
+                                        outfolder, compress){
   
-  # Load read sequences and sequence names then write to file
-  reads <- ShortRead::readFastq(read.file.path)
-  reads@id <- Biostrings::BStringSet(
-    stringr::str_extract(as.character(ShortRead::id(reads)), read.name.pattern)
+  if( compress ){  
+    file_path <- file.path(
+      outfolder, paste0(samplename, ".", type, ".fastq.gz")
+    )
+  }else{
+    file_path <- file.path(outfolder, paste0(samplename, ".", type, ".fastq"))
+  }
+      
+  if( file.exists(file_path) ) unlink(file_path)
+  
+  Biostrings::writeXStringSet(
+    x = reads, 
+    filepath = file_path, 
+    compress = compress, 
+    format = "fastq", 
+    qualities = quals
   )
   
-  reads <- reads[multiplexed.data$index]
-  reads <- split(reads, multiplexed.data$sampleName)
-  
-  null <- lapply(
-    seq_along(reads), 
-    function(i, reads, type, out.folder, compress){
-      
-      if(compress){  
-        
-        filePath <- file.path(
-          out.folder, paste0(names(reads[i]), ".", type, ".fastq.gz")
-        )
-        
-      }else{
-        
-        filePath <- file.path(
-          out.folder, paste0(names(reads[i]), ".", type, ".fastq")
-        )
-        
-      }
-      
-      if( file.exists(filePath) ) unlink(filePath)
-      
-      ShortRead::writeFastq(reads[[i]], file = filePath, compress = compress)
-      
-      cat(
-        paste0("\nWrote ", length(reads[[i]]), " reads to:\n", filePath, "."))
-      
-    },
-    reads = reads, type = type, out.folder = out.folder, compress = compress
+  cat(
+    paste0("Wrote ", length(reads), " reads to:\n  ", file_path, ".\n")
   )
-  
-  return(list(read.file.path, type, out.folder))
+      
+  return(list(file_path, type, outfolder))
   
 }
 
@@ -299,7 +347,7 @@ file_ext <- file_ext[length(file_ext)]
 if( file_ext %in% c("yaml", "yml") ){
   
   if( !"yaml" %in% row.names(installed.packages()) ){
-    stop("\nPackage:yaml not loaded or installed.")
+    stop("Package:yaml not loaded or installed.\n")
   }
   
   manifest <- yaml::yaml.load_file(args$manifest)
@@ -322,7 +370,7 @@ if( file_ext %in% c("yaml", "yml") ){
     )
     
   }
-
+  
 }else{
   
   if( file_ext == "csv" ){
@@ -347,46 +395,85 @@ if( !args$singleBarcode ){
   unique_samples <- nrow(samples_df[,c("bc1", "bc2")]) == 
     nrow(unique(samples_df[,c("bc1", "bc2")]))
   
-  if( !unique_samples ){
-    stop("\nAmbiguous barcoding of samples. Please correct.")
-  }
-
+  if( !unique_samples ) stop("Ambiguous barcoding of samples. Please correct.\n")
+  
 }else{
-
+  
   unique_samples <- length(samples_df[,c("bc1")]) == 
     length(unique(samples_df[,"bc1"]))
   
-  if( !unique_samples ){
-    stop("\nAmbiguous barcoding of samples. Please correct.")
-  }
-
+  if( !unique_samples ) stop("Ambiguous barcoding of samples. Please correct.\n")
+  
 }
 
 # Read in barcode sequences ----
 bc1_reads <- ShortRead::readFastq(demulti$path[demulti$bc1])
+
+all_indices <- stringr::str_extract(
+  as.character(ShortRead::id(bc1_reads)), 
+  args$readNamePattern
+)
+
+if( !all(table(all_indices) == 1) ){
+  stop(
+    "\n  Read names are not unique, check input sequence files or ",
+    "adjust readNamePattern parameter.\n")
+}
+
 cat(paste("\nReads to demultiplex : ", length(bc1_reads), "\n"))
 
 if( args$cores > 1 ){
   
-  cluster <- parallel::makeCluster(min(c(parallel::detectCores(), args$cores)))
-  
-  BC1_parsed <-  parallel::parLapply(
-    cluster,
-    unique(samples_df$bc1), 
-    parseIndexReads,
-    index.file.path = demulti$path[demulti$bc1],
-    barcode.length = args$bc1Len,
-    max.mismatch = args$bc1Mis,
-    read.name.pattern = args$readNamePattern
+  bc1_proc_grps <- split(
+    bc1_reads,
+    ceiling( seq_along(bc1_reads) / (length(bc1_reads)/args$cores) )
   )
   
-  names(BC1_parsed) <- unique(samples_df$bc1)
+  split_indices <- split(
+    all_indices,
+    ceiling( seq_along(all_indices) / (length(bc1_reads)/args$cores) )
+  )
+  
+  cluster <- parallel::makeCluster(min(c(parallel::detectCores(), args$cores)))
+  
+  BC1_parsed_list <-  parallel::clusterMap(
+    cluster,
+    function(reads, idx, parseIndexReads, samples_df, args){
+      parseIndexReads(
+        barcode.seqs = samples_df$bc1,
+        reads = reads,
+        indices = idx,
+        barcode.length = args$bc1Len,
+        max.mismatch = args$bc1Mis,
+        max.N.count = args$maxN
+      )
+    },
+    reads = bc1_proc_grps,
+    idx = split_indices,
+    MoreArgs = list(
+      parseIndexReads = parseIndexReads, 
+      samples_df = samples_df,
+      args = args
+    ),
+    SIMPLIFY = FALSE
+  )
+  
+  BC1_parsed <- lapply(
+    names(BC1_parsed_list[[1]]), function(x){
+      unlist(lapply(seq_along(BC1_parsed_list), function(i){
+        BC1_parsed_list[[i]][[x]]
+      }))
+    }
+  )
+  
+  names(BC1_parsed) <- names(BC1_parsed_list[[1]])
+  rm(BC1_parsed_list, bc1_proc_grps)
   
   cat("\nbc1 breakdown:\n")
   print(
     data.frame(
       "bc1" = names(BC1_parsed),
-      "Read Counts" = sapply( BC1_parsed, length )
+      "Read Counts" = lengths(BC1_parsed)
     ),
     right = TRUE, 
     row.names = FALSE
@@ -394,38 +481,82 @@ if( args$cores > 1 ){
   
   if( !args$singleBarcode ){
     
-    BC2_parsed <- parallel::parLapply(
-      cluster, 
-      unique(samples_df$bc2), 
-      parseIndexReads,
-      index.file.path = demulti$path[demulti$bc2],
-      barcode.length = args$bc2Len,
-      max.mismatch = args$bc2Mis,
-      read.name.pattern = args$readNamePattern
+    bc2_reads <- ShortRead::readFastq(demulti$path[demulti$bc2])
+    
+    bc2_indices <- stringr::str_extract(
+      as.character(ShortRead::id(bc2_reads)), 
+      args$readNamePattern
     )
     
+    if( !all(bc2_indices == all_indices) ){
+      warning(
+        "  Index reads are not in the same order. Sequencing files should ",
+        "always be kept in order across read types.\n")
+    }
+    
+    bc2_proc_grps <- split(
+      bc2_reads,
+      ceiling( seq_along(bc2_reads) / (length(bc2_reads)/args$cores) )
+    )
+    
+    split_bc2_indices <- split(
+      bc2_indices,
+      ceiling( seq_along(bc2_reads) / (length(bc2_reads)/args$cores) )
+    )
+    
+    BC2_parsed_list <- parallel::clusterMap(
+      cluster,
+      function(reads, idx, parseIndexReads, samples_df, args){
+        parseIndexReads(
+          barcode.seqs = samples_df$bc2,
+          reads = reads,
+          indices = idx,
+          barcode.length = args$bc2Len,
+          max.mismatch = args$bc2Mis,
+          max.N.count = args$maxN
+        )
+      },
+      reads = bc2_proc_grps,
+      idx = split_bc2_indices,
+      MoreArgs = list(
+        parseIndexReads = parseIndexReads, 
+        samples_df = samples_df,
+        args = args
+      ),
+      SIMPLIFY = FALSE
+    )
+    
+    BC2_parsed <- lapply(
+      names(BC2_parsed_list[[1]]), function(x){
+        unlist(lapply(seq_along(BC2_parsed_list), function(i){
+          BC2_parsed_list[[i]][[x]]
+        }))
+      }
+    )
+    
+    names(BC2_parsed) <- names(BC2_parsed_list[[1]])
+    rm(BC2_parsed_list, bc2_proc_grps)
+
   }
   
   parallel::stopCluster(cluster)
   
 }else{
   
-  BC1_parsed <-  lapply(
-    unique(samples_df$bc1), 
-    parseIndexReads,
-    index.file.path = demulti$path[demulti$bc1],
+  BC1_parsed <-  parseIndexReads(
+    barcode.seqs = samples_df$bc1, 
+    reads = bc1_reads,
+    indices = all_indices,
     barcode.length = args$bc1Len,
     max.mismatch = args$bc1Mis,
-    read.name.pattern = args$readNamePattern
+    max.N.count = args$maxN
   )
-
-  names(BC1_parsed) <- unique(samples_df$bc1)
   
   cat("\nbc1 breakdown:\n")
   print(
     data.frame(
       "bc1" = names(BC1_parsed),
-      "Read Counts" = sapply( BC1_parsed, length )
+      "Read Counts" = lengths(BC1_parsed)
     ),
     right = TRUE, 
     row.names = FALSE
@@ -433,13 +564,26 @@ if( args$cores > 1 ){
   
   if( !args$singleBarcode ){
     
-    BC2_parsed <- lapply(
-      unique(samples_df$bc2), 
-      parseIndexReads,
-      index.file.path = demulti$path[demulti$bc2],
+    bc2_reads <- ShortRead::readFastq(demulti$path[demulti$bc2])
+    
+    bc2_indices <- stringr::str_extract(
+      as.character(ShortRead::id(bc2_reads)), 
+      args$readNamePattern
+    )
+    
+    if( !all(bc2_indices == all_indices) ){
+      warning(
+        "  Index reads are not in the same order. Sequencing files should ",
+        "always be kept in order across read types.\n")
+    }
+    
+    BC2_parsed <- parseIndexReads(
+      barcode.seqs = samples_df$bc2, 
+      reads = bc2_reads,
+      indices = bc2_indices,
       barcode.length = args$bc2Len,
       max.mismatch = args$bc2Mis,
-      read.name.pattern = args$readNamePattern
+      max.N.count = args$maxN
     )
     
   }
@@ -447,18 +591,17 @@ if( args$cores > 1 ){
 }
 
 if( !args$singleBarcode ){
-
-  names(BC2_parsed) <- unique(samples_df$bc2)
+  
   cat("\nbc2 breakdown:\n")
   print(
     data.frame(
       "bc2" = names(BC2_parsed),
-      "Read Counts" = sapply(BC2_parsed, length)
+      "Read Counts" = lengths(BC2_parsed)
     ),
     right = TRUE,
     row.names = FALSE
   )
-
+  
 }
 
 if( !args$singleBarcode ){
@@ -478,55 +621,78 @@ if( !args$singleBarcode ){
   
 }else{
   
-  demultiplexed_indices <- BC1_parsed
+  demultiplexed_indices <- BC1_parsed[samples_df$bc1]
   
 }
 
 # As there is some flexibility in the barcode matching, some reads may be 
-# be assigned to multiple samples. These reads are ambiguous and will be 
-# removed.
-ambiguous_indices <- unique(
-  unlist(demultiplexed_indices)[duplicated(unlist(demultiplexed_indices))]
-)
-
-demultiplexed_indices <- lapply(demultiplexed_indices, function(x, reads){
-    x[!x %in% reads]
-  },
-  reads = ambiguous_indices
-)
+# be assigned to multiple samples (ambiguous). Additionally, uncalled bases can
+# lead to degenerate sequences (a cause of ambiguous matching), or many 
+# sequences will be unassigned.
+if( !args$singleBarcode ){
+  
+  degenerate_indices <- unique(c(BC1_parsed$degenerate, BC2_parsed$degenerate))
+  
+  ambiguous_indices <- unique(c(BC1_parsed$ambiguous, BC2_parsed$ambiguous))
+  
+  ambiguous_indices <- ambiguous_indices[
+    !ambiguous_indices %in% degenerate_indices
+  ]
+  
+  unassigned_indices <- unique(c(BC1_parsed$unassigned, BC2_parsed$unassigned))
+  
+  unassigned_indices <- unassigned_indices[
+    !unassigned_indices %in% c(degenerate_indices, ambiguous_indices)
+  ]
+  
+  demultiplexed_indices <- lapply(demultiplexed_indices, function(x){
+    x[!x %in% c(unassigned_indices, ambiguous_indices, degenerate_indices)]
+  })
+  
+  unassigned_indices <- c(unassigned_indices, all_indices[
+    !all_indices %in% c(
+      unlist(demultiplexed_indices), degenerate_indices, 
+      ambiguous_indices, unassigned_indices
+    )
+  ])
+  
+}else{
+  
+  degenerate_indices <- BC1_parsed$degenerate
+  ambiguous_indices <- BC1_parsed$ambiguous
+  unassigned_indices <- BC1_parsed$unassigned
+  
+}
 
 # Reads by sample
-samples_df$read_counts <- sapply( demultiplexed_indices, length )
+samples_df$read_counts <- lengths(demultiplexed_indices)
 cat("\nRead counts for each sample.\n")
 print(samples_df, split.tables = Inf)
 
 # Ambiguous reads
 cat(paste0("\nAmbiguous reads: ", length(ambiguous_indices), "\n"))
 
+# Degenerate reads
+cat(paste0("Degenerate reads: ", length(degenerate_indices), "\n"))
+
 # Unassigned reads
-all_indices <- seq_along(bc1_reads)
-
-unassigned_indices <- all_indices[
-  !all_indices %in% unlist(demultiplexed_indices, use.names = FALSE)
-]
-
-unassigned_indices <- unassigned_indices[
-  !unassigned_indices %in% ambiguous_indices
-]
-
-print(paste0("\nUnassigned reads: ", length(unassigned_indices), "\n"))
+cat(paste0("Unassigned reads: ", length(unassigned_indices), "\n"))
 
 if( args$stat != FALSE ){
   write.table(
     data.frame(
       sampleName = paste0(
-        c(samples_df$sampleName, "ambiguous_reads", "unassigned_reads"), 
+        c(
+          samples_df$sampleName, "ambiguous_reads", 
+          "degenerate_reads", "unassigned_reads"
+        ), 
         ".demulti"
       ),
       metric = "reads",
       count = c(
         samples_df$read_counts, 
         length(ambiguous_indices), 
+        length(degenerate_indices),
         length(unassigned_indices)
       )
     ),
@@ -539,7 +705,7 @@ if( args$stat != FALSE ){
 multiplexed_data <- data.frame(
   "sampleName" = S4Vectors::Rle(
     values = samples_df$sampleName, 
-    length = sapply(demultiplexed_indices, length)
+    length = lengths(demultiplexed_indices)
   ),
   "index" = unlist(demultiplexed_indices),
   row.names = NULL
@@ -551,45 +717,94 @@ ambiguous_data <- data.frame(
   row.names = NULL
 )
 
-unassignedData <- data.frame(
+degenerate_data <- data.frame(
+  "sampleName" = rep("degenerate", length(degenerate_indices)),
+  "index" = degenerate_indices,
+  row.names = NULL
+)
+
+unassigned_data <- data.frame(
   "sampleName" = rep("unassigned", length(unassigned_indices)),
   "index" = unassigned_indices,
   row.names = NULL
 )
 
-multiplexed_data <- rbind(multiplexed_data, ambiguous_data, unassignedData)
-multiplexed_data$sampleName <- factor(
-  multiplexed_data$sampleName,
-  levels = c(samples_df$sampleName, "ambiguous", "unassigned")
+multiplexed_data <- rbind(
+  multiplexed_data, ambiguous_data, degenerate_data, unassigned_data
 )
 
-stopifnot(nrow(multiplexed_data) == length(all_indices))
+multiplexed_data$sampleName <- factor(
+  multiplexed_data$sampleName,
+  levels = c(samples_df$sampleName, "ambiguous", "degenerate", "unassigned")
+)
+
+stopifnot( all(multiplexed_data$index %in% all_indices) )
 
 if( args$poolreps ){
   multiplexed_data$sampleName <- gsub("-\\d+$", "", multiplexed_data$sampleName)
 }
 
-cat(paste0("\nReads to be written to files: ", nrow(multiplexed_data), "\n"))
+cat(paste0("Reads to be written to files: ", nrow(multiplexed_data), "\n"))
 
-# Write files to read files to outfolder directory
+# Write files to read files to outfolder directory ----
 if( args$cores > 1 ){
   
   cluster <- parallel::makeCluster(min(c(parallel::detectCores(), args$cores)))
   
   read_list <- demulti$readType[demulti$path != "NA"]
   read_paths <- demulti$path[match(read_list, demulti$readType)]
-
-  demultiplex <- parallel::clusterMap(
-    cluster,
-    writeDemultiplexedSequences,
+  
+  written_seq_files <- mapply(
+    function(read.file.path, read.type, cluster, args,
+             multiplexed.data, writeDemultiplexedSequences){
+      
+      reads <- ShortRead::readFastq(read.file.path)
+      
+      seqs <- reads@sread
+      
+      ids <- Biostrings::BStringSet(
+        stringr::str_extract(
+          as.character(reads@id), args$readNamePattern
+        )
+      )
+      
+      names(seqs) <- ids
+      
+      quals <- reads@quality@quality
+      
+      seqs <- split(
+        seqs[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
+      
+      quals <- split(
+        quals[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
+    
+      demultiplex <- parallel::clusterMap(
+        cluster,
+        writeDemultiplexedSequences,
+        reads = seqs,
+        quals = quals,
+        samplename = names(seqs),
+        MoreArgs = list(
+          type = read.type,
+          outfolder = args$outfolder,
+          compress = args$compress
+        )
+      )
+      
+    },
     read.file.path = read_paths,
-    type = read_list,
+    read.type = read_list,
     MoreArgs = list(
+      cluster = cluster,
       multiplexed.data = multiplexed_data,
-      read.name.pattern = args$readNamePattern,
-      out.folder = args$outfolder,
-      compress = args$compress
-    )
+      writeDemultiplexedSequences = writeDemultiplexedSequences,
+      args = args
+    ),
+    SIMPLIFY = FALSE
   )
   
   parallel::stopCluster(cluster)
@@ -599,19 +814,57 @@ if( args$cores > 1 ){
   read_list <- demulti$readType[demulti$path != "NA"]
   read_paths <- demulti$path[match(read_list, demulti$readType)]
   
-  demultiplex <- mapply(
-    writeDemultiplexedSequences,
+  written_seq_files <- mapply(
+    function(read.file.path, read.type, args,
+             multiplexed.data, writeDemultiplexedSequences){
+      
+      reads <- ShortRead::readFastq(read.file.path)
+      
+      seqs <- reads@sread
+      
+      ids <- Biostrings::BStringSet(
+        stringr::str_extract(
+          as.character(reads@id), args$readNamePattern
+        )
+      )
+      
+      names(seqs) <- ids
+      
+      quals <- reads@quality@quality
+      
+      seqs <- split(
+        seqs[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
+      
+      quals <- split(
+        quals[match(multiplexed.data$index, as.character(ids))],
+        multiplexed.data$sampleName
+      )
+      
+      demultiplex <- mapply(
+        writeDemultiplexedSequences,
+        reads = seqs,
+        quals = quals,
+        samplename = names(seqs),
+        MoreArgs = list(
+          type = read.type,
+          outfolder = args$outfolder,
+          compress = args$compress
+        )
+      )
+      
+    },
     read.file.path = read_paths,
-    type = read_list,
+    read.type = read_list,
     MoreArgs = list(
       multiplexed.data = multiplexed_data,
-      read.name.pattern = args$readNamePattern,
-      out.folder = args$outfolder,
-      compress = args$compress
-    )
+      writeDemultiplexedSequences = writeDemultiplexedSequences,
+      args = args
+    ),
+    SIMPLIFY = FALSE
   )
-
 }
 
-cat("\nDemultiplexing complete.\n")
+cat("Demultiplexing complete.\n")
 q()

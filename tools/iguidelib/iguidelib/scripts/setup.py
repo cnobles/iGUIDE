@@ -86,7 +86,7 @@ def main( argv = sys.argv ):
                 subprocess.run(ln_args)
     else:
         for type in read_types: 
-            check_existing_fastq(Path(config[type]))
+            check_existing_fastq(Path(config["Seq_Path"]) / config[type])
     
     sys.exit(cmd.returncode)
     

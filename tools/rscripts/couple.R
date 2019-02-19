@@ -100,11 +100,11 @@ args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
 # Argument Conditionals
 if( is.null(args$anchorPSL) | is.null(args$adriftPSL) ){
-  stop("Anchor and adrift PSL files not found. Please provide.")
+  stop("\n  Anchor and adrift PSL files not found. Please provide.\n")
 }
 
 if( is.null(args$uniqOutput) ){
-  stop("Please provide an output file name.")
+  stop("\n  Please provide an output file name.\n")
 }
 
 # Print Inputs to terminal
@@ -125,7 +125,7 @@ input_table <- input_table[
   ),
 ]
 
-cat("Coupler Inputs:")
+cat("\nCoupler Inputs:\n")
 print(
   data.frame(input_table),
   right = FALSE, 
@@ -152,7 +152,8 @@ if( !all(
     "processBLATData", "condenseSites", "writeOutputFile") %in% ls())
 ){
   stop(
-    "Cannot load supporting scripts. You may need to clone from github again."
+    "\n  Cannot load supporting scripts. ",
+    "You may need to clone from github again.\n"
   )
 }
 
@@ -160,7 +161,7 @@ if( !all(
 if( grepl(".fa", args$refGenome) ){
   
   if( !file.exists(args$refGenome) ){
-    stop("Specified reference genome file not found.")
+    stop("\n  Specified reference genome file not found.\n")
   }
   
   ref_file_type <- ifelse(grepl(".fastq", args$refGenome), "fastq", "fasta")
@@ -181,16 +182,16 @@ if( grepl(".fa", args$refGenome) ){
     
     cat("\nInstalled genomes include:\n")
     print(paste(unique(BSgenome::installed.genomes()), collapse = "\n"))
-    stop("\nSelected reference '", args$refGenome, "'genome not in list.")
+    stop("\n  Selected reference '", args$refGenome, "'genome not in list.\n")
     
   }else if( length(genome) > 1 ){
     
     cat("\nInstalled genomes include:\n")
     print(paste(unique(BSgenome::installed.genomes(), collapse = "\n")))
-    stop(paste(
-        "\nPlease be more specific about reference genome.", 
-        "Multiple matches to input."
-    ))
+    stop(
+        "\n  Please be more specific about reference genome. ", 
+        "Multiple matches to input.\n"
+    )
     
   }
   
@@ -224,7 +225,8 @@ if( length(args$keys) > 1 ){
   
   if( !anchor_key_type %in% c("csv", "tsv", "rds", "RData") ){
     stop(
-      "Output key file type not supported. Please use csv, tsv, rds, or RData."
+      "\n  Output key file type not supported. ",
+      "Please use csv, tsv, rds, or RData.\n"
     )
   }
   
@@ -234,7 +236,8 @@ if( length(args$keys) > 1 ){
   
   if( !adrift_key_type %in% c("csv", "tsv", "rds", "RData") ){
     stop(
-      "Output key file type not supported. Please use csv, tsv, rds, or RData."
+      "\n  Output key file type not supported. ",
+      "Please use csv, tsv, rds, or RData.\n"
     )
   }
   
@@ -246,7 +249,7 @@ if( length(args$keys) > 1 ){
   # Check input for data, if none, write files and exit
   if( nrow(anchor_keys) == 0 | nrow(adrift_keys) == 0 ){
     
-    message("No sequences identified in at least one key file.")
+    cat("\nNo sequences identified in at least one key file.\n")
     writeNullOutput(args)
     q()
     
@@ -267,7 +270,7 @@ if( length(args$keys) > 1 ){
   # Check intersection is not 0
   if( length(common_names) == 0 | is.null(common_names) ){
     
-    message("No sequences in common between key files.")
+    cat("\nNo sequences in common between key files.\n")
     writeNullOutput(args)
     q()
     
@@ -308,7 +311,8 @@ if( length(args$keys) > 1 ){
   
   if( !keys_type %in% c("csv", "tsv", "rds", "RData") ){
     stop(
-      "Output key file type not supported. Please use csv, tsv, rds, or RData."
+      "\n  Output key file type not supported. ",
+      "Please use csv, tsv, rds, or RData.\n"
     )
   }
   
@@ -317,7 +321,7 @@ if( length(args$keys) > 1 ){
   
   if( nrow(keys) == 0 ){
     
-    message("No sequences identified in key file.")
+    cat("\nNo sequences identified in key file.\n")
     writeNullOutput(args)
     q()
     
@@ -341,7 +345,7 @@ if( length(args$keys) > 1 ){
   
 }else if( length(args$keys) > 2 ){
   
-  stop("Cannot have more key files than sequence alignment files.")
+  stop("\n  Cannot have more key files than sequence alignment files.\n")
   
 }
 
@@ -403,7 +407,7 @@ if( is.null(args$keys) ){
 
 # Print out basic alignment info.
 cat(sprintf(
-  "Anchor Alignments: %1$s from %2$s sequences", 
+  "\nAnchor Alignments: %1$s from %2$s sequences\n", 
   nrow(anchor_hits),
   length(unique(anchor_hits$qName))
 ))
@@ -417,7 +421,7 @@ cat(sprintf(
 # Stop if there are no alignments to couple.
 if( nrow(anchor_hits) == 0 | nrow(adrift_hits) == 0 ){
   
-  message("No sequences aligned for at least one of the sequence pairs.")
+  cat("\nNo sequences aligned for at least one of the sequence pairs.\n")
   writeNullOutput(args)
   q()
   
@@ -436,7 +440,7 @@ anchor_hits <- qualityFilter(
 
 if( nrow(anchor_hits) == 0 ){
   
-  message("No alignments remaining after quality filtering anchor reads.")
+  cat("\nNo alignments remaining after quality filtering anchor reads.\n")
   writeNullOutput(args)
   q()
   
@@ -456,7 +460,7 @@ adrift_hits <- qualityFilter(
 
 if( nrow(adrift_hits) == 0 ){
   
-  message("No alignments remaining after quality filtering adrift reads.")
+  cat("\nNo alignments remaining after quality filtering adrift reads.\n")
   writeNullOutput(args)
   q()
   
@@ -492,7 +496,10 @@ printHead(
 # Stop if no alignments passed filtering for individual sequences.
 if( length(anchor_hits) == 0 | length(adrift_hits) == 0 ){
   
-  message("No alignments remaining after quality filtering for at least one of the sequence pairs.")
+  cat(
+    "\nNo alignments remaining after quality filtering",
+    "for at least one of the sequence pairs.\n"
+  )
   writeNullOutput(args)
   q()
   
@@ -542,7 +549,7 @@ adrift_loci <- red_adrift_hits[S4Vectors::subjectHits(pairs)]
 #Stop if no alignments coupled based on criteria.
 if( length(pairs) == 0 ){
 
-  message("No alignments coupled based on input criteria.")
+  cat("\nNo alignments coupled based on input criteria.\n")
   writeNullOutput(args)
   q()
   
@@ -577,7 +584,7 @@ adrift_loci <- adrift_loci[keep_loci]
 # Stop if no loci were properly paired
 if( length(anchor_loci) == 0 | length(adrift_loci) == 0 ){
   
-  message("No genomic loci from alignments were properly paired.")  
+  cat("\nNo genomic loci from alignments were properly paired.\n")  
   writeNullOutput(args)
   q()
   
@@ -756,7 +763,10 @@ paired_loci$readPairKeys <- paired_loci_key$readPairKeys
 #' Stop if there are no paired_loci
 if( length(paired_loci) == 0 ){
   
-  message("No valid paired genomic loci were found within the data given input criteria.")
+  cat(
+    "\nNo valid paired genomic loci were found within", 
+    "the data given input criteria.\n"
+  )
   writeNullOutput(args)
   q()
   
@@ -895,7 +905,10 @@ printHead(
   uniq_sites,
   title = "Head of uniquely mapped genomic loci.",
   caption = sprintf(
-    "Alignments yeilded %1$s unique anchor sites from %2$s properly-paired and aligned reads.",
+    paste(
+      "Alignments yeilded %1$s unique anchor sites from %2$s", 
+      "properly-paired and aligned reads."
+    ),
     length(reduce(flank(uniq_sites, -1, start = TRUE), min.gapwidth = 0L)),
     length(uniq_sites)
   )
@@ -933,7 +946,10 @@ if( !is.null(args$condSites) ){
     cond_sites,
     title = "Head of unique anchor sites.",
     caption = sprintf(
-      "There were %1$s unique anchor sites identified with a total of %2$s unique template lengths and %3$s read counts.",
+      paste(
+        "There were %1$s unique anchor sites identified with a total", 
+        "of %2$s unique template lengths and %3$s read counts."
+      ),
       length(cond_sites),
       sum(cond_sites$fragLengths),
       sum(cond_sites$counts)

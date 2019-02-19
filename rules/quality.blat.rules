@@ -21,6 +21,8 @@ rule post_align:
     maxLen=config["maxTempLength"]
   log:
     RUN_DIR + "/logs/{sample}.couple.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["coupleMB"]
   shell:
     """
     Rscript {params.tool} {input.sampleR2} {input.sampleR1} \

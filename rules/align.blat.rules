@@ -11,6 +11,8 @@ rule align:
     config["BLATparams"]
   log:
     RUN_DIR + "/logs/{sample}.{read}.blat.log"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["alignMB"]
   shell:
     """
     if [[ $(cat {input.seq} | wc -l) -eq 0 ]]
