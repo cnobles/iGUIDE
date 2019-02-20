@@ -87,8 +87,11 @@ if not "alignMB" in config:
 if not "coupleMB" in config:
     config["coupleMB"] = 4000
     
-if not "processMB" in config:
-    config["processMB"] = 4000
+if not "assimilateMB" in config:
+    config["assimilateMB"] = 4000
+
+if not "evaluateMB" in config:
+    config["evaluateMB"] = 4000
     
 if not "reportMB" in config:
     config["reportMB"] = 4000
@@ -97,8 +100,9 @@ if not "reportMB" in config:
 # Target Rules
 rule all:
     input: 
-      incorp_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
-      edit_sites=RUN_DIR + "/output/edited_sites." + RUN + ".rds",
+      uniq_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
+      incorp_sites=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
+      evaluation=RUN_DIR + "/output/iguide.eval." + RUN + ".rds",
       report=RUN_DIR + "/reports/report." + RUN + ".html",
       stats=RUN_DIR + "/output/stats." + RUN + ".csv"
 

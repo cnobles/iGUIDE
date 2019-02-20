@@ -61,7 +61,8 @@ filtMB : 4000
 consolMB : 4000
 alignMB : 4000
 coupleMB : 4000
-processMB : 4000
+assimilateMB : 4000
+evaluateMB : 4000
 reportMB : 4000
 
 # Demultiplexing parameters

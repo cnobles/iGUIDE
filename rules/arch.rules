@@ -39,7 +39,7 @@ rule generate_stat_matrix:
       sample=SAMPLES, read=READS),
     align=expand(
       RUN_DIR + "/processData/{sample}.align.stat", sample=SAMPLES),
-    proc=RUN_DIR + "/processData/" + RUN + ".edit.stat"
+    assim=RUN_DIR + "/processData/" + RUN + ".assim.stat"
   output:
     RUN_DIR + "/output/stats." + RUN + ".csv"
   params:

@@ -162,7 +162,7 @@ if( args$format == "pdf" ){
 
 # Summary
 
-The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(input_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(input_data$algnmts$contrib)))` inferred cells sampled.
+The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` inferred cells sampled.
 
 ```{r} 
 if( args$format == "pdf" ){
@@ -176,12 +176,12 @@ if( args$format == "pdf" ){
 
 ```{r spec_summary}
 pander(
-  spec_overview_join, 
+  spec_overview, 
   caption = tbl_caps[1], 
   justify = ifelse(
     sapply(
-      seq_along(spec_overview_join), 
-      function(i) is.numeric(spec_overview_join[,i])
+      seq_along(spec_overview), 
+      function(i) is.numeric(spec_overview[,i])
     ), 
     "right", 
     "center"
@@ -281,7 +281,7 @@ if( args$format == "pdf" ){
 
 ```{r}
 incorp_len <- ifelse(
-  !is.null(args$support), 
+  nrow(eval_data$spec_info$supp_data) > 0,
   length(unique(paste(on_tar_dists$condition, on_tar_dists$gRNA))), 
   length(unique(on_tar_dists$gRNA))
 )
@@ -318,7 +318,7 @@ for( i in unique(ceiling(seq_len(incorp_len) / 2)) ){
     }
   }
   
-  if( !is.null(args$support) ){
+  if( nrow(eval_data$spec_info$supp_data) > 0 ){
   
       p <- incorp_plot + 
         facet_wrap_paginate(
