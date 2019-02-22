@@ -320,7 +320,7 @@ if [[ $__run_iguide_tests = true ]]; then
     else
         warning "    iGUIDE Tests:  FAILED"
         warning "    Try running the test outside of the install to confirm."
-        warning "    Just run 'bash tests/test.sh $__iguide_env'."
+        warning "    Just run 'bash etc/tests/test.sh $__iguide_env'."
     fi
 fi
 
