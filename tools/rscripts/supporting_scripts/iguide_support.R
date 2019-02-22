@@ -1012,47 +1012,6 @@ plotEditSites <- function(gr, sampleName = NULL, resolution = 10L){
   
 }
 
-
-#' A Binary Ambiguous Nucleotide scoring Matrix (BAN Mat)
-#' 
-#' Constructed based on NUC4.4.
-#' 
-#' Meant for comparing ambiguous sequences against "A", "T", "G", "C", and "N"
-#' containing sequences. Currently matches between ambiuous nucleotides are 
-#' considered mismatch.
-#' 
-#' @author Christopher Nobles, Ph.D.
-
-banmat <- function(){
-  
-  matrix(c(
-    1,0,0,0,0,1,1,0,0,1,0,1,1,1,1,0,
-    0,1,0,0,0,1,0,1,1,0,1,0,1,1,1,0,
-    0,0,1,0,1,0,1,0,1,0,1,1,0,1,1,0,
-    0,0,0,1,1,0,0,1,0,1,1,1,1,0,1,0,
-    0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,0,
-    1,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,
-    1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,
-    0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,
-    0,1,1,0,0,0,0,0,1,0,0,0,0,0,1,0,
-    1,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,
-    0,1,1,1,0,0,0,0,0,0,1,0,0,0,1,0,
-    1,0,1,1,0,0,0,0,0,0,0,1,0,0,1,0,
-    1,1,0,1,0,0,0,0,0,0,0,0,1,0,1,0,
-    1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
-    ncol = 16,
-    nrow = 16,
-    byrow = TRUE,
-    dimnames = list(
-      c("A", "T", "G", "C", "S", "W", "R", "Y", 
-        "K", "M", "B", "V", "H", "D", "N", "?"),
-      c("A", "T", "G", "C", "S", "W", "R", "Y", 
-        "K", "M", "B", "V", "H", "D", "N", "?")))
-  
-}
-
 make_square <- function(p, dims, fudge=1){
   
   dims <- heatmap_dims(p)

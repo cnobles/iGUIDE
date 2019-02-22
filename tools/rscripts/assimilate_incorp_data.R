@@ -63,7 +63,7 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "--install_path", nargs = 1, type = "character", default = "IGUIDE_DIR",
+  "--iguide_dir", nargs = 1, type = "character", default = "IGUIDE_DIR",
   help = "iGUIDE install directory path, do not change for normal applications."
 )
 
@@ -71,14 +71,14 @@ parser$add_argument(
 # Set arguments with parser ----
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
-if( !dir.exists(args$install_path) ){
-  root_dir <- Sys.getenv(args$install_path)
+if( !dir.exists(args$iguide_dir) ){
+  root_dir <- Sys.getenv(args$iguide_dir)
 }
 
 if( !dir.exists(root_dir) ){
   stop(paste0("\n  Cannot find install path to iGUIDE: ", root_dir, ".\n"))
 }else{
-  args$install_path <- root_dir
+  args$iguide_dir <- root_dir
 }
 
 
@@ -93,7 +93,7 @@ input_table <- data.frame(
 input_table <- input_table[
   match(c(
     "uniqSites :", "output :", "config :", "umitags :", "multihits :", "stat :",
-    "install_path :"
+    "iguide_dir :"
     ), 
     input_table$Variables
   ),
@@ -118,13 +118,13 @@ code_dir <- dirname(sub(
 
 ## Load in supporting functions for the analysis
 source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
-
+source(file.path(code_dir, "supporting_scripts/nucleotideScoringMatrices.R"))
 
 # Inputs and parameters ----
 # Run parameters and sample parameters
 config <- yaml::yaml.load_file(args$config)
 
-sample_info_path <- file.path(args$install_path, config$Sample_Info)
+sample_info_path <- file.path(args$iguide_dir, config$Sample_Info)
 
 if( !(file.exists(sample_info_path) | file.exists(config$Sample_Info)) ){
   
@@ -150,7 +150,7 @@ submat <- banmat()
 if( grepl(".fa", config$Ref_Genome) ){
   
   if( !(
-    file.exists(file.path(args$install_path, config$Ref_Genome)) | 
+    file.exists(file.path(args$iguide_dir, config$Ref_Genome)) | 
       file.exists(config$Ref_Genome)
   ) ){
     stop(
@@ -162,11 +162,11 @@ if( grepl(".fa", config$Ref_Genome) ){
   
   
   if( file.exists(
-    file.path(args$install_path, config$Ref_Genome) 
+    file.path(args$iguide_dir, config$Ref_Genome) 
   ) ){
     
     ref_genome <- Biostrings::readDNAStringSet(
-      filepath = file.path(args$install_path, config$Ref_Genome),
+      filepath = file.path(args$iguide_dir, config$Ref_Genome),
       format = ref_file_type
     )
     

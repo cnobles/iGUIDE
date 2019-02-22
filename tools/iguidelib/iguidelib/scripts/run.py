@@ -16,7 +16,7 @@ def main( argv = sys.argv ):
             "Could not determine Conda prefix. Activate your iGUIDE "
             "environment and try this command again.")
 
-    usage_str = "iguide %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
+    usage_str = "\n  iguide %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
 
     description_str = (
         "Initiate the processing of an iGUIDE project givin a configuration "

@@ -1,3 +1,3 @@
 # etc
 
-This directory contains scripts for installation and uninstallation.
+This directory contains scripts and data for installation, testing, and uninstalling.

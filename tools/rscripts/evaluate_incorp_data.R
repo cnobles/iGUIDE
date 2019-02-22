@@ -38,21 +38,23 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "--install_path", nargs = 1, type = "character", default = "IGUIDE_DIR",
+  "--iguide_dir", nargs = 1, type = "character", default = "IGUIDE_DIR",
   help = "iGUIDE install directory path, do not change for normal applications."
 )
 
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
-if( !dir.exists(args$install_path) ){
-  root_dir <- Sys.getenv(args$install_path)
+if( !dir.exists(args$iguide_dir) ){
+  root_dir <- Sys.getenv(args$iguide_dir)
+}else{
+  root_dir <- args$iguide_dir
 }
 
 if( !dir.exists(root_dir) ){
   stop(paste0("\n  Cannot find install path to iGUIDE: ", root_dir, ".\n"))
 }else{
-  args$install_path <- root_dir
+  args$iguide_dir <- root_dir
 }
 
 ## Determine output file name and path
@@ -74,7 +76,7 @@ input_table <- data.frame(
 
 input_table <- input_table[
   match(
-    c("config :", "output :", "support :", "install_path :"),
+    c("config :", "output :", "support :", "iguide_dir :"),
     input_table$Variables),
 ]
 
