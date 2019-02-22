@@ -5,4 +5,4 @@ before_install:
   - sudo apt-get install texlive-latex-extra
 install:
   - bash install.sh
-script: source tests/test.sh
+script: bash etc/tests/test.sh
