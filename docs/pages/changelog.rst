@@ -6,6 +6,18 @@
 ChangeLog 
 ========================
 
+**v0.9.6 (March XXth, 2019)**
+
+* Introduced process workflow steps: assimilate and evaluate
+  + Assimilate aligned data and compare with targeting sequences
+    + Core data object that can be combined across runs / projects
+  + Evaluated data incorporates reference data and statistical models
+    + A staple data object for reports and can be constructed from multiple runs
+* Included new subcommands 'eval' and modified 'report'
+  + report from either config(s) or eval dataset
+* Cleaned up file structure
+* Updated documentation in code and docs.
+
 **v0.9.5 (February 19th, 2019)**
 
 * Updated demultiplexing to be more efficient and better HPC compatible.

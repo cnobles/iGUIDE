@@ -149,7 +149,7 @@ fig_caps <- paste0("**Figure ", 1:3, "**. ", fig_caps)
 This report includes data from the following sequencing runs: `r gsub("_", "-", set_names)`.
 
 ```{r title_graphic, fig.width=6, fig.height=6, eval = args$graphic}
-plot_genomic_density(graphic_grl, res = 1E7, clean = TRUE)
+plotGenomicDensity(graphic_grl, res = 1E7, clean = TRUE)
 ```
 
 ```{r} 
@@ -432,7 +432,7 @@ layout_list <- split(seq_len(gen_den_len), row_idx)
 
 ```{r genomic_distribution, fig.width=ifelse(length(layout_list[[1]]) > 1, 7.5, 3.25), fig.height=4.8}
 
-genomic_den_plot <- plot_genomic_density(
+genomic_den_plot <- plotGenomicDensity(
     genomic_grl, res = 1E7, grp.col = "condition"
   ) +
   custom_theme +
@@ -500,7 +500,7 @@ ft_seq_plots <- lapply(
         y, aligned.sequence, mismatch, target, aligns, MESL, gene_id
       ) %>%
       dplyr::mutate(MESL = format(round(MESL, digits = 1))) %>%
-      seq_diverge_plot(
+      plotSeqDiverge(
         ref = ref_gRNA, padding = 7, text.size = 3.5, 
         font.family = "Courier", font.face = "plain", force.sq = TRUE) +
       labs(title = title) +

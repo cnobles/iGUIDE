@@ -1,13 +1,32 @@
-## GUIDE-seq matching method
-## Pile up alignments and find the beginning of the most frequent alignment
-## (based on fragment lengths) for the group. Look +/- 25 bp around the site for
-## identifying on/off-target sites with the guideRNA.
-## This needs to be made into a function for standardizing locations, solve the 
-## bias problem by doing it twice on the data, since it's so fast, it shouldn't
-## matter the extra round. Further, this pile up method would be good for
-## identifying genomic regions to scan and would reduce the query load, just 
-## increase the range.
-pileupCluster <- function(gr, grouping = NULL, maxgap = 0L, return = "full"){
+#' Cluster ranges into pile up clusters
+#' 
+#' @usage pileupCluster(gr)
+#' @usage pileupCluster(gr, grouping = NULL, maxgap = 0L, return = "full")
+#' 
+#' @param gr a GRanges object to identify clusters with. If the grouping param
+#' is included, the GRanges object should contain an column in the metadata 
+#' columns with a name that matches the grouping param.
+#' 
+#' @param grouping a character vector of column names used for grouping ranges
+#' together, i.e. clustering within specimens by use `grouping = "specimen"` 
+#' where `specimen` is a metadata column in the input `gr`.
+#' 
+#' @param maxgap an integer indicating the distance allowed between ranges to 
+#' consider them as overlapping. Follows the GenomicRanges::findOverlaps
+#' notation, where 0L means adjacent ranges (not overlapping) will be identified
+#' as overlapping. To only select ranges which overlap, use -1L.
+#' 
+#' @param return a character string of either "full" (default), "simple", or 
+#' "ID". Full will return a listed object containing the input gr (`$gr`) with
+#' appended data columns with information about the clusters. A "simple" return
+#' returns a character vector of position identifiers for the considered origin 
+#' of the cluster, while "ID" returns an integer vector of the cluster 
+#' membership.
+#' 
+#' @description Pile up ranges and find the beginning of the most frequent 
+#' range (based on fragment lengths) for the group. 
+#' 
+pileupCluster <- function(gr, grouping = NULL, maxgap = -1L, return = "full"){
   
   stopifnot(return %in% c("full", "simple", "ID"))
   
@@ -55,7 +74,25 @@ pileupCluster <- function(gr, grouping = NULL, maxgap = 0L, return = "full"){
   
 }
 
-groupPileups <- function(gr, strand, maxgap = maxgap){
+#' groupPileup ranges, companion function to pileupCluster
+#' 
+#' @usage groupPileups(gr, strand, maxgap)
+#' 
+#' @param gr a GRanges object to identify clusters with. If the grouping param
+#' is included, the GRanges object should contain an column in the metadata 
+#' columns with a name that matches the grouping param.
+#' 
+#' @param strand character vector of singular length specifying either "+" or 
+#' "-" strand to identify the grouping on. 
+#' 
+#' @param maxgap integer indicating the distance allowed between ranges to 
+#' consider them as overlapping. Follows the GenomicRanges::findOverlaps
+#' notation, where 0L means adjacent ranges (not overlapping) will be identified
+#' as overlapping. To only select ranges which overlap, use -1L.
+#' 
+#' @description Identify groups of ranges that 'pileup' or overlap together.
+#' 
+groupPileups <- function(gr, strand, maxgap){
   
   # Implement axial cluster structure rather than all vs all.
   red.gr <- GenomicRanges::reduce(gr, min.gapwidth = maxgap, with.revmap = TRUE)
@@ -121,6 +158,31 @@ groupPileups <- function(gr, strand, maxgap = maxgap){
   
 }  
 
+#' Identify paired alignments within a set of ranges
+#' 
+#' @usage identifyPairedAlgnmts(gr, grouping = NULL, maxgap, maxovlp = 10L)
+#' 
+#' @param gr a GRanges object to identify paired alignments. If the grouping 
+#' param is included, the GRanges object should contain an column in the 
+#' metadata columns with a name that matches the grouping param.
+#' 
+#' @param grouping a character vector of column names used for grouping ranges
+#' together, i.e. clustering within specimens by use `grouping = "specimen"` 
+#' where `specimen` is a metadata column in the input `gr`.
+#' 
+#' @param maxgap integer indicating the distance allowed between ranges to 
+#' consider them as overlapping. Follows the GenomicRanges::findOverlaps
+#' notation, where 0L means adjacent ranges (not overlapping) will be identified
+#' as overlapping. To only select ranges which overlap, use -1L.
+#'
+#' @param maxovlp integer indicating the maximum allowed overlap before breaking
+#' the paired criteria, this is implemented to give some control over alignments
+#' that overlap more then would be expected by biology.
+#' 
+#' @description Given a set of ranges, identify which ranges match with the 
+#' paired criteria. This means that the ranges are outward facing from eachother
+#' and are found on opposite strands.
+#' 
 identifyPairedAlgnmts <- function(gr, grouping = NULL, maxgap, maxovlp = 10L){
   
   if( !is.null(grouping) ){
@@ -215,6 +277,37 @@ identifyPairedAlgnmts <- function(gr, grouping = NULL, maxgap, maxovlp = 10L){
   
 }
 
+#' Assign locus IDs to alignments
+#' 
+#' @usage assignLociID(gr, pilegap = 0L, pairgap = 200L, maxovlp = 10L, grouping = NULL)
+#' 
+#' @param gr a GRanges object to identify pileup and paired alignments. If the 
+#' grouping param is included, the GRanges object should contain an column in 
+#' the metadata columns with a name that matches the grouping param.
+#' 
+#' @param pilegap,pairgap an integer indicating the distance allowed between 
+#' ranges to consider them as overlapping. `pilegap` is passed to 
+#' `pileupCluster` while `pairgap` is passed to `identifyPairedAlgnmts`.Follows 
+#' the GenomicRanges::findOverlaps notation, where 0L means adjacent ranges 
+#' (not overlapping) will be identified as overlapping. To only select ranges 
+#' which overlap, use -1L.
+#' 
+#' @param pairgap integer indicating the distance allowed between ranges to 
+#' consider them as overlapping. Follows the GenomicRanges::findOverlaps
+#' notation, where 0L means adjacent ranges (not overlapping) will be identified
+#' as overlapping. To only select ranges which overlap, use -1L.
+#' 
+#' @param maxovlp integer indicating the maximum allowed overlap before breaking
+#' the paired criteria, this is implemented to give some control over alignments
+#' that overlap more then would be expected by biology.
+#' 
+#' @param grouping a character vector of column names used for grouping ranges
+#' together, i.e. clustering within specimens by use `grouping = "specimen"` 
+#' where `specimen` is a metadata column in the input `gr`.
+#' 
+#' @description Using the pileup and paired identification, give each set of 
+#' alignments a unique identifier that groups them together for analysis.
+#' 
 assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, maxovlp = 10L, 
                          grouping = NULL){
   
@@ -280,11 +373,33 @@ assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, maxovlp = 10L,
   
 }
 
-# Format number in tables with big.marks conveinently
+#' Format number in tables with big.marks conveinently
+#' 
+#' @usage pNums(x, ...)
+#' 
+#' @param x vector of numbers to format. Standard big.mark = ",".
+#' @param ... arguments further passed to the `format` function.
+#' 
 pNums <- function(x, ...){
   format(x, big.mark = ",", ...)
 }
 
+#' Load reference files into the R environment
+#' 
+#' @usage loadRefFiles(ref, type = "gene.list", freeze = NULL, root = NULL)
+#' 
+#' @param ref reference object passed from config file.
+#' @param type character value of either "gene.list", "GRanges", "data.frame",
+#' which determines the output format.
+#' @param freeze character value of the reference genome to use when loading
+#' the reference file, if the reference needs it. Used if reference is 
+#' downloading from UCSC.
+#' @param root file path to the root or install directory of iGUIDE.
+#' 
+#' @description A convenience function that loads several different types of 
+#' reference files into the R environment. Allows for input flexibility in 
+#' config files when specifying reference datasets.
+#' 
 loadRefFiles <- function(ref, type = "gene.list", freeze = NULL, root = NULL){
   
   stopifnot(type %in% c("gene.list", "GRanges", "data.frame"))
@@ -401,7 +516,21 @@ loadRefFiles <- function(ref, type = "gene.list", freeze = NULL, root = NULL){
   
 }
 
-# Convert matches to GRanges objects
+#' Convert matches to GRanges objects
+#' 
+#' @usage mindexToGranges(mindex, strand, ref = NULL)
+#' 
+#' @param mindex an MIndex object, such as produced by 
+#' Biostrings::vmatchPattern.
+#' 
+#' @param strand character to specify the strand of the alignment, either "+" or
+#' "-" or "*".
+#' 
+#' @param ref reference genome object, sequence information will be included 
+#' with output GRanges object if this parameter is specified.
+#' 
+#' @description Converts MIndex objects into GRange objects. Helpful conversion
+#' if using the Biostrings::vmatchPattern function and genome objects.
 mindexToGranges <- function(mindex, strand, ref = NULL){
   
   if( is.null(mindex@NAMES) ) stop("NAMES column not found for seqnames.")
@@ -428,7 +557,29 @@ mindexToGranges <- function(mindex, strand, ref = NULL){
   
 }
 
-# Generate random sites across the reference genome.
+#' Generate random sites across the reference genome.
+#' 
+#' @usage selectRandomSites(
+#'   num, ref.genome, drop.extra.seqs = TRUE, seq.names = NULL, rnd.seed = NULL
+#' )
+#' 
+#' @param num integer the number of random sites to choose.
+#' 
+#' @param ref.genome BSgenome object of the reference genome.
+#' 
+#' @param drop.extra.seqs logical, if TRUE then non-standard sequences will be
+#' dropped from the possibilities of selecting random sites. FALSE will include
+#' the non-standard sequences. Standard sequences are defined by chr1-22, X, Y,
+#' and M.
+#' @param seq.names character vector of sequence names to select sites from.
+#' 
+#' @param rnd.seed integer value that functions as the random seed for the 
+#' selection process.
+#' 
+#' @description Generate any number of uniformily distributed random sites 
+#' across a reference genome. Output in a GRanges object with the sequence info
+#' of the reference genome.
+#' 
 selectRandomSites <- function(num, ref.genome, drop.extra.seqs = TRUE, 
                               seq.names = NULL, rnd.seed = NULL){
 
@@ -507,6 +658,26 @@ selectRandomSites <- function(num, ref.genome, drop.extra.seqs = TRUE,
   
 }
 
+#' Get sequences from a reference genome at a specific site.
+#' 
+#' @usage getSiteSeqs(gr, upstream.flank, downstream.flank, ref.genome)
+#' 
+#' @param gr GRanges object or character vector of positions following the 
+#' pattern "seqname:strand:position". These objects specify the specific 
+#' location in the reference genome and the strand, sense ("+") or anti-sense 
+#' ("-"). Only the anchored positions of the ranges will be used. If gr is a 
+#' GRanges object, it will pass through `flank(gr, -1, start = TRUE)` to
+#' identify these positions.
+#' 
+#' @param upstream.flank integer value for upstream sequence to return.
+#' 
+#' @param downstream.flank integer value for downstream sequence to return.
+#' 
+#' @param ref.genome BSgenome object of the reference genome.
+#' 
+#' @description Given a list of positions or GRanges object of genomic
+#' locations, return the sequences around the positions from a reference genome.
+#' 
 getSiteSeqs <- function(gr, upstream.flank, downstream.flank, ref.genome){
 
   if( class(gr) != "GRanges" ){
@@ -552,6 +723,43 @@ getSiteSeqs <- function(gr, upstream.flank, downstream.flank, ref.genome){
   
 }
 
+#' Compare gRNA sequences with those sequences found around incorporation sites
+#' 
+#' @usage compareGuideRNAs(
+#'   gr.with.sequences, seq.col, guide.rna.seqs, submat = NULL, tolerance = 6L, 
+#'   upstream.flank, downstream.flank, PAM = "NGG", offset.nt = 4L
+#' )
+#' 
+#' @param gr.with.sequences GRanges object with a metadata column, specified by
+#' `seq.col`, that contains sequences for the range.
+#'  
+#' @param seq.col character string indicating the metadata column containing 
+#' sequence information for the range.
+#' 
+#' @param guide.rna.seqs a list of gRNA sequences to compare against the ranges.
+#' 
+#' @param submat matrix that functions as the substitution matrix for sequence
+#' alignment scores. Typically binary to calculate exact mismatches.
+#' 
+#' @param tolerance integer specifying the number of mismatches tolerated for an
+#' alignment.
+#' 
+#' @param upstream.flank,downstream.flank integer value specifying the distance 
+#' that was previously used to capture sequences flanking the incorporation 
+#' sites.
+#' 
+#' @param PAM character string indicating the patter to recognize the PAM
+#' sequence.
+#' 
+#' @param offset.nt integer value specifying the base in the gRNA sequence where
+#' editing occurs most often. Numbered bases from the 3' end of the gRNA
+#' sequences, not including the PAM.
+#' 
+#' @description Scan through sequences flanking incorporation sites for matches 
+#' to gRNA sequences and PAM motifs. This will create an all by all comparison
+#' and return a GRanges object with the input information and additional 
+#' metadata cols with matching information.
+#' 
 compareGuideRNAs <- function(gr.with.sequences, seq.col, 
                              guide.rna.seqs, submat = NULL, tolerance = 6L,
                              upstream.flank, downstream.flank,
@@ -651,6 +859,21 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
   
 }
 
+#' Align gRNA sequences against flanking sequences around incorporation sites
+#' 
+#' @usage alnGuideRNAs(seqs, guide.rna.seqs, tolerance)
+#' 
+#' @param seqs sequences in either Biostrings object or character vector.
+#' 
+#' @param guide.rna.seqs a list of gRNA sequences to compare against the ranges.
+#' 
+#' @param tolerance integer specifying the number of mismatches tolerated for an
+#' alignment.
+#' 
+#' @description Companion function to `compareGuideRNAs` which aligns gRNA 
+#' sequences to input sequences to determine potential locations of matched 
+#' alignments.
+#' 
 alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
 
   if( is.null(names(seqs)) ) names(seqs) <- seq_along(seqs)
@@ -723,6 +946,32 @@ alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
   
 }
 
+#' Determine the editing site location
+#' 
+#' @usage calcCutSite(
+#'   sites, matched.seqs, upstream.flank, downstream.flank, PAM, offset.nt
+#' )
+#' 
+#' @param sites GRanges object representing the incorporation sites
+#'  
+#' @param matched.seqs character vector of sequences matching gRNAs, 
+#' corresponding to the `sites`.
+#' 
+#' @param upstream.flank,downstream.flank integer value specifying the distance 
+#' that was previously used to capture sequences flanking the incorporation 
+#' sites.
+#' 
+#' @param PAM character string indicating the patter to recognize the PAM
+#' sequence.
+#' 
+#' @param offset.nt integer value specifying the base in the gRNA sequence where
+#' editing occurs most often. Numbered bases from the 3' end of the gRNA
+#' sequences, not including the PAM.
+#' 
+#' @description Companion function to `compareGuideRNAs` which determines 
+#' expected locations of nuclease editing based on matched sequences to the gRNA
+#' sequences and known upstream and downstream flanking distances.
+#' 
 calcCutSite <- function(sites, matched.seqs, upstream.flank, 
                          downstream.flank, PAM, offset.nt){
   df <- data.frame(
@@ -756,6 +1005,28 @@ calcCutSite <- function(sites, matched.seqs, upstream.flank,
   
 }
 
+#' Filter out inappropriate comparisons based on experimental conditions
+#' 
+#' @usage filterInappropriateComparisons(guideRNA.match, specimen, treatment)
+#' 
+#' @param guideRNA.match character vector of gRNA names, indicating a gRNA that
+#' a single incorporation is matched too. Needs to be the same length as 
+#' `specimen`.
+#' 
+#' @param specimen character vector of specimen names. Needs to be the same 
+#' length as `guideRNA.match`.
+#' 
+#' @param treatment list containing character vectors matching gRNA names and 
+#' the names of each component of the list are the specimen names.
+#' 
+#' @description After comparing gRNA sequences to regions identified by 
+#' incorporations, some comparisons may not be valid depending on how the
+#' samples were prepared. For example, if sample A was treated with gRNA1 and 
+#' sample B was treated with gRNA2, then it makes little sense to assume
+#' incorporations in sample B with sequence related to gRNA1 are part of the 
+#' nuclease specific activity. This function removes any inappropriately matched
+#' annotations given speciment and treatment data.
+#' 
 filterInappropriateComparisons <- function(guideRNA.match, specimen, treatment){
 
   stopifnot( length(guideRNA.match) == length(specimen) )
@@ -792,6 +1063,39 @@ filterInappropriateComparisons <- function(guideRNA.match, specimen, treatment){
   
 }
 
+#' Assign a Gene ID to a given position
+#' 
+#' @usage assignGeneID(
+#'   seqnames, positions, reference, ref.genes, onco.genes, special.genes, 
+#'   annotations = TRUE
+#' )
+#' 
+#' @param seqnames character vector of seqnames present in `reference`.
+#' 
+#' @param positions integer vector of positions on the seqnames to assign the
+#' gene ID, must be the same length as `seqnames`.
+#' 
+#' @param reference BSgenome object of the reference genome.
+#' 
+#' @param ref.genes GRanges object with transcription unit references. Names 
+#' used in the assignment should be in a metadata column named "annot_sym".
+#' 
+#' @param onco.genes A list of gene names, present in the `ref.genes` GRanges
+#' object, that indicate cancer-associated genes.
+#' 
+#' @param special.genes A list gene names for special annotation, should be 
+#' present in the `ref.genes` GRanges object.
+#' 
+#' @param annotations logical indicating if annotations should be included in 
+#' the output character vector.
+#' 
+#' @description For a given genomic location, assign it a gene ID which is the 
+#' name of the nearest, or within, transcription unit. Additionally, annotations
+#' are provided that specify the following: "*" means the position is within the
+#' transcription unit for the specified gene, "~" means that the gene is on the
+#' list provided by `onco.genes`, and lastly "!" means the gene is present on
+#' the `special.genes` list.
+#' 
 assignGeneID <- function(seqnames, positions, reference, ref.genes, onco.genes,
                          special.genes, annotations = TRUE){
 
@@ -858,6 +1162,22 @@ assignGeneID <- function(seqnames, positions, reference, ref.genes, onco.genes,
   
 }
 
+#' Calculate the coverage of given ranges
+#' 
+#' @usage calcCoverage(gr, resolution)
+#' 
+#' @param gr GRanges object.
+#' 
+#' @param resolution integer value specifying the width for which to caclulate
+#' coverage. 1L will determine the coverage at every position within the given
+#' range, while 10L will determine the coverage in 10 bp chuncks.
+#' 
+#' @description Convert an input GRanges object into a coverage GRanges object
+#' which indicates the number of alignments overlapping at different positions.
+#' This is commonly known as the coverage, or how many times did you observe a 
+#' region of the genome given GRange information. This is a companion function
+#' to `plotCoverage` which does the work of generating the data object to plot.
+#' 
 calcCoverage <- function(gr, resolution){ 
   ###!!!!!!!!Add option for counting coverage by reads or uniq frags
   #Set up coverage gr
@@ -929,6 +1249,20 @@ calcCoverage <- function(gr, resolution){
   
 }
 
+#' Coverage plot
+#' 
+#' @usage plotCoverage(gr, resolution = 10L)
+#' 
+#' @param gr GRanges object.
+#' 
+#' @param resolution integer value specifying the width for which to caclulate
+#' coverage. 1L will determine the coverage at every position within the given
+#' range, while 10L will determine the coverage in 10 bp chuncks.
+#' 
+#' @description Plot the amount of coverage given a set of alignment ranges.
+#' This function will convert the input GRanges object into a coverage object 
+#' using the `calcCoverage` function and then plot it using a specific format.
+#' 
 plotCoverage <- function(gr, resolution = 10L){
   
   df <- calcCoverage(gr, resolution)
@@ -955,6 +1289,28 @@ plotCoverage <- function(gr, resolution = 10L){
       axis.line.y = element_line(color = "black"))
 }
 
+#' Plot edit site coverage
+#' 
+#' @usage plotEditSites(gr, sampleName = NULL, resolution = 10L)
+#' 
+#' @param gr GRanges object with metadata column 'edit.site' which functions as
+#' a grouping vector for the output plots. Additionally, the column 
+#' "guideRNA.match" will be used in the title data.
+#' 
+#' @param sampleName character string specifying the name of metadata column 
+#' with sample designation.
+#' 
+#' @param resolution integer value specifying the width for which to caclulate
+#' coverage. 1L will determine the coverage at every position within the given
+#' range, while 10L will determine the coverage in 10 bp chuncks.
+#' 
+#' @description Another way to plot coverage is to focus on called edit sites
+#' and generate an individual plot for each. This plot will take a GRanges 
+#' object with a metadata column 'edit.site' and generate a coverage plot for
+#' each specified unique edit.site. This is a visual way to scan over the 
+#' results and determine if edit sites that are being called really appear to be
+#' nuclease dependent sites.
+#' 
 plotEditSites <- function(gr, sampleName = NULL, resolution = 10L){
   
   stopifnot( length(unique(gr$edit.site)) == 1 )
@@ -1012,7 +1368,19 @@ plotEditSites <- function(gr, sampleName = NULL, resolution = 10L){
   
 }
 
-make_square <- function(p, dims, fudge=1){
+#' Modify tile-based plots to have square tiles
+#' 
+#' @usage makeSquare(p, dims, fudge=1)
+#' 
+#' @param p ggplot object using geom tile or that you would like to fix the 
+#' aspect ratio
+#' 
+#' @param dims dimenstion object of the input matrix to a heatmap. A list of
+#' integer vectors of length 2, with the names "ncols" and "nrows".
+#' 
+#' @description Use to fix an aspect ratio of a tile-based plot to be square.
+#' 
+makeSquare <- function(p, dims, fudge=1){
   
   dims <- heatmap_dims(p)
   p + ggplot2::theme(aspect.ratio = (dims$nrows / dims$ncols) * fudge)
@@ -1022,7 +1390,9 @@ make_square <- function(p, dims, fudge=1){
 #' Combine a list of ShortRead objects
 #' 
 #' @param split.seqs list of ShortRead objects
-#' @author Christopher Nobles, Ph.D.
+#' 
+#' @description Utility function that combines ShortRead objects.
+#' 
 serialAppendS4 <- function(split.seqs){
 
   stopifnot(class(split.seqs) == "list")
@@ -1055,6 +1425,7 @@ serialAppendS4 <- function(split.seqs){
 #' @param key,val vector coercible into a factor vector. Both key and val 
 #' vectors need to be equal length. Output will be of equal length and in same 
 #' input order.
+#' 
 #' @param return options for output returned. "standard" will return a numeric 
 #' vector of grouping IDs and is the default. "data.frame" will return a 
 #' data.frame with key, val, and clus columns. "simple" will return a numeric
@@ -1122,15 +1493,18 @@ clusterKV <- function(key, val, return = "standard"){
 #' Predict Edit Site Probablility based on incorporation distance given an
 #' On-target incorporation density
 #' 
-#' @usage predictESProb(x, density)
+#' @usage predictESProb(x, density, range = NULL)
 #' 
 #' @param x integer position within range of density object indicating the 
 #' distance from the predicted edit site.
+#' 
 #' @param density a density object constructed from the incorporation site 
 #' distribution around associated On-target editing site(s).
-#' @param range a numeric vector indicating the range of data to consider.
 #' 
-#' @author Christopher Nobles, Ph.D.
+#' @param range a numeric vector indicating the range of data to consider. NULL
+#' will default to the range of input for the denisity object.
+#' 
+#' @description 
 #' 
 predictESProb <- function(x, density, range = NULL){
   
@@ -1153,7 +1527,26 @@ predictESProb <- function(x, density, range = NULL){
   
 }
 
-generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
+#' Generate a GRanges object that covers the entire genome at specified 
+#' resolution
+#' 
+#' @usage generateGenomicRegions(ref, res, drop.alt.chr = TRUE)
+#' 
+#' @param ref reference genome as a BSgenome object.
+#' 
+#' @param res integer value to specify the width of each range. The number of
+#' ranges generated will depend on the resolution to cover the entire genome.
+#' 
+#' @param drop.alt.chr logical specifying if alternative chromosomes 
+#' (seqnames != chr1:22, X, Y, M) should be removed from the output GRanges
+#' object.
+#' 
+#' @description Given a referene BSgenome object, generate a GRanges object with
+#' ranges that span the entire genome with `res` resolution. This can then be
+#' used as a scanning reference range for the density or counts of hits within 
+#' the regions.
+#' 
+generateGenomicRegions <- function(ref, res, drop.alt.chr = TRUE){
   
   if( class(ref) == "BSgenome" ) ref <- GenomicRanges::seqinfo(ref)
   
@@ -1189,7 +1582,36 @@ generate_genomic_regions <- function(ref, res, drop.alt.chr = TRUE){
   
 }
 
-genomic_density <- function(gr, res, cutoff = 2, adj = 1, drop.alt.chr = TRUE){
+#' Determine the genomic density of input GRanges across the reference genome.
+#' 
+#' @usage genomicDensity(gr, res, cutoff = 2, adj = 1, drop.alt.chr = TRUE)
+#' 
+#' @param gr GRanges object which will be used to calculate the genomic density.
+#' 
+#' @param res integer value to specify the width of each range. The number of
+#' ranges generated will depend on the resolution to cover the entire reference
+#' genome.
+#' 
+#' @param cutoff integer value specifying minimum counts of input ranges in `gr`
+#' required in an output region of the genome to be included. Any regions with
+#' counts below this cutoff will be dropped from the output.
+#' 
+#' @param adj integer value to add to every region as an adjustment factor. If 
+#' using the log.count or norm.log.count outputs, adding 1 will still include 
+#' all ranges rather than lead to -Inf values.
+#' 
+#' @param drop.alt.chr logical specifying if alternative chromosomes 
+#' (seqnames != chr1:22, X, Y, M) should be removed from the output GRanges
+#' object.
+#' 
+#' @description This function can be used to determine the genomic density 
+#' of the input GRanges object. The output GRanges object will contain several
+#' columns with count information in the metadata columns. The columns include:
+#' "count" - the number of ranges within the region, "log.count" - the log 
+#' transformation of the count plus the adjustment, and "norm.log.count" - where
+#' the "log.count" has been normalized such that the highest value is 1.0. 
+#' 
+genomicDensity <- function(gr, res, cutoff = 2, adj = 1, drop.alt.chr = TRUE){
   
   stopifnot(class(gr) == "GRanges")
   
@@ -1199,18 +1621,51 @@ genomic_density <- function(gr, res, cutoff = 2, adj = 1, drop.alt.chr = TRUE){
     stop("SeqInfo should be present for input GRanges.")
   }
   
-  ref_regions <- generate_genomic_regions(
+  ref_regions <- generateGenomicRegions(
     GenomicRanges::seqinfo(gr), res, drop.alt.chr = drop.alt.chr
   )
   
-  ref_regions$count <- GenomicRanges::countOverlaps(ref_regions, gr) + adj
-  ref_regions$log.count <- log(ref_regions$count, base = 10)
+  ref_regions$count <- GenomicRanges::countOverlaps(ref_regions, gr)
+  ref_regions$log.count <- log(ref_regions$count + adj, base = 10)
   ref_regions$norm.log.count <- ref_regions$log.count/max(ref_regions$log.count)
   ref_regions <- ref_regions[ref_regions$count >= cutoff]
   ref_regions
   
 }
 
+#' Collapse row contents of a data.frame or matrix into single vector.
+#'
+#' \code{vcollapse} returns a single vector from input data.frame or matrix 
+#' where row contents have been combined or collapsed, as with 
+#' `paste(..., collaspe = "")`.
+#'
+#' @description Similar to python zip, `vzip` takes input vectors and merges
+#' them together by their input order and index. A simple example is two numeric
+#' vectors, A = c(1,1,1) and B = c(2,2,2). The output of vzip(A,B) would simply
+#' be a single vector of c(1,2,1,2,1,2). Any number of vectors can be input, but
+#' each input vector must be of the same length. Output vector class depends on
+#' input vector consensus.
+#'
+#' @usage
+#' vcollapse(d)
+#' vcollapse(d, sep = "-", fill = "NA")
+#'
+#' @param d data.frame or matrix or object coercible to a matrix. Row contents
+#' will be combined into a single output vector.
+#' 
+#' @param sep character used to separate collapsed contents.
+#' 
+#' @param fill character used to fill empty values within the coerced object.
+#'
+#' @examples
+#' df <- data.frame(
+#'   "A" = letters[1:5],
+#'   "B" = 3:7,
+#'   "C" = LETTERS[2:6])
+#' vcollapse(df)
+#' vcollapse(df, sep = "-")
+#' vcollapse(df, sep = "-", fill = "z")
+#'
 vcollapse <- function(d, sep, fill = "NA"){
   
   if( is.vector(d) ){
@@ -1267,7 +1722,38 @@ vcollapse <- function(d, sep, fill = "NA"){
   
 }
 
-plot_genomic_density <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2, 
+#' Generate a genomic density plot
+#' 
+#' @usage plotGenomicDensity(
+#'   grl, res = 1E7, grp.col = NULL, cutoff = 2, drop.alt.chr = TRUE, 
+#'   clean = FALSE
+#' )
+#' 
+#' @param grl GRangesList object of length 4, representing all alignments, 
+#' pileup alignments, paired alignments, and gRNA matched alignments.
+#' 
+#' @param res integer value specifying the resolution on the genome to display
+#' the genomic density, "norm.log.count", see `genomicDensity`.
+#' 
+#' @param grp.col character string specifying the metadata column name in each
+#' component of the list with grouping information. 
+#' 
+#' @param cutoff integer value specifying minimum counts of input ranges in `gr`
+#' required in an output region of the genome to be included. Any regions with
+#' counts below this cutoff will be dropped from the output.
+#' 
+#' @param drop.alt.chr logical specifying if alternative chromosomes 
+#' (seqnames != chr1:22, X, Y, M) should be removed from the output GRanges
+#' object.
+#' 
+#' @param clean logical specifying if the plot should be void of axis and legend
+#' labels (or clean = TRUE). 
+#' 
+#' @description A circular plot that puts each chromosome end to end and 
+#' displays the normalized log density of each level of alignment. Used to get 
+#' a genomic overview / summary of detected double strand breaks.
+#' 
+plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2, 
                                  drop.alt.chr = TRUE, clean = FALSE){
   
   if( class(grl) == "GRanges" ) grl <- GenomicRanges::GRangesList(grl)
@@ -1302,7 +1788,7 @@ plot_genomic_density <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
       dplyr::bind_rows(lapply(
         x, 
         function(y){
-          y <- genomic_density(
+          y <- genomicDensity(
             y, res = res, cutoff = cutoff, drop.alt.chr = drop.alt.chr
           )
           
@@ -1412,7 +1898,24 @@ plot_genomic_density <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
   
 }
 
-div_seq <- function(seqs, ref, match.chr = "."){
+#' Remove matching seuqences from input vector and replace with character
+#' 
+#' @usage divSeq(seqs, ref, match.chr = ".")
+#' 
+#' @param seqs character vector of sequences to compare against the reference.
+#' 
+#' @param ref character string of a sequence that functions as the reference.
+#' 
+#' @param match.chr character used to replace characters in `seqs` that match in
+#' the same position in `ref`.
+#' 
+#' @description Given a vector of character strings, compare them to the
+#' reference. Any character that matches the reference, in the same position,
+#' will be converted into the `match.chr` while any sequence diverging from the
+#' reference will be left unchanged. This allows the user to easily identify the
+#' differences between sequence strings.
+#' 
+divSeq <- function(seqs, ref, match.chr = "."){
   
   seqs <- as.character(seqs)
   ref <- as.character(ref)
@@ -1435,7 +1938,50 @@ div_seq <- function(seqs, ref, match.chr = "."){
   
 }
 
-seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4, 
+#' Sequence diverge plot
+#' 
+#' @usage plotSeqDiverge(
+#'   df, ref, nuc.col = NULL, padding = 4, text.size = 2, convert.seq = TRUE, 
+#'   force.sq = FALSE, font.family = "Courier", font.face = "bold", 
+#'   fill = "left"
+#' )
+#' 
+#' @param df data.frame containing sequence and additional information to be 
+#' displayed.
+#' 
+#' @param ref character string of a sequence that functions as the reference.
+#' 
+#' @param nuc.col character string specifying the name of the nucleotide 
+#' sequence column to display in the input data.frame. If not provided, the 
+#' function will assume it is the first column in the data.frame.
+#' 
+#' @param padding integer value specifying the space to insert between columns 
+#' and the table in the output plot.
+#' 
+#' @param text.size integer value specifying the text size for the plot.
+#' 
+#' @param convert.seq logical to convert sequences to only show diverging 
+#' sequences from reference or to display whole strings.
+#' 
+#' @param force.sq logical specifying if the output plot should have a fixed 
+#' ratio.
+#' 
+#' @param font.family character string specifying the font family to use for the
+#' plot. Recommended to use a monospace font family.
+#' 
+#' @param font.face character string specifying the font face to use in the 
+#' plot.
+#' 
+#' @param fill character string specifying if sequences of length less than the
+#' reference should be filled in. Fill should be either "left" (insert blank 
+#' spaces on the left) or "right" (for inserting blank spaces on the right). 
+#' 
+#' @description A plot the displays the nucleotide divergence from the reference
+#' sequence. This plot is easy to identify differences between the reference 
+#' sequence and the input sequences. Additionally, other columns in the input
+#' data.frame will be displayed in a table adjacent to the plot.
+#' 
+plotSeqDiverge <- function(df, ref, nuc.col = NULL, padding = 4, 
                              text.size = 2, convert.seq = TRUE, 
                              force.sq = FALSE, font.family = "Courier",
                              font.face = "bold", fill = "left"){
@@ -1480,7 +2026,7 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
   nuc_len <- nchar(ref)
   
   # Convert seqs
-  if( convert.seq ) seqs <- div_seq(seqs, ref)
+  if( convert.seq ) seqs <- divSeq(seqs, ref)
   
   # Nucleotide color
   nucleotide_levels <- c("A", "T", "G", "C", ".", "N")
@@ -1492,11 +2038,11 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
   N_pos <- which(unlist(strsplit(ref, "")) == "N")
   
   nuc_melt <- stringr::str_split(
-    string = c(ref, paste(rep(" ", nuc_len), collapse = ""), seqs), 
-    pattern = "", 
-    simplify = TRUE
-  ) %>%
-    as.data.frame() %>%
+      string = c(ref, paste(rep(" ", nuc_len), collapse = ""), seqs), 
+      pattern = "", 
+      simplify = TRUE
+    ) %>%
+    as.data.frame(stringsAsFactors = FALSE) %>%
     dplyr::mutate(pos.y = -(seq_len(n()))) %>%
     tidyr::gather(key = "var", value = "value", -pos.y) %>%
     dplyr::mutate(
@@ -1513,31 +2059,37 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
     dplyr::mutate_all(format, big.mark = ",", justify = "centre")
   
   sup_names <- names(sup_df)
-  
-  sup_df <- dplyr::bind_rows(
-    as.data.frame(
-      t(matrix(
-        c(names(sup_df), rep(" ", ncol(sup_df))), 
-        ncol = 2, dimnames = list(names(sup_df))))),
-    sup_df
-  ) %>%
-    dplyr::mutate_all(format, justify = "centre") %>%
-    dplyr::mutate(pos.y = -(seq_len(n())))
-  
-  sup_melt <- tidyr::gather(sup_df, key = "var", value = "value", -pos.y) %>%
-    dplyr::mutate(
-      pos.x = nuc_len + (match(var, names(sup_df))) * padding - padding * 0.25,
-      color = "#FFFFFF"
-    ) %>%
-    dplyr::select(pos.x, pos.y, value, color) %>%
-    dplyr::bind_rows(
-      data.frame(
-        pos.x = max(.$pos.x) + padding,
-        pos.y = -1,
-        value = " ",
+  if( length(sup_names) > 0 ){
+    
+    sup_df <- dplyr::bind_rows(
+        as.data.frame(
+          t(matrix(
+            c(names(sup_df), rep(" ", ncol(sup_df))), 
+            ncol = 2, dimnames = list(names(sup_df))))),
+        sup_df
+      ) %>%
+      dplyr::mutate_all(format, justify = "centre") %>%
+      dplyr::mutate(pos.y = -(seq_len(n())))
+    
+    sup_melt <- tidyr::gather(sup_df, key = "var", value = "value", -pos.y) %>%
+      dplyr::mutate(
+        pos.x = nuc_len + (match(var, names(sup_df))) * padding - padding * 0.25,
         color = "#FFFFFF"
+      ) %>%
+      dplyr::select(pos.x, pos.y, value, color) %>%
+      dplyr::bind_rows(
+        data.frame(
+          pos.x = max(.$pos.x) + padding,
+          pos.y = -1,
+          value = " ",
+          color = "#FFFFFF"
+        )
       )
-    )
+  }else{
+    
+    sup_melt <- data.frame()
+    
+  }
   
   plot_melt <- dplyr::bind_rows(nuc_melt, sup_melt)
   
@@ -1546,21 +2098,24 @@ seq_diverge_plot <- function(df, ref, nuc.col = NULL, padding = 4,
     names = unique(plot_melt$color)
   )
   
-  p <- ggplot(plot_melt, aes(x = pos.x, y = pos.y)) +
-    geom_tile(aes(fill = color)) +
-    geom_text(
-      aes(label = value), size = text.size, 
-      family = font.family, fontface = font.face) +
-    scale_fill_manual(values = plot_colors) +
-    theme(
-      axis.line = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title = element_blank(),
-      legend.position = "none")
+  p <- ggplot2::ggplot(plot_melt, ggplot2::aes(x = pos.x, y = pos.y)) +
+    ggplot2::geom_tile(ggplot2::aes(fill = color)) +
+    ggplot2::geom_text(
+      ggplot2::aes(label = value), size = text.size, 
+      family = font.family, fontface = font.face
+    ) +
+    ggplot2::scale_fill_manual(values = plot_colors) +
+    ggplot2::theme(
+      axis.line = ggplot2::element_blank(),
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
+      axis.title = ggplot2::element_blank(),
+      legend.position = "none"
+    )
   
   if( force.sq ){
-    p <- p + theme(aspect.ratio = with(plot_melt, max(abs(pos.y))/max(pos.x)))
+    p <- p + 
+      ggplot2::theme(aspect.ratio = with(plot_melt, max(abs(pos.y))/max(pos.x)))
   }
   
   p
