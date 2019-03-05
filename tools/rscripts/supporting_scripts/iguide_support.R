@@ -1742,6 +1742,10 @@ vcollapse <- function(d, sep, fill = "NA"){
 #' required in an output region of the genome to be included. Any regions with
 #' counts below this cutoff will be dropped from the output.
 #' 
+#' @param abund.method character string specifying the abundance to plot. Types
+#' include "count", "log.count", "norm.log.count". Refer to `genomicDensity` for
+#' descriptions of the abundances.
+#' 
 #' @param drop.alt.chr logical specifying if alternative chromosomes 
 #' (seqnames != chr1:22, X, Y, M) should be removed from the output GRanges
 #' object.
@@ -1754,7 +1758,8 @@ vcollapse <- function(d, sep, fill = "NA"){
 #' a genomic overview / summary of detected double strand breaks.
 #' 
 plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2, 
-                                 drop.alt.chr = TRUE, clean = FALSE){
+                               abund.method = "norm.log.count", 
+                               drop.alt.chr = TRUE, clean = FALSE){
   
   if( class(grl) == "GRanges" ) grl <- GenomicRanges::GRangesList(grl)
   
@@ -1836,8 +1841,17 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
     )
   }
   
+  max_scores <- sapply(
+    split(gen_den[,match(abund.method, names(gen_den))], gen_den$type), max
+  )
   
-  gen_den$score <- as.numeric(gen_den$type) + gen_den$norm.log.count
+  cum_max_scores <- sapply(
+    levels(gen_den$type), function(x){
+      sum(max_scores[seq_len(match(x, names(max_scores))-1)])
+  }) + 1
+  
+  gen_den$score <- cum_max_scores[gen_den$type] + 
+    gen_den[,match(abund.method, names(gen_den))]
   
   # Grid layout
   x_breaks <- ref_cum_len[
@@ -1852,46 +1866,56 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
     names = names(x_breaks)[2:length(x_breaks)]
   )
   
-  y_breaks <- seq_along(grl)
+  y_breaks <- cum_max_scores
   
-  p <- ggplot(gen_den) 
+  p <- ggplot2::ggplot(gen_den) 
   
   if( !clean ){
     
     p <- p +
-      geom_hline(yintercept = y_breaks, color = "grey90") +
-      geom_vline(xintercept = x_breaks, color = "grey90") +
-      scale_x_continuous(
+      ggplot2::geom_hline(yintercept = y_breaks, color = "grey90") +
+      ggplot2::geom_vline(xintercept = x_breaks, color = "grey90") +
+      ggplot2::scale_x_continuous(
         breaks = x_lab_pos,
-        labels = gsub("chr", "", names(x_lab_pos)))
+        labels = gsub("chr", "", names(x_lab_pos))
+      )
     
   }else{
     
-    p <- p + scale_x_continuous(labels = NULL)
+    p <- p + ggplot2::scale_x_continuous(labels = NULL)
     
   }
   
   p <- p + 
-    geom_rect(
-      aes(
+    ggplot2::geom_rect(
+      ggplot2::aes(
         xmin = adj.start, xmax = adj.end, 
-        ymin = as.integer(type), ymax = score, 
-        fill = type)) +
-    scale_y_continuous(
-      limits = c(0, length(grl)+1), breaks = seq_along(grl), labels = NULL) +
-    scale_fill_brewer(type = "qual", palette = "Set1", direction = -1) +
-    labs(x = "Chromosome", fill = "Levels") + 
-    coord_polar() +
-    theme_bw() +
-    theme(
-      panel.background = element_rect(color = "white"),
-      panel.border = element_rect(color = "white"),
-      panel.grid = element_blank(),
-      axis.line.x = element_blank(),
-      axis.ticks = element_blank())
+        ymin = cum_max_scores[type], ymax = score, 
+        fill = type
+      )
+    ) +
+    ggplot2::scale_y_continuous(
+      limits = c(0, max(gen_den$score)), breaks = cum_max_scores, labels = NULL
+    ) +
+    ggplot2::scale_fill_brewer(
+      type = "qual", palette = "Set1", direction = -1
+    ) +
+    ggplot2::labs(x = "Chromosome", fill = "Levels") + 
+    ggplot2::coord_polar() +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      panel.background = ggplot2::element_rect(color = "white"),
+      panel.border = ggplot2::element_rect(color = "white"),
+      panel.grid = ggplot2::element_blank(),
+      axis.line.x = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank()
+    )
   
   if( clean ){
-    p + theme(legend.position = "none", axis.title = element_blank())
+    p + ggplot2::theme(
+      legend.position = "none", 
+      axis.title = ggplot2::element_blank()
+    )
   }else{
     p
   }

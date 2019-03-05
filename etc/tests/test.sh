@@ -19,8 +19,8 @@ iguide setup configs/simulation.config.yml -- --nolock
 # Generate test DAG graph
 iguide run configs/simulation.config.yml -- -np
 
-#iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
-#    analysis/simulation/reports/simulation.dag.svg
+iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
+    analysis/simulation/reports/simulation.dag.svg
 
 iguide run configs/simulation.config.yml -- -p -w 30 --nolock --cores ${__CORES}
 
@@ -31,6 +31,10 @@ iguide eval configs/simulation.config.yml \
 iguide report -e analysis/simulation/reports/iguide.eval.simulation.test.rds \
     -o analysis/simulation/reports/report.simulation.test \
     -g
+
+# Test for accuracy and retention
+Rscript tools/rscripts/check_test_accuracy.R configs/simulation.config.yml \
+    etc/tests/Data/truth.csv -v
 
 # Test for precise outputs
 Rscript tools/rscripts/check_file_digests.R etc/tests/simulation.digests.yml -v

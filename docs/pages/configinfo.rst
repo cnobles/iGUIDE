@@ -267,7 +267,11 @@ Sequence trimming
 
 ``R{1/2}leadMismatch``
   Integer values indicating the number of allowed mismatches in either R1 or R2
-  leading sequence trimming. 
+  leading sequence trimming. Recommend to set to less than 10% error.
+
+``R2odnMismatch``
+  Integer value indicating the number of allowed mismatches in the unprimed 
+  ODN sequence, typically should be set to 0.
 
 ``R{1/2}overMismatch``
   Integer values indicating the number of allowed mismatches in either R1 or R2

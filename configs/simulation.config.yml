@@ -73,7 +73,6 @@ barcode2 : "I2"
 bc1Mismatch : 0
 bc2Mismatch : 0
 maxNcount : 1
-#demultiCores : 4
 
 # Sequence trimming
 ## R1 sequence
@@ -82,6 +81,7 @@ R1overMismatch : 4
 R1overMaxLength : 20
 ## R2 sequence
 R2leadMismatch : 3
+R2odnMismatch : 0
 R2overMismatch : 4
 R2overMaxLength : 20
 
@@ -115,5 +115,5 @@ recoverMultihits : FALSE
 suppFile : TRUE
 figures : TRUE
 reportData : FALSE
-infoGraphic : FALSE
+infoGraphic : TRUE
 signature : "Christopher L. Nobles, Ph.D. [Bushman Lab]"

@@ -76,7 +76,7 @@ parser$add_argument(
 
 parser$add_argument(
   "--badQualBases", nargs = 1, type = "integer", default = 5,
-  help = desc$basQualBases
+  help = desc$badQualBases
 )
 
 parser$add_argument(

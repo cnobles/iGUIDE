@@ -6,7 +6,7 @@
 ChangeLog 
 ========================
 
-**v0.9.6 (March XXth, 2019)**
+**v0.9.6 (March 5th, 2019)**
 
 * Introduced process workflow steps: assimilate and evaluate
   + Assimilate aligned data and compare with targeting sequences
@@ -17,6 +17,8 @@ ChangeLog
   + report from either config(s) or eval dataset
 * Cleaned up file structure
 * Updated documentation in code and docs.
+* Implemented accuracy and retention checks with simulation dataset.
+* Updated simulation dataset with larger set to test analysis.
 
 **v0.9.5 (February 19th, 2019)**
 

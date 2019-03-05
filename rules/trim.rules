@@ -62,7 +62,7 @@ rule seq_trim_R2_odn:
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD_ODN[wildcards.sample],
-    leadMis=config["R2leadMismatch"]
+    leadMis=config["R2odnMismatch"]
   log:
     RUN_DIR + "/logs/{sample}.R2.odn.trim.log"
   resources:

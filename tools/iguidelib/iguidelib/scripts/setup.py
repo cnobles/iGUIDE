@@ -66,7 +66,7 @@ def main( argv = sys.argv ):
                       '--snakefile', str(snakefile),
                       '--configfile', str(args.config),
                       '--dir', str(args.iguide_dir)] + remaining
-    print("Running: " + " ".join(snakemake_args))
+    #print("Running: " + " ".join(snakemake_args))
 
     cmd = subprocess.run(snakemake_args)
     
