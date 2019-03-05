@@ -129,8 +129,12 @@ readFile <- function(path, root){
   # Read in methods based on inputs.
   if( any(exts %in% c("tsv", "csv")) ){
     
-    if( ext == "gz" ) path <- paste0("zcat ", path)
-    return(data.table::fread(input = path, data.table = FALSE))
+    if( ext == "gz" ){
+      path <- paste0("zcat ", path)
+      return(data.table::fread(cmd = path, data.table = FALSE))
+    }else{
+      return(data.table::fread(input = path, data.table = FALSE))
+    }
     
   }else if( any(stringr::str_detect(exts, "fast")) ){
     
@@ -159,9 +163,8 @@ sample_info <- readFile(run_config$Sample_Info, args$iguide_dir)
 
 # Files to check ----
 check_files <- paste0(
-  "analysis/", run_config$Run_Name, "/output/",
-  c("unique_sites.", "incorp_sites.", "iguide.eval."), run_config$Run_Name, 
-  c(".csv.gz", ".rds", ".rds")
+  "analysis/", run_config$Run_Name, "/output/unique_sites.", 
+  run_config$Run_Name, ".csv.gz"
 )
 
 check_data <- lapply(check_files, readFile, root = args$iguide_dir)
