@@ -65,7 +65,7 @@ rule assimilate_sites:
 
 rule iguide_evaluation:
   input: RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
-  output: RUN_DIR + "/output/iguide.eval." + RUN + ".rds"
+  output: temp(RUN_DIR + "/output/iguide.eval." + RUN + ".rds")
   params: 
     tool = ROOT_DIR + "/tools/rscripts/evaluate_incorp_data.R",
     config = RUN_DIR + "/" + "config.yml"

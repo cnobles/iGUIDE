@@ -102,7 +102,6 @@ rule all:
     input: 
       uniq_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
       incorp_sites=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
-      evaluation=RUN_DIR + "/output/iguide.eval." + RUN + ".rds",
       report=RUN_DIR + "/reports/report." + RUN + ".html",
       stats=RUN_DIR + "/output/stats." + RUN + ".csv"
 
