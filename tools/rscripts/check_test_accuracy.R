@@ -130,10 +130,9 @@ readFile <- function(path, root){
   if( any(exts %in% c("tsv", "csv")) ){
     
     if( ext == "gz" ){
-      path <- paste0("zcat ", path)
-      return(data.table::fread(cmd = path, data.table = FALSE))
+      return(read.table(gzfile(path), header = TRUE, sep = ","))
     }else{
-      return(data.table::fread(input = path, data.table = FALSE))
+      return(read.table(path, header = TRUE, sep = ","))
     }
     
   }else if( any(stringr::str_detect(exts, "fast")) ){
@@ -168,7 +167,7 @@ check_files <- paste0(
 )
 
 check_data <- lapply(check_files, readFile, root = args$iguide_dir)
-names(check_data) <- c("uniq_sites", "incorp_sites", "eval_data")
+names(check_data) <- c("uniq_sites")
 
 check_data$multihits <- suppressMessages(dplyr::bind_rows(lapply(
   sample_info$sampleName, 
