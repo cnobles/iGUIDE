@@ -104,7 +104,11 @@ readFile <- function(path, root){
   # Read in methods based on inputs.
   if( any(exts %in% c("tsv", "csv")) ){
     
-    delim <- ifelse(any(exts) == "csv", ",", "\t")
+    if( any(exts) == "csv" ){
+      delim <- ","
+    }else{
+      delim <- "\t"
+    }
     
     if( ext == "gz" ){
       return(read.table(gzfile(path), header = TRUE, sep = delim))
