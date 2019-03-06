@@ -7,12 +7,16 @@
 #' Names with ".": arguments / options for functions
 
 # Required / highly suggested option parameters and library ----
-options(stringsAsFactors = FALSE, scipen = 99)
+options(stringsAsFactors = FALSE, scipen = 99, width = 999)
 suppressMessages(library("magrittr"))
 
 # Set up and gather command line arguments ----
 parser <- argparse::ArgumentParser(
-  description = "Post-processing script for iGUIDE."
+  description = "Assimilate incorporation data from iGUIDE pipeline.",
+  usage = paste(
+    "Rscript assimilate_incorp_data.R <uniqSites> -o <output> -c <config>",
+    "[-h/--help, -v/--version] [optional args]"
+  )
 )
 
 parser$add_argument(
@@ -24,12 +28,12 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "-o", "--output", nargs = 1, type = "character", 
+  "-o", "--output", nargs = 1, type = "character", required = TRUE,
   help = "Output file name in .rds format."
 )
 
 parser$add_argument(
-  "-c", "--config", nargs = 1, type = "character",
+  "-c", "--config", nargs = 1, type = "character", required = TRUE,
   help = "Run specific config file in yaml format."
 )
 
@@ -58,8 +62,25 @@ parser$add_argument(
   )
 )
 
-# Set arguments with parser
+parser$add_argument(
+  "--iguide_dir", nargs = 1, type = "character", default = "IGUIDE_DIR",
+  help = "iGUIDE install directory path, do not change for normal applications."
+)
+
+
+# Set arguments with parser ----
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
+
+if( !dir.exists(args$iguide_dir) ){
+  root_dir <- Sys.getenv(args$iguide_dir)
+}
+
+if( !dir.exists(root_dir) ){
+  stop(paste0("\n  Cannot find install path to iGUIDE: ", root_dir, ".\n"))
+}else{
+  args$iguide_dir <- root_dir
+}
+
 
 input_table <- data.frame(
   "Variables" = paste0(names(args), " :"), 
@@ -71,19 +92,21 @@ input_table <- data.frame(
 
 input_table <- input_table[
   match(c(
-    "uniqSites :", "output :", "config :", "umitags :", "multihits :", "stat :"
+    "uniqSites :", "output :", "config :", "umitags :", "multihits :", "stat :",
+    "iguide_dir :"
     ), 
     input_table$Variables
   ),
 ]
 
 # Log inputs
-cat("\nPost-processing Inputs:\n")
+cat("\nAssimilate Inputs:\n")
 print(
   x = data.frame(input_table),
   right = FALSE, 
   row.names = FALSE
 )
+
 
 # Source supporting functions ----
 # Set the code_dir from the commandline call to the script
@@ -93,34 +116,45 @@ code_dir <- dirname(sub(
   x = grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 ))
 
-# Load in supporting functions for the analysis
-source(file.path(code_dir, "supporting_scripts/post_process_support.R"))
+## Load in supporting functions for the analysis
+source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
+source(file.path(code_dir, "supporting_scripts/nucleotideScoringMatrices.R"))
 
 # Inputs and parameters ----
 # Run parameters and sample parameters
 config <- yaml::yaml.load_file(args$config)
 
-config$Install_Directory <- Sys.getenv("IGUIDE_DIR")
+sample_info_path <- file.path(args$iguide_dir, config$Sample_Info)
 
-sample_info <- data.table::fread(
-  input = file.path(config$Install_Directory, config$Sample_Info), 
-  data.table = FALSE
-)
+if( !(file.exists(sample_info_path) | file.exists(config$Sample_Info)) ){
+  
+  stop(
+    "\n  Specified Sample Info file not found: ", config$Sample_Info, "\n"
+  )
+  
+}else if( !file.exists(sample_info_path) ){
+  
+  sample_info_path <- file.path(config$Sample_Info)
+  
+}
+
+sample_info <- data.table::fread(input = sample_info_path, data.table = FALSE)
 
 submat <- banmat()
 
-## Load reference genome ----
-# Load a reference genome from a fasta file or a BSGenome reference.
-# Script stops if ref genome is not available
+
+# Load reference genome ----
+## Load a reference genome from a fasta file or a BSGenome reference.
+## Script stops if ref genome is not available
 
 if( grepl(".fa", config$Ref_Genome) ){
   
   if( !(
-    file.exists(file.path(config$Install_Directory, config$Ref_Genome)) | 
+    file.exists(file.path(args$iguide_dir, config$Ref_Genome)) | 
       file.exists(config$Ref_Genome)
   ) ){
     stop(
-      "Specified reference genome file not found: ", config$Ref_Genome, ".\n"
+      "\n  Specified reference genome file not found: ", config$Ref_Genome, "\n"
     )
   }
   
@@ -128,11 +162,11 @@ if( grepl(".fa", config$Ref_Genome) ){
   
   
   if( file.exists(
-    file.path(config$Install_Directory, config$Ref_Genome) 
+    file.path(args$iguide_dir, config$Ref_Genome) 
   ) ){
     
     ref_genome <- Biostrings::readDNAStringSet(
-      filepath = file.path(config$Install_Directory, config$Ref_Genome),
+      filepath = file.path(args$iguide_dir, config$Ref_Genome),
       format = ref_file_type
     )
     
@@ -155,20 +189,20 @@ if( grepl(".fa", config$Ref_Genome) ){
   
   if( length(genome) == 0 ){
     
-    cat("\nInstalled genomes include:")
+    cat("\nInstalled genomes include:\n")
     print(unique(BSgenome::installed.genomes()))
-    cat("\nSelected reference genome not in list.")
-    stop("Error: Genome not available.")
+    cat("\n  Selected reference genome not in list.")
+    stop("\n  Genome not available.\n")
     
   }else if( length(genome) > 1 ){
     
-    cat("\nInstalled genomes include:")
+    cat("\nInstalled genomes include:\n")
     print(unique(BSgenome::installed.genomes()))
     cat(
-      "\nPlease be more specific about reference genome.",
+      "\n  Please be more specific about reference genome.",
       "Multiple matches to input."
     )
-    stop("Error: Multiple genomes requested.")
+    stop("\n  Multiple genomes requested.\n")
     
   }
   
@@ -178,33 +212,10 @@ if( grepl(".fa", config$Ref_Genome) ){
   
 }
 
-## Load refGenes and gene lists for annotation ----
-# Load in reference annotations such as gene regions and onco-associated genes
 
-ref_genes <- loadRefFiles(
-  ref = config$refGenes, 
-  type = "GRanges", 
-  freeze = config$Ref_Genome,
-  root = config$Install_Directory
-)
-
-onco_genes <- loadRefFiles(
-  ref = config$oncoGeneList, 
-  type = "gene.list", 
-  freeze = config$Ref_Genome,
-  root = config$Install_Directory
-)
-
-special_genes <- loadRefFiles(
-  ref = config$specialGeneList, 
-  type = "gene.list", 
-  freeze = config$Ref_Genome,
-  root = config$Install_Directory
-)
-
-## Incorporation site parameters ----
-# These parameters are pulled straight from the run config file and describe 
-# how the following analysis will be conducted.
+# Incorporation site parameters ----
+## These parameters are pulled straight from the run config file and describe 
+## how the following analysis will be conducted.
 
 upstream_dist <- config$upstreamDist
 downstream_dist <- config$downstreamDist
@@ -212,9 +223,9 @@ max_guide_mismatch <- config$maxGuideMismatch
 pile_up_min <- config$pileUpMin
 on_target_sites <- config$On_Target_Sites 
 
-## Load Guide RNAs and sample metadata ----
-# Identify the guide RNA sequences used for the analysis and build an object 
-# use further on in processing to analyse the samples.
+# Load Guide RNAs and sample metadata ----
+## Identify the guide RNA sequences used for the analysis and build an object 
+## use further on in processing to analyse the samples.
 
 guide_rna_seqs <- lapply(config$Guide_RNA_Sequences, toupper)
 pam_seq <- lapply(config$PAM_Sequence, toupper)
@@ -253,9 +264,11 @@ gRNA_tbl <- data.frame(
 cat("\nGuide RNA Sequence Table:")
 print(gRNA_tbl, right = FALSE, row.names = FALSE)
 
-## Load data related to how samples were processed ----
-# The treatment object dictates how each sample was treated, or which guide RNAs
-# where used on which samples. This is important in the results interpretation.
+
+# Load data related to how samples were processed ----
+## The treatment object dictates how each sample was treated, or which guide 
+## RNAs where used on which samples. This is important in the results 
+## interpretation.
 
 treatment <- config$Treatment
 
@@ -267,7 +280,7 @@ if( any(grepl("sampleInfo:", treatment[1])) ){
   )
   
   if( length(info_col) != 1 ){
-    stop("Cannot parse treatment data. Check config yaml and sampleInfo.")
+    stop("\n  Cannot parse treatment data. Check config yaml and sampleInfo.\n")
   }
   
   treatment_df <- data.frame(
@@ -312,20 +325,22 @@ if( any(grepl("sampleInfo:", treatment[1])) ){
 cat("\nSample Treatment Table:\n")
 print(x = t(as.data.frame(treatment)), right = FALSE)
 
+
 # Load input data ----
-## Unique sites ----
-# This object is the alignment positions for the sequences / reads that only 
-# aligned to a single location on the reference genome.
+# Unique sites ----
+## This object is the alignment positions for the sequences / reads that only 
+## aligned to a single location on the reference genome.
 
 reads <- data.table::fread(
   input = args$uniqSites, data.table = FALSE, stringsAsFactors = FALSE
 )
 
-## Multihits if requested ----
-# Multihits are alignments that legitimately appear in multiple locations
-# across the reference genome. These can be more difficult to interpret but are
-# an option for this software. The user should be familiar and cautious of 
-# alignment artifacts if using multihit data.
+
+# Multihits if requested ----
+## Multihits are alignments that legitimately appear in multiple locations
+## across the reference genome. These can be more difficult to interpret but are
+## an option for this software. The user should be familiar and cautious of 
+## alignment artifacts if using multihit data.
 
 if( all(!is.null(args$multihits)) ){
   
@@ -409,7 +424,7 @@ if( all(!is.null(args$multihits)) ){
 }
 
 # Print out stats during analysis.
-cat("\nTabulation of aligned reads per specimen:")
+cat("\nTabulation of aligned reads per specimen:\n")
 temp_table <- table(stringr::str_extract(reads$sampleName, "[\\w]+"))
 
 print(
@@ -423,15 +438,15 @@ print(
 
 rm(temp_table)
 
-## Umitags or captured random sequences ----
-# Unique molecular index tags, or UMItags, are random sequences appended to the
-# index 2 read. They are 8 or so nucleotides and are combined with the terminal 
-# breakpoint sequence to be potentially used for a higher dynamic range 
-# abundance measure. While ideal in theory, practice has identified these 
-# sequences skewing with read counts and an over abundance of sharing of the 
-# random sequence between difference breakpoints. Interpretation of UMItag based
-# abundances should be interpreted with caution as they are prone / susceptable
-# to PCR artifacts.
+# Umitags or captured random sequences ----
+## Unique molecular index tags, or UMItags, are random sequences appended to the
+## index 2 read. They are 8 or so nucleotides and are combined with the terminal 
+## breakpoint sequence to be potentially used for a higher dynamic range 
+## abundance measure. While ideal in theory, practice has identified these 
+## sequences skewing with read counts and an over abundance of sharing of the 
+## random sequence between difference breakpoints. Interpretation of UMItag 
+## based abundances should be interpreted with caution as they are prone / 
+## susceptable to PCR artifacts.
 
 if( all(!is.null(args$umitags)) ){
   
@@ -445,15 +460,15 @@ if( all(!is.null(args$umitags)) ){
 }
 
 # Process input data ----
-## Format input alignments ----
-# All alignments
+# Format input alignments ----
+## All alignments
 
 algnmts <- dplyr::mutate(
   reads, 
   specimen = stringr::str_extract(sampleName, "[\\w]+")
 )
 
-# Determine abundance metrics, with or without UMItags
+## Determine abundance metrics, with or without UMItags
 if( config$UMItags & !is.null(args$umitags) ){
   
   algnmts <- dplyr::arrange(algnmts, desc(contrib)) %>%
@@ -484,11 +499,11 @@ if( config$UMItags & !is.null(args$umitags) ){
   
 }
 
-# Generate a sample table of the data for log purposes
+## Generate a sample table of the data for log purposes
 sample_index <- ifelse(nrow(algnmts) > 10, 10, nrow(algnmts))
 sample_index <- sample(seq_len(nrow(algnmts)), sample_index, replace = FALSE)
 
-cat("\nSample of aligned templates:")
+cat("\nSample of aligned templates:\n")
 
 print(
   data.frame(algnmts[sample_index,]),
@@ -496,11 +511,11 @@ print(
   row.names = FALSE
 )
 
-cat(paste0("\nNumber of templates: ", nrow(algnmts)))
+cat(paste0("\nNumber of templates: ", nrow(algnmts), "\n"))
 
 rm(sample_index)
 
-# Transform the data into a GRanges object
+## Transform the data into a GRanges object
 algnmts_gr <- GenomicRanges::GRanges(
   seqnames = algnmts$seqnames,
   ranges = IRanges::IRanges(start = algnmts$start, end = algnmts$end),
@@ -523,11 +538,11 @@ if( config$UMItags & !is.null(args$umitags) ){
 }
 
 # Analyze alignments ----
-# Identify groups of alignments or pileups of aligned fragments
-# These pileups give strong experimental evidence of directed incorporation of
-# the dsODN into a region. Initially, pileups are identified and then checked 
-# for pairing, or if there is another pileup on the opposite strand in close 
-# proximity.
+## Identify groups of alignments or pileups of aligned fragments
+## These pileups give strong experimental evidence of directed incorporation of
+## the dsODN into a region. Initially, pileups are identified and then checked 
+## for pairing, or if there is another pileup on the opposite strand in close 
+## proximity.
 algnmts_gr$clus.ori <- pileupCluster(
   gr = algnmts_gr, 
   grouping = "specimen", 
@@ -541,7 +556,7 @@ algnmts_gr$paired.algn <- identifyPairedAlgnmts(
   maxgap = upstream_dist*2
 )
 
-# Create a GRange with only the unique cluster origins
+## Create a GRange with only the unique cluster origins
 split_clus_id <- stringr::str_split(
   string = unique(algnmts_gr$clus.ori), pattern = ":", simplify = TRUE
 )
@@ -562,7 +577,7 @@ algn_clusters$clus.seq <- getSiteSeqs(
   ref.genome = ref_genome
 )
 
-# Identify which guideRNAs potentially bind near clusters
+## Identify which guideRNAs potentially bind near clusters
 algn_clusters <- compareGuideRNAs(
   gr.with.sequences = algn_clusters, 
   guide.rna.seqs = guide_rna_seqs, 
@@ -573,8 +588,8 @@ algn_clusters <- compareGuideRNAs(
   downstream.flank = downstream_dist
 )
 
-# Merge the guideRNA alignment information from the clusters back to all unique
-# alignments
+## Merge the guideRNA alignment information from the clusters back to all unique
+## alignments
 algnmts <- as.data.frame(merge(
   x = as.data.frame(algnmts_gr), 
   y = GenomicRanges::mcols(algn_clusters)[,c(
@@ -584,18 +599,18 @@ algnmts <- as.data.frame(merge(
   by = "clus.ori"
 ))
 
-# Change guideRNA.match to No_Valid_Match if an inappropriate gRNA is annotated
+## Change guideRNA.match to No_Valid_Match if an inappropriate gRNA is annotated
 algnmts$guideRNA.match <- filterInappropriateComparisons(
   guideRNA.match = algnmts$guideRNA.match, 
   specimen = algnmts$specimen, 
   treatment = treatment
 )
 
-# Fragment pileups, paired clustering, and guideRNA alignments have been used to
-# characterize the incorporation sites analyzed here. Each metric will be used 
-# to create a list of incorporation sites that may be nuclease cut sites. The 
-# following identifies which alignments are associated with each of these 
-# criteria.
+## Fragment pileups, paired clustering, and guideRNA alignments have been used 
+## to characterize the incorporation sites analyzed here. Each metric will be 
+## used to create a list of incorporation sites that may be nuclease cut sites. 
+## The following identifies which alignments are associated with each of these 
+## criteria.
 tbl_clus_ori <- algnmts %>% 
   dplyr::group_by(specimen, clus.ori) %>%
   dplyr::filter(n() >= pile_up_min) %>%
@@ -622,9 +637,9 @@ idx_df <- data.frame(
   )
 )
 
-cat("\nTable of uniquely aligned template counts:")
+cat("\nTable of uniquely aligned template counts:\n")
 print(idx_df, right = FALSE, row.names = FALSE) 
-cat(paste0("\nTotal number of templates: ", nrow(algnmts)))
+cat(paste0("\nTotal number of templates: ", nrow(algnmts), "\n"))
 
 probable_algns <- algnmts[idx_combined,]
 
@@ -634,11 +649,14 @@ probable_algns$on.off.target <- ifelse(
   "Off-target"
 )
 
-cat("\nOn / Off target alignment counts.")
+cat("\nOn / Off target alignment counts:\n")
 print(table(probable_algns$on.off.target))
 
-# Create summary and output formated object related to each of the criteria for
-# edited site detection.
+
+## Create summary and output formated object related to each of the criteria for
+## edited site detection.
+
+## Matched alignments
 matched_algns <- probable_algns[
   probable_algns$guideRNA.match != "No_valid_match",
 ]
@@ -681,16 +699,9 @@ if( config$UMItags ){
 }
 
 matched_summary <- dplyr::ungroup(matched_summary) %>% 
-  as.data.frame() %>%
-  dplyr::mutate(gene_id = assignGeneID( 
-    seqnames = stringr::str_extract(edit.site, "[\\w]+"), 
-    positions = as.numeric(stringr::str_extract(edit.site, "[\\w]+$")), 
-    reference = ref_genome, 
-    ref.genes = ref_genes, 
-    onco.genes = onco_genes, 
-    special.genes = special_genes
-  ))
+  as.data.frame()
 
+## Paired alignments
 paired_algns <- probable_algns[
   probable_algns$paired.algn %in% names(tbl_paried_algn),
 ]
@@ -735,17 +746,7 @@ if( config$UMItags ){
 
 if( nrow(paired_regions) > 0 ){
   
-  paired_regions <- dplyr::mutate(
-      paired_regions,     
-      gene_id = assignGeneID(
-        seqnames = seqnames, 
-        positions = mid, 
-        reference = ref_genome, 
-        ref.genes = ref_genes, 
-        onco.genes = onco_genes, 
-        special.genes = special_genes
-      )
-    ) %>%
+  paired_regions <- paired_regions %>%
     dplyr::group_by(specimen, paired.algn) %>%
     dplyr::mutate(
       on.off.target = ifelse(
@@ -785,18 +786,55 @@ if( nrow(paired_regions) > 0 ){
   
   paired_regions <- dplyr::mutate(
     paired_regions,
-    gene_id = vector(mode = "character"),
     on.off.target = vector(mode = "character")
   )
   
 }
-      
+
+## Pile up alignments
 pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),
 ]
 
+pile_up_summary <- pile_up_algns %>%
+  dplyr::mutate(
+    guideRNA.match = stringr::str_replace(
+      string = guideRNA.match, 
+      pattern = stringr::fixed(" (rev)"), 
+      replacement = ""
+    )
+  ) %>%
+  dplyr::group_by(specimen, clus.ori)
+
+if( config$UMItags ){
+  
+  pile_up_summary <- dplyr::summarise(
+    pile_up_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    count = sum(count), 
+    umitag = sum(umitag),
+    algns = sum(contrib)
+  )
+  
+}else{
+  
+  pile_up_summary <- dplyr::summarise(
+    pile_up_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    count = sum(count), 
+    algns = sum(contrib)
+  )
+  
+}
+
+pile_up_summary <- dplyr::ungroup(pile_up_summary) %>% 
+  as.data.frame()
+
+
 # Generate stats if requested ----
-# If requested, generate stats from the analysis for qc.
+## If requested, generate stats from the analysis for qc.
 
 if( args$stat != FALSE ){
   
@@ -839,8 +877,8 @@ if( args$stat != FALSE ){
 }
 
 # Output data composition ----
-# rds file that can be read into reports or loaded
-# into a data base with some additional scripting.
+## rds file that can be read into reports or loaded into a database with some 
+## additional scripting.
 data_comp <- list(
   "algnmts" = algnmts, 
   "probable_algns" = probable_algns,
@@ -848,7 +886,8 @@ data_comp <- list(
   "matched_summary" = matched_summary,
   "paired_algns" = paired_algns,
   "paired_regions" = paired_regions,
-  "pile_up_algns" = pile_up_algns
+  "pile_up_algns" = pile_up_algns,
+  "pile_up_summary" = pile_up_summary
 )
 
 saveRDS(data_comp, file = args$output)
@@ -856,7 +895,7 @@ saveRDS(data_comp, file = args$output)
 if( file.exists(args$output) ){
   message("Successfully completed script.")
 }else{
-  message("Check output, not detected at the end of post-processing script.")
+  stop("Check output, it not detected after assimilating.")
 }
 
-q()
+q(status = 0)

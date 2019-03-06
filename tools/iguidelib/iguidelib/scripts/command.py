@@ -7,16 +7,18 @@ from iguidelib.scripts.run import main as Run
 from iguidelib.scripts.setup import main as Setup
 #from iguidelib.scripts.config import main as Config
 from iguidelib.scripts.list_samples import main as ListSamples
+from iguidelib.scripts.evaluate import main as Eval
 from iguidelib.scripts.report import main as Report
 from iguidelib.scripts.clean import main as Clean
 
 def main():
 
-    usage_str = "%(prog)s [-h/--help,-v/--version] <subcommand> <path/to/config.file> <options> -- <snakemake.options>"
+    usage_str = "\n  %(prog)s [-h/--help,-v/--version] <subcommand> <path/to/config.file> <options> -- <snakemake.options>"
     description_str = (
         "subcommands:\n"
         "  setup        \tCreate a new config file for a project using local data.\n"
         "  run          \tExecute the iGUIDE pipeline.\n"
+        "  eval         \tEvaluate a set or sets of assimilated iGUIDE outputs.\n"
         "  report       \tGenerate a custom report from iGUIDE output files.\n"
         "  list_samples \tOutput a list of samples from a project.\n"
         "  config       \t[inDev] Modify or update iGUIDE config files.\n"
@@ -43,7 +45,7 @@ def main():
 
     args, remaining = parser.parse_known_args()
     
-    sub_cmds = ["setup", "run", "config", "list_samples", "report", "clean"]
+    sub_cmds = ["setup", "run", "eval", "report", "config", "list_samples", "clean"]
     
     if not args.command in sub_cmds:
         parser.print_help()
@@ -67,6 +69,8 @@ def main():
         #Config(remaining)
     elif args.command == "list_samples":
         ListSamples(remaining)
+    elif args.command == "eval":
+        Eval(remaining)
     elif args.command == "report":
         Report(remaining)
     elif args.command == "clean":

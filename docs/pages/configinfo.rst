@@ -47,6 +47,7 @@ Run configuration
   run name parameters. Other symbols should not be included, such as a dot 
   (``.``). The run name is further used by the software to link files and 
   directories together, so it will need to be consistent whenever it is used.
+  Examples include: iGUIDE_190201_B6V99, 181213_PD1_T-cell_exp.
   
 ``Sample_Info``
   This is a file path to the sample information file. It can either be an 
@@ -107,9 +108,18 @@ SampleInfo formating
 ``Sample_Name_Column``
   This is the name of the column in the sample information file which contains 
   identifiable information about samples. An appropriate format for the sample 
-  names is "{specimen}-{rep}" where 'specimen' is an alpha-numeric designator for 
-  the specimen and 'rep' is a numeric identifier for technical or biological 
-  replicates, separated by a dash (``-``).
+  names is "{specimen}-{rep}" where 'specimen' is an alpha-numeric designator 
+  for the specimen and 'rep' is a numeric identifier for technical or biological 
+  replicates, separated by a dash (``-``). Replicates will be pooled during the
+  final analysis, so if you want them to be separate in the report, make sure
+  you give each specimen a different identifier. For example, iGSP0002-1 and
+  iGSP0002-2, will be pooled together for the report and analysis, but 
+  iGSP0002-1 and iGSP0003-1 will not. These names will be used in naming files,
+  so do not include any special characters that will confuse file managment. 
+  Try to stick to common delimiters, such as "-", "_", ".". A good practice is
+  to put specimen identifiers at the beginning, replicate identifiers at the end
+  following a "-", and anything else descriptive in the middle. For example, 
+  iGSP0002-neg-1, can specify the orientation the sample was processed with.
 
 Sequence information
 """"""""""""""""""""
@@ -143,18 +153,22 @@ Guide RNA information
 
 ``Guide_RNA_Sequences``
   This parameter specifies the guide RNA sequences, including the PAM sequences.
-  An acceptable input format would be ``B2M : "GAGTAGCGCGAGCACAGCTANGG"``, and 
+  An acceptable input format would be ``{gRNA_name} : "{sequence with PAM}"`` 
+  (i.e. ``B2M.3 : "GAGTAGCGCGAGCACAGCTANGG"``) and 
   additional guide RNA sequences can be included, one per line, and each 
   indented at the same level. The input format of ``{gRNA_name} : {gRNA_seq}``
   needs to be maintained for proper function. The 'gRNA_name' in this situation
   will need to match the 'gRNA_name' used in the ``On_Target_Sites`` and 
-  ``Treatment`` parameters.
+  ``Treatment`` parameters. 'gRNA_name' should follow a common format, and use
+  standard delimiters, such as "-", "_", and ".". For example: ``B2M.3``, 
+  ``TRAC.1.5``, ``TruCD33v5``.
 
 ``PAM_Sequence``
   A sequence indicating the pattern acquisition motif (PAM) of the guide RNA 
-  sequence(s). Multiple PAM sequences can be separated by a linebreak, similar 
-  to ``Guide_RNA_Sequences`` but do not need a name. The sequence provided needs
-  to be identical to the end of the ``Guide_RNA_Sequences``.
+  sequence(s). Multiple PAM sequences can be separated by a linebreak or a 
+  comma, similar to ``Guide_RNA_Sequences`` but do not need a name. The sequence
+  provided needs to be identical to the end of the ``Guide_RNA_Sequences``. For 
+  example: ``PAM_Sequence : "NGG"``, ``PAM_Sequence : "NGG", "NGA"``
   
 ``On_Target_Sites``
   This parameter indicates the specific location for editing by the guide RNAs.
@@ -170,7 +184,19 @@ Guide RNA information
   and the 'position' indicates the nucleotide of editing. For Cas9, the position
   of editing is commonly between the 3rd and 4th nucleotide from the 3' end of
   the targeting sequence (not including the PAM). Being off by a nucleotide or 
-  so will not cause any problems.
+  so will not cause any problems. Example below.
+  
+  .. code-block:: shell
+  
+    On_Target_Sites :
+      TRAC.5 : "chr14:+:22547664"
+      TRBC.4'1 : "chr7:+:142792020"
+      TRBC.4'2 : "chr7:+:142801367"
+      PD1.3 : "chr2:-:241858808"
+      TRAC.3.4 : "chr14:-:22550626"
+      B2M.3 : "chr15:-:44711569"
+      CIITA.15.1 : "chr16:+:10916399"
+
 
 Specimen treatment
 """"""""""""""""""
@@ -182,8 +208,10 @@ Specimen treatment
   column with the information. If a single sample was treated with more than one
   guide RNA, then delimit multiple guide RNA names by a semicolon (``;``), i.e.
   ``all : "B2M;TRAC;TRBC"``. Additionally, each specimen can be indicated 
-  individually on a new line. Only specimen names should be given here is 
-  provided individually, not sample identifiers.
+  individually on a new line. Only specimen names should be given here and  
+  provided individually, not sample identifiers. This means that if your sample
+  names follow the suggested format, "{specimen}-{replicate}", you would only 
+  specify the "{specimen} : {treatment}" underneath this parameter.
 
 
 Config - Processing Information
@@ -239,7 +267,11 @@ Sequence trimming
 
 ``R{1/2}leadMismatch``
   Integer values indicating the number of allowed mismatches in either R1 or R2
-  leading sequence trimming. 
+  leading sequence trimming. Recommend to set to less than 10% error.
+
+``R2odnMismatch``
+  Integer value indicating the number of allowed mismatches in the unprimed 
+  ODN sequence, typically should be set to 0.
 
 ``R{1/2}overMismatch``
   Integer values indicating the number of allowed mismatches in either R1 or R2

@@ -1,7 +1,7 @@
 %
 % SimIncorpData Inputs
 
-[ 2019-01-07 13:40:46 ]
+[ 2019-03-05 14:12:35 ]
 
 Variables     Values          
 ------------- ----------------
@@ -12,7 +12,7 @@ seed :        1
 %
 % Configuration
                             _                                                             
-sample_info                 sampleInfo.csv                                                
+sample_info                 ../sampleInfo.csv                                             
 ref_genome                  hg38                                                          
 guide_rna_sequences.B2M     GAGTAGCGCGAGCACAGCTANGG                                       
 guide_rna_sequences.TRAC    TGTGCTAGACATGAGGTCTANGG                                       
@@ -22,16 +22,18 @@ on_target_sites.B2M         chr15:-:44711569
 on_target_sites.TRAC        chr14:+:22547664                                              
 on_target_sites.TRBC'1      chr7:+:142792020                                              
 on_target_sites.TRBC'2      chr7:+:142801367                                              
-on_target_params.abund      10                                                            
-off_target_params.num       3                                                             
-off_target_params.abund1    5                                                             
-off_target_params.abund2    3                                                             
-off_target_params.abund3    1                                                             
+on_target_params.abund      250                                                           
+off_target_params.num       5                                                             
+off_target_params.abund1    25                                                            
+off_target_params.abund2    15                                                            
+off_target_params.abund3    10                                                            
+off_target_params.abund4    5                                                             
+off_target_params.abund5    1                                                             
 off_target_params.mismatch  3                                                             
 false_target_sites.TET2     chr4:+:105272459                                              
-false_target_params.abund   2                                                             
-random_background.num       10                                                            
-random_background.max_abund 1                                                             
+false_target_params.abund   10                                                            
+random_background.num       100                                                           
+random_background.max_abund 2                                                             
 seqs.P5                     AATGATACGGCGACCACCGAGATCTACAC                                 
 seqs.PI2                    ACACTCTTTCCCTACACGACGCTCTTCCGATCT                             
 seqs.P7                     CAAGCAGAAGACGGCATACGAGAT                                      
@@ -62,48 +64,48 @@ instrument                  miseq
     iGXB      GGACTCCT   CTCTCTATNNWNNWNN   TRAC;TRBC;B2M 
 
 
-[ 2019-01-07 13:41:00 ] Loaded reference genome:  BSgenome.Hsapiens.UCSC.hg38
-[ 2019-01-07 13:41:00 ] Identifying top potential off-target sites for gRNA(s):  B2M, TRAC, TRBC
-[ 2019-01-07 13:44:57 ] Generating random pool of  20  sites.%
+[ 2019-03-05 14:12:48 ] Loaded reference genome:  BSgenome.Hsapiens.UCSC.hg38
+[ 2019-03-05 14:12:48 ] Identifying top potential off-target sites for gRNA(s):  B2M, TRAC, TRBC
+[ 2019-03-05 14:16:45 ] Generating random pool of  200  sites.%
 % Sample from target data set.
 
 
  class    gRNA        posid         abund 
 -------- ------ ------------------ -------
-   on     B2M    chr15:-:44711569    10   
-   on     TRAC   chr14:+:22547664    10   
-   on     TRBC   chr7:+:142792020    10   
-   on     TRBC   chr7:+:142801367    10   
-  off     B2M    chr9:+:94689940      5   
- random   all    chr18:-:7994423      1   
- random   all    chr18:-:25419796     1   
- random   all    chr19:+:30401105     1   
- random   all    chr21:-:30922246     1   
- random   all    chrX:+:63482147      1   
+   on     B2M    chr15:-:44711569    250  
+   on     TRAC   chr14:+:22547664    250  
+   on     TRBC   chr7:+:142792020    250  
+   on     TRBC   chr7:+:142801367    250  
+  off     B2M    chr9:+:94689940     25   
+ random   all    chrX:+:101200463     2   
+ random   all    chrX:-:74874001      1   
+ random   all    chrX:+:77250240      2   
+ random   all    chrX:+:59275654      2   
+ random   all    chrY:+:25780118      1   
 
 
-[ 2019-01-07 13:45:01 ] Generating incorporation positions from targets.%
+[ 2019-03-05 14:16:58 ] Generating incorporation positions from targets.%
 % Sample from incorporation data set.
 
 
- class    gRNA         posid              incorp       
--------- ------ ------------------- -------------------
-   on     TRAC   chr14:+:22547664    chr14:-:22547631  
- random   all     chr18:-:7994423     chr18:-:7994387  
-  off     TRAC    chr5:+:99273655     chr5:+:99273665  
- random   all    chr3:+:128309163    chr3:+:128309214  
-   on     TRAC   chr14:+:22547664    chr14:+:22547764  
-   on     TRAC   chr14:+:22547664    chr14:+:22547674  
-  off     TRAC    chr4:-:90001289     chr4:-:90001284  
-   on     TRAC   chr14:+:22547664    chr14:-:22547655  
-   on     TRAC   chr14:+:22547664    chr14:-:22547662  
- random   all    chr12:-:114777960   chr12:+:114778008 
+ class    gRNA        posid              incorp      
+-------- ------ ------------------ ------------------
+ random   all    chrX:-:74874001    chrX:-:74873983  
+ random   all    chr5:+:119420959   chr5:+:119420979 
+   on     TRAC   chr14:+:22547664   chr14:-:22547654 
+ random   all    chr12:-:85017483   chr12:+:85017493 
+   on     TRAC   chr14:+:22547664   chr14:-:22547657 
+ random   all    chr3:-:158971102   chr3:+:158971118 
+   on     TRAC   chr14:+:22547664   chr14:-:22547643 
+ random   all    chr2:-:181072373   chr2:-:181072278 
+  off     TRAC   chr5:+:99273655    chr5:+:99273663  
+   on     TRAC   chr14:+:22547664   chr14:+:22547673 
 
 
-[ 2019-01-07 13:45:01 ] Retrieving genomic sequences for template construction.
-[ 2019-01-07 13:45:02 ] Building templates with accessory sequences.
-[ 2019-01-07 13:45:02 ] Simulating  4  reads for sequencing cycles:  R1, I1, I2, R2
-[ 2019-01-07 13:45:03 ] Constructed reads. Saving output to:  Data
-[ 2019-01-07 13:45:03 ] Writing truth files.
-[ 2019-01-07 13:45:03 ] Writing fastq files for reads.
-[ 2019-01-07 13:45:03 ] Script completed.
+[ 2019-03-05 14:16:58 ] Retrieving genomic sequences for template construction.
+[ 2019-03-05 14:17:00 ] Building templates with accessory sequences.
+[ 2019-03-05 14:17:04 ] Simulating  4  reads for sequencing cycles:  R1, I1, I2, R2
+[ 2019-03-05 14:17:04 ] Constructed reads. Saving output to:  Data
+[ 2019-03-05 14:17:04 ] Writing truth files.
+[ 2019-03-05 14:17:04 ] Writing fastq files for reads.
+[ 2019-03-05 14:17:04 ] Script completed.

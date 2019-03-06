@@ -8,7 +8,7 @@ Aligner : "blat"
 UMItags : TRUE
 
 # Sequence files
-Seq_Path : "tests/Data/"
+Seq_Path : "etc/tests/Data/"
 R1: "Undetermined_S0_L001_R1_001.fastq.gz"
 R2: "Undetermined_S0_L001_R2_001.fastq.gz"
 I1: "Undetermined_S0_L001_I1_001.fastq.gz"
@@ -61,7 +61,8 @@ filtMB : 4000
 consolMB : 4000
 alignMB : 4000
 coupleMB : 4000
-processMB : 4000
+assimilateMB : 4000
+evaluateMB : 4000
 reportMB : 4000
 
 # Demultiplexing parameters
@@ -72,7 +73,6 @@ barcode2 : "I2"
 bc1Mismatch : 0
 bc2Mismatch : 0
 maxNcount : 1
-#demultiCores : 4
 
 # Sequence trimming
 ## R1 sequence
@@ -81,6 +81,7 @@ R1overMismatch : 4
 R1overMaxLength : 20
 ## R2 sequence
 R2leadMismatch : 3
+R2odnMismatch : 0
 R2overMismatch : 4
 R2overMaxLength : 20
 
@@ -114,5 +115,5 @@ recoverMultihits : FALSE
 suppFile : TRUE
 figures : TRUE
 reportData : FALSE
-infoGraphic : FALSE
+infoGraphic : TRUE
 signature : "Christopher L. Nobles, Ph.D. [Bushman Lab]"

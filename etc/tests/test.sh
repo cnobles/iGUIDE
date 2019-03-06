@@ -19,18 +19,25 @@ iguide setup configs/simulation.config.yml -- --nolock
 # Generate test DAG graph
 iguide run configs/simulation.config.yml -- -np
 
-#iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
-#    analysis/simulation/reports/simulation.dag.svg
+iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
+    analysis/simulation/reports/simulation.dag.svg
 
 iguide run configs/simulation.config.yml -- -p -w 30 --nolock --cores ${__CORES}
 
-iguide report configs/simulation.config.yml \
-    -o analysis/simulation/reports/report.simulation.test.html \
-    -s sampleInfo/simulation.supp.csv \
-    -t html
+iguide eval configs/simulation.config.yml \
+    -o analysis/simulation/reports/iguide.eval.simulation.test.rds \
+    -s sampleInfo/simulation.supp.csv 
+
+iguide report -e analysis/simulation/reports/iguide.eval.simulation.test.rds \
+    -o analysis/simulation/reports/report.simulation.test \
+    -g
+
+# Test for accuracy and retention
+Rscript tools/rscripts/check_test_accuracy.R configs/simulation.config.yml \
+    etc/tests/Data/truth.csv -v
 
 # Test for precise outputs
-Rscript tools/rscripts/check_file_digests.R tests/simulation.digests.yml -v
+Rscript tools/rscripts/check_file_digests.R etc/tests/simulation.digests.yml -v
 
 # Cleanup
 iguide clean configs/simulation.config.yml

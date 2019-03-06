@@ -16,7 +16,14 @@ rule all_uniq_sites:
     done
     """
 
-    
+rule compress_uniq_sites:
+  input: 
+    sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
+    edits=RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
+  output: RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz"
+  shell: "gzip {input.sites}"
+
+
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
@@ -31,23 +38,23 @@ def all_multi_inputs(wildcards):
   else:
     return []
 
-rule all_edit_sites:
+rule assimilate_sites:
   input:
     sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
     umitag=all_umitag_inputs,
     multi=all_multi_inputs
   output:
-    edit=RUN_DIR + "/output/edited_sites." + RUN + ".rds",
-    stat=temp(RUN_DIR + "/processData/" + RUN + ".edit.stat")
+    incorp=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
+    stat=temp(RUN_DIR + "/processData/" + RUN + ".assim.stat")
   params:
     config = RUN_DIR + "/" + "config.yml",
-    tool = ROOT_DIR + "/tools/rscripts/post_process.R"
+    tool = ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R"
   log:
-    RUN_DIR + "/logs/" + RUN + ".postproc.log"
+    RUN_DIR + "/logs/" + RUN + ".assim.log"
   resources:
-    mem_mb=lambda wildcards, attempt: attempt * config["processMB"]
+    mem_mb=lambda wildcards, attempt: attempt * config["assimilateMB"]
   run:
-    call_str="Rscript {params.tool} {input.sites} -o {output.edit} "
+    call_str="Rscript {params.tool} {input.sites} -o {output.incorp} "
     if (config["UMItags"]):
         call_str=call_str + "-u {input.umitag} "
     if (config["recoverMultihits"]):
@@ -56,12 +63,21 @@ rule all_edit_sites:
     shell(call_str)
 
 
-rule compress_uniq_sites:
-  input: 
-    sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
-    edits=RUN_DIR + "/output/edited_sites." + RUN + ".rds"
-  output: RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz"
-  shell: "gzip {input.sites}"
+rule iguide_evaluation:
+  input: RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
+  output: temp(RUN_DIR + "/output/iguide.eval." + RUN + ".rds")
+  params: 
+    tool = ROOT_DIR + "/tools/rscripts/evaluate_incorp_data.R",
+    config = RUN_DIR + "/" + "config.yml"
+  log: RUN_DIR + "/logs/" + RUN + ".eval.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["evaluateMB"]
+  run:
+    call_str="Rscript {params.tool} {params.config} -o {output}"
+    if (config["suppFile"]):
+      call_str=call_str + " -s " + ROOT_DIR + "/" + config["Supplemental_Info"]
+    call_str=call_str + " > {log} 2>&1"
+    shell(call_str)
 
 
 def report_supp(wildcards):
@@ -70,14 +86,12 @@ def report_supp(wildcards):
       supp_str = supp_str + "-f "
   if (config["reportData"]):
       supp_str = supp_str + "-d "
-  if (config["suppFile"]):
-      supp_str = supp_str + "-s " + ROOT_DIR + "/" + config["Supplemental_Info"]
   if (config["infoGraphic"]):
       supp_str = supp_str + "-g "
   return supp_str
         
 rule run_report:
-  input: RUN_DIR + "/output/edited_sites." + RUN + ".rds"
+  input: RUN_DIR + "/output/iguide.eval." + RUN + ".rds"
   output: RUN_DIR + "/reports/report." + RUN + ".html"
   params: 
     tool = ROOT_DIR + "/tools/rscripts/generate_iGUIDE_report.R",
@@ -88,5 +102,5 @@ rule run_report:
     mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
   shell:
     """
-    Rscript {params.tool} {params.config} -o {output} {params.supp} > {log} 2>&1
+    Rscript {params.tool} {input} -o {output} {params.supp} > {log} 2>&1
     """

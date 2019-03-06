@@ -25,7 +25,7 @@ jobs:
       - run:
           name: run tests
           command: |
-            bash tests/test.sh
+            bash etc/tests/test.sh
 
       #- save_cache:
       #    paths:

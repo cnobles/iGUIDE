@@ -131,7 +131,7 @@ function __test_r_version () {
 function __test_r_packages () {
     activate_iguide
 
-    $(Rscript ${__iguide_dir}/etc/check_for_required_packages.R \
+    $(Rscript ${__iguide_dir}/tools/rscripts/check_for_required_packages.R \
         > /dev/null) && echo true || echo false
 
     deactivate_iguide
@@ -149,7 +149,7 @@ function __test_iguidelib() {
 
 function __test_iguide() {
     if [[ $(__test_env) = true ]]; then
-      	$(bash ${__iguide_dir}/tests/test.sh ${__iguide_env} &> /dev/null) && \
+      	$(bash ${__iguide_dir}/etc/tests/test.sh ${__iguide_env} &> /dev/null) && \
       	    echo true || echo false
     else
       	echo "fail"
@@ -320,7 +320,7 @@ if [[ $__run_iguide_tests = true ]]; then
     else
         warning "    iGUIDE Tests:  FAILED"
         warning "    Try running the test outside of the install to confirm."
-        warning "    Just run 'bash tests/test.sh $__iguide_env'."
+        warning "    Just run 'bash etc/tests/test.sh $__iguide_env'."
     fi
 fi
 
