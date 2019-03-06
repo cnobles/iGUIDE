@@ -104,7 +104,7 @@ readFile <- function(path, root){
   # Read in methods based on inputs.
   if( any(exts %in% c("tsv", "csv")) ){
     
-    if( any(exts) == "csv" ){
+    if( any(exts == "csv") ){
       delim <- ","
     }else{
       delim <- "\t"
