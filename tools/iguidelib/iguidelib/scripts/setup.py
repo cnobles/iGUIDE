@@ -82,6 +82,8 @@ def main( argv = sys.argv ):
 
     # If skipping demultiplexing, create symbolic links to specimen sequencing
     # files.
+    read_types = config["Read_Types"] 
+     
     if args.skip_demultiplexing:
         try:
             sampleInfo = open(config['Sample_Info'])
@@ -100,6 +102,9 @@ def main( argv = sys.argv ):
                         )
                     )
                 )
+    else:
+        for type in read_types: 
+            check_existing_fastq(Path(config["Seq_Path"]) / config[type])
 
     # Create symbolic link to config
     config_path = Path(args.config).absolute()
@@ -130,6 +135,13 @@ def check_existing(path, force=False):
             "Error: specified file '{}' exists. Use --force to "
             "overwrite.".format(path))
     return path
+
+def check_existing_fastq(path, force=False):
+    if path.is_file() and not force:
+        print("Sample file '{}' found.".format(path))
+    else:
+        print("Warning: specified sample file '{}' does not exist. "
+              "Make sure it exists before running iguide run.".format(path))
 
 def get_sample_list(sampleInfo):
     sampleList = []
