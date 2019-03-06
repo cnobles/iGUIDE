@@ -104,8 +104,13 @@ readFile <- function(path, root){
   # Read in methods based on inputs.
   if( any(exts %in% c("tsv", "csv")) ){
     
-    if( ext == "gz" ) path <- paste0("zcat ", path)
-    return(data.table::fread(input = path, data.table = FALSE))
+    delim <- ifelse(any(exts) == "csv", ",", "\t")
+    
+    if( ext == "gz" ){
+      return(read.table(gzfile(path), header = TRUE, sep = delim))
+    }else{
+      return(read.table(path, header = TRUE, sep = delim))
+    }
     
   }else if( any(stringr::str_detect(exts, "fast")) ){
     
