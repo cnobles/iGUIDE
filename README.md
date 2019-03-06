@@ -65,7 +65,6 @@ iguide list_samples configs/simulation.config.yml
 # Create test analysis directory
 # (The simulation configuration file is used by default and does not need to be specified)
 
-iguide setup configs/simulation.config.yml -- -np
 iguide setup configs/simulation.config.yml
 
 # Process a simulation dataset

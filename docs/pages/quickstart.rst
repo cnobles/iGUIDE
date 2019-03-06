@@ -22,7 +22,7 @@ The directory should look like this (RunName is specified in the ConfigFile}::
   ├── input_data
   ├── logs
   ├── output
-  ├── processData
+  ├── process_data
   └── reports
 
 Components within the run directory:
@@ -31,7 +31,7 @@ Components within the run directory:
 * input_data - Directory where input fastq.gz files can be deposited
 * logs - Directory containing log files from processing steps
 * output - Directory containing output data from the analysis
-* processData - Directory containing intermediate processing files
+* process_data - Directory containing intermediate processing files
 * reports - Directory containing output reports and figures
 
 As a current convention, all processing is done within the analysis directory. 
@@ -116,30 +116,44 @@ entirety of processing can start.::
 
   # After constructing the config file and having reference files (i.e. sampleinfo)
   # You can check the samples associated with the run.
+  
   iguide list_samples configs/simulation.config.yml
 
   # Create test analysis directory
   # (The simulation configuration file is used by default and does not need to be specified)
-  iguide setup configs/simulation.config.yml -- -np
+  
   iguide setup configs/simulation.config.yml
 
   # Process a simulation dataset
+
   iguide run configs/simulation.config.yml -- -np
   iguide run configs/simulation.config.yml -- --latency-wait 30
-  cat analysis/simulation/output/unique_sites.simulation.csv
+  zcat analysis/simulation/output/unique_sites.simulation.csv.gz
 
-  # After run completion, generate a report in a different format than standard
-  iguide report analysis/simulation/output/edited_sites.simulation.rds \
-    -c configs/simulation.config.yml \
+  # Processing will complete with a report, but if additional analyses are required,
+  # you can reevaluate the 'incorp_sites' object. Multiple objects can be evaluated
+  # together, just include the run files.
+
+  iguide eval analysis/simulation/output/incorp_sites.simulation.rds \
+    -o analysis/simulation/output/iguide.eval.simulation.test.rds \
+    -s sampleInfo/simulation.supp.csv
+
+  # After evaluation, generate a report in a different format than standard.
+  # Additionally the evaluation and report generation step can be combined using 
+  # config file(s) as inputs for the 'report' subcommand.
+
+  iguide report -e analysis/simulation/output/iguide.eval.simulation.test.rds \
     -o analysis/simulation/reports/report.simulation.pdf \
     -s sampleInfo/simulation.supp.csv \
     -t pdf
 
   # When you are all finished and ready to archive / remove excess files, a minimal configuration
   # can be achived with the 'clean' subcommand.
+
   iguide clean configs/simulation.config.yml
 
   # Or you realized you messed up all the input and need to restart
+
   iguide clean configs/simulation.config.yml --remove_proj
 
 
