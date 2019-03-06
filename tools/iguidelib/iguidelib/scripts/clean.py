@@ -79,7 +79,7 @@ def main( argv = sys.argv ):
         sys.exit(1)
 
     if not args.remove_proj:
-        directories_to_clean = ["input_data", "logs", "processData"]
+        directories_to_clean = ["input_data", "logs", "process_data"]
         
         files_to_clean = []
         for directory in directories_to_clean:

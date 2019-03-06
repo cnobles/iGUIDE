@@ -3,15 +3,15 @@
 
 rule post_align:
   input:
-    sampleR1=RUN_DIR + "/processData/{sample}.R1.psl.gz",
-    sampleR2=RUN_DIR + "/processData/{sample}.R2.psl.gz",
-    keyR1=RUN_DIR + "/processData/{sample}.R1.key.csv",
-    keyR2=RUN_DIR + "/processData/{sample}.R2.key.csv"
+    sampleR1=RUN_DIR + "/process_data/{sample}.R1.psl.gz",
+    sampleR2=RUN_DIR + "/process_data/{sample}.R2.psl.gz",
+    keyR1=RUN_DIR + "/process_data/{sample}.R1.key.csv",
+    keyR2=RUN_DIR + "/process_data/{sample}.R2.key.csv"
   output:
-    uniq=temp(RUN_DIR + "/processData/{sample}.uniq.csv"),
-    chimera=RUN_DIR + "/processData/{sample}.chimera.rds",
-    multihit=RUN_DIR + "/processData/{sample}.multihits.rds",
-    stat=temp(RUN_DIR + "/processData/{sample}.align.stat")
+    uniq=temp(RUN_DIR + "/process_data/{sample}.uniq.csv"),
+    chimera=RUN_DIR + "/process_data/{sample}.chimera.rds",
+    multihit=RUN_DIR + "/process_data/{sample}.multihits.rds",
+    stat=temp(RUN_DIR + "/process_data/{sample}.align.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/couple.R",
     ref=config["Ref_Genome"],

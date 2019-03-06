@@ -3,11 +3,11 @@
 
 rule all_uniq_sites:
   input:
-    expand(RUN_DIR + "/processData/{sample}.uniq.csv", sample=SAMPLES)
+    expand(RUN_DIR + "/process_data/{sample}.uniq.csv", sample=SAMPLES)
   output:
     RUN_DIR + "/output/unique_sites." + RUN + ".csv"
   params:
-    RUN_DIR + "/processData"
+    RUN_DIR + "/process_data"
   shell:
     """
     head -n 1 -q {params}/*.uniq.csv | uniq > {output}
@@ -27,14 +27,14 @@ rule compress_uniq_sites:
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
-      RUN_DIR + "/processData/{sample}.umitags.fasta.gz", sample = SAMPLES)
+      RUN_DIR + "/process_data/{sample}.umitags.fasta.gz", sample = SAMPLES)
   else:
     return []
 
 def all_multi_inputs(wildcards):
   if (config["recoverMultihits"]):
     return expand(
-      RUN_DIR + "/processData/{sample}.multihits.rds", sample = SAMPLES)
+      RUN_DIR + "/process_data/{sample}.multihits.rds", sample = SAMPLES)
   else:
     return []
 
@@ -45,7 +45,7 @@ rule assimilate_sites:
     multi=all_multi_inputs
   output:
     incorp=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
-    stat=temp(RUN_DIR + "/processData/" + RUN + ".assim.stat")
+    stat=temp(RUN_DIR + "/process_data/" + RUN + ".assim.stat")
   params:
     config = RUN_DIR + "/" + "config.yml",
     tool = ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R"

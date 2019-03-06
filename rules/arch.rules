@@ -13,7 +13,7 @@ rule setup_working_dir:
     ln -s ../../{input} config.yml
     mkdir input_data
     mkdir logs
-    mkdir processData
+    mkdir process_data
     mkdir output
     mkdir reports
     cd ../
@@ -23,27 +23,27 @@ rule setup_working_dir:
 
 rule generate_stat_matrix:
   input:
-    demulti=RUN_DIR + "/processData/" + RUN + ".demulti.stat",
+    demulti=RUN_DIR + "/process_data/" + RUN + ".demulti.stat",
     trimR1=expand(
-      RUN_DIR + "/processData/{sample}.R1.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/{sample}.R1.trim.stat", sample=SAMPLES),
     trimPrimer=expand(
-      RUN_DIR + "/processData/{sample}.R2.primer.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/{sample}.R2.primer.trim.stat", sample=SAMPLES),
     trimODN=expand(
-      RUN_DIR + "/processData/{sample}.R2.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/{sample}.R2.trim.stat", sample=SAMPLES),
     umitags=expand(
-      RUN_DIR + "/processData/{sample}.umitags.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/{sample}.umitags.stat", sample=SAMPLES),
     filt=expand(
-      RUN_DIR + "/processData/{sample}.filt.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/{sample}.filt.stat", sample=SAMPLES),
     consol=expand(
-      RUN_DIR + "/processData/{sample}.{read}.consol.stat", 
+      RUN_DIR + "/process_data/{sample}.{read}.consol.stat", 
       sample=SAMPLES, read=READS),
     align=expand(
-      RUN_DIR + "/processData/{sample}.align.stat", sample=SAMPLES),
-    assim=RUN_DIR + "/processData/" + RUN + ".assim.stat"
+      RUN_DIR + "/process_data/{sample}.align.stat", sample=SAMPLES),
+    assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
   output:
     RUN_DIR + "/output/stats." + RUN + ".csv"
   params:
-    dir=RUN_DIR + "/processData",
+    dir=RUN_DIR + "/process_data",
     tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
   shell:
     """

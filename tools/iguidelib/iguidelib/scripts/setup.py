@@ -16,11 +16,10 @@ def main( argv = sys.argv ):
             "Could not determine Conda prefix. Activate your iGUIDE "
             "environment and try this command again.")
 
-    usage_str = "\n  iguide %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
+    usage_str = "\n  iguide %(prog)s <path/to/config.file> <options>"
     
     description_str = (
-        "Setup a new iGUIDE project given a project configuration file. "
-        "Arguments after '--' are passed to Snakemake asis."
+        "Setup a new iGUIDE project given a project configuration file."
     )
     
     parser = argparse.ArgumentParser(
@@ -46,50 +45,81 @@ def main( argv = sys.argv ):
         help = "Use this option if your data is already demultiplexed."
                " (Make sure Demulti_Dir is set in config file.)")
 
-    # The remaining args (after --) are passed to Snakemake
+    # The remaining args will not be used
     args, remaining = parser.parse_known_args(argv)
 
-    snakefile = Path(args.iguide_dir)/"Snakefile"
+    # iGUIDE directory
+    iguide_directory = Path(args.iguide_dir)
     
-    if not snakefile.exists():
+    if not iguide_directory.exists():
         sys.stderr.write(
-            "Error: could not find a Snakefile in directory '{}'\n".format(
+            "Error: could not find iGUIDE directory '{}'.\n".format(
                 args.iguide_dir))
         sys.exit(1)
-
-    yaml = YAML(typ = 'safe')   # default, if not specfied, is 'rt' (round-trip)
+    
+    # Load config yaml file
+    yaml = YAML(typ = 'safe')
     config = yaml.load(open(args.config, "r"))
-    analysis_directory = check_existing(Path("analysis/" + config['Run_Name']))
-    read_types = config["Read_Types"]
     
-    snakemake_args = ['snakemake', str(analysis_directory),
-                      '--snakefile', str(snakefile),
-                      '--configfile', str(args.config),
-                      '--dir', str(args.iguide_dir)] + remaining
-    #print("Running: " + " ".join(snakemake_args))
+    analysis_directory = iguide_directory / "analysis" / config['Run_Name']
+    
+    # Check for existing project directory
+    if analysis_directory.exists():
+        sys.stderr.write(
+            "Error: Project directory currently exists: '{}'.\n".format(
+                str(analysis_directory)))
+        sys.exit(1)
+    else:
+        os.makedirs(str(analysis_directory))
+    
+    # Construct directory tree
+    sub_directories = [
+        "input_data", "logs", "process_data", "output", "reports"
+    ]
+    
+    for sub_dir in sub_directories:
+        os.makedirs(str(analysis_directory / sub_dir))
 
-    cmd = subprocess.run(snakemake_args)
-    
+    # If skipping demultiplexing, create symbolic links to specimen sequencing
+    # files.
     if args.skip_demultiplexing:
         try:
             sampleInfo = open(config['Sample_Info'])
         except FileNotFoundError:
-            sampleInfo = open(os.getenv("IGUIDE_DIR", os.getcwd()) + "/" + config['Sample_Info'])
+            sampleInfo = open(
+              os.getenv("IGUIDE_DIR", os.getcwd()) + "/" + config['Sample_Info']
+            )
         sampleList = get_sample_list(sampleInfo)
         demultiDir = check_existing(Path(config['Demulti_Dir']))
         for sample in sampleList:
             for type in read_types:
-                ln_args = [
-                    'ln', '-s', str(demultiDir) + '/' + sample + '.' + type + '.fastq.gz',
-                    str(analysis_directory) + '/processData/' + sample + '.' + type + '.fastq.gz'
-                ]
-                subprocess.run(ln_args)
+                os.symlink( 
+                    str(demultiDir / str(sample + '.' + type + '.fastq.gz')),
+                    str(analysis_directory / "process_data" / str(
+                        sample + '.' + type + '.fastq.gz'
+                        )
+                    )
+                )
+
+    # Create symbolic link to config
+    config_path = Path(args.config).absolute()
+    
+    if config_path.exists():
+        os.symlink(str(config_path), str(analysis_directory / "config.yml"))
     else:
-        for type in read_types: 
-            check_existing_fastq(Path(config["Seq_Path"]) / config[type])
+        sys.stderr.write(
+            "Error: could not locate aboslute path to config file: '{}'.\n".format(
+                str(config_path)))
+        sys.exit(1)
     
-    sys.exit(cmd.returncode)
-    
+    if analysis_directory.exists():
+        print("  '{}' setup has completed.".format(config["Run_Name"]))
+    else:
+        sys.stderr.write(
+            "Error: could not setup project: '{}'.\n".format(
+                str(config["Run_Name"])))
+        sys.exit(1)
+        
 
 def check_existing(path, force=False):
     if path.is_dir():
@@ -101,18 +131,11 @@ def check_existing(path, force=False):
             "overwrite.".format(path))
     return path
 
-def check_existing_fastq(path, force=False):
-    if path.is_file() and not force:
-        print("Sample file '{}' found.".format(path))
-    else:
-        print("Warning: specified sample file '{}' does not exist. "
-                "Make sure it exists before running iguide run.".format(path))
-
 def get_sample_list(sampleInfo):
     sampleList = []
     for line in sampleInfo:
         items=line.split(',')
-        if(items[0]=="sampleName"):
+        if( items[0]==config["Sample_Name_Column"] ):
             continue
         sampleList.append(items[0])
     return sampleList

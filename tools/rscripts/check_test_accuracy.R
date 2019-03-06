@@ -174,7 +174,7 @@ check_data$multihits <- suppressMessages(dplyr::bind_rows(lapply(
   function(x){
     y <- readFile(
       paste0(
-        "analysis/", run_config$Run_Name, "/processData/", 
+        "analysis/", run_config$Run_Name, "/process_data/", 
         x, ".multihits.rds"
       ), 
       args$iguide_dir

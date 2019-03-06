@@ -11,16 +11,16 @@ rule demultiplex:
     I2=str(Path(config["Seq_Path"]) / config["I2"])
   output:
     data=temp(expand(
-      RUN_DIR + "/processData/{sample}.{type}.fastq.gz", \
+      RUN_DIR + "/process_data/{sample}.{type}.fastq.gz", \
       sample=SAMPLES, type=TYPES)),
     ambi=temp(expand(
-      RUN_DIR + "/processData/ambiguous.{type}.fastq.gz", type=TYPES)),
+      RUN_DIR + "/process_data/ambiguous.{type}.fastq.gz", type=TYPES)),
     dgen=temp(expand(
-      RUN_DIR + "/processData/degenerate.{type}.fastq.gz", type=TYPES)),
+      RUN_DIR + "/process_data/degenerate.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
-      RUN_DIR + "/processData/unassigned.{type}.fastq.gz", type=TYPES)),
+      RUN_DIR + "/process_data/unassigned.{type}.fastq.gz", type=TYPES)),
     stat=temp(
-      RUN_DIR + "/processData/" + RUN + ".demulti.stat")
+      RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/demulti.R",
     bc1Len=config["barcode1Length"],
@@ -45,6 +45,6 @@ rule demultiplex:
       --bc1 {params.bc1} --bc1Len {params.bc1Len} \
       --bc2 {params.bc2} --bc2Len {params.bc2Len} \
       --bc1Mis {params.bc1Mis} --bc2Mis {params.bc2Mis} --maxN {params.maxN} \
-      -o {RUN_DIR}/processData --stat {params.statName} -c {threads} \
+      -o {RUN_DIR}/process_data --stat {params.statName} -c {threads} \
       --compress > {log} 2>&1
     """

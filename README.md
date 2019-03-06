@@ -107,6 +107,12 @@ conda deactivate
 
 ### Changelog:
 
+**v0.9.7 (March 6th, 2019)**
+
+* Hotfix to workflow.
+* Changed 'setup' subcommand to python script based rather than snakemake.
+* Changed file organization.
+
 **v0.9.6 (March 5th, 2019)**
 
 * Introduced process workflow steps: assimilate and evaluate

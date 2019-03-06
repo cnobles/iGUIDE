@@ -13,8 +13,7 @@ source ${HOME}/miniconda3/etc/profile.d/conda.sh
 conda activate ${__IGUIDE_ENV}
 
 # Create test analysis directory
-iguide setup configs/simulation.config.yml -- -np
-iguide setup configs/simulation.config.yml -- --nolock
+iguide setup configs/simulation.config.yml
 
 # Generate test DAG graph
 iguide run configs/simulation.config.yml -- -np
