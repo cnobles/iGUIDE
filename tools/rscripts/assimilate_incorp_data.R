@@ -765,9 +765,10 @@ matched_algns <- probable_algns[
 
 matched_summary <- matched_algns %>%
   dplyr::mutate(
-    target.match = stringr::str_remove(
+    target.match = stringr::str_replace(
       string = target.match, 
-      pattern = "\\:\\([\\w]+\\)$"
+      pattern = "\\:\\([\\w]+\\)$",
+      replacement = ""
     )
   ) %>%
   dplyr::group_by(
@@ -900,9 +901,10 @@ pile_up_algns <- probable_algns[
 
 pile_up_summary <- pile_up_algns %>%
   dplyr::mutate(
-    target.match = stringr::str_remove(
+    target.match = stringr::str_replace(
       string = target.match, 
-      pattern = "\\:\\([\\w]+\\)$"
+      pattern = "\\:\\([\\w]+\\)$",
+      replacement = ""
     )
   ) %>%
   dplyr::group_by(specimen, clus.ori)
