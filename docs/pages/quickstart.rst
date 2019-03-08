@@ -9,12 +9,13 @@ Initializing a Run
 ------------------
 
 Once the config and sampleInfo files have been configured, a run directory can 
-be created using the command below where {ConfigFile} is the path to your configuration file::
+be created using the command below where {ConfigFile} is the path to your 
+configuration file::
 
   cd path/to/iGUIDE
   iguide setup {ConfigFile}
 
-The directory should look like this (RunName is specified in the ConfigFile}::
+The directory should look like this (RunName is specified in the ConfigFile)::
   
   > tree analysis/{RunName}
   analysis/{RunName}/
@@ -87,18 +88,26 @@ processed using the following command::
 Snakemake offers a great number of resources for managing the processing through 
 the pipeline. I recommend familiarizing yourself with the utility 
 (https://snakemake.readthedocs.io/en/stable/). Here are some helpful snakemake
-options that can be passed to iGUIDE by appending to the iguide command after ``--``:
+options that can be passed to iGUIDE by appending to the iguide command after 
+``--``:
 
-* ``[--configfile X]`` associate a specific configuration for processing, essential for processing but already passed in by ``iguide``.
+* ``[--configfile X]`` associate a specific configuration for processing, 
+  essential for processing but already passed in by ``iguide``.
 * ``[--cores X]`` multicored processing, specified cores to use by X.
 * ``[--nolock]`` process multiple runs a the same time, from different sessions.
 * ``[--notemp]`` keep all temporary files, otherwise removed.
 * ``[--keep-going]`` will keep processing if one or more job error out.
-* ``[-w X, --latency-wait X]`` wait X seconds for the output files to appear before erroring out.
-* ``[--restart-times X]`` X is the number of time to restart a job if it fails. Defaults to 0, but is used in ``iguide`` to increase memory allocation.
-* ``[--resources mem_mb=X]`` Defined resources, for ``iguide`` the mem_mb is the MB units to allow for memory allocation to the whole run. For HPC, this can be coupled with ``--cluster-config`` to request specific resources for each job.
-* ``[--rerun-incomplete, --ri]`` Re-run all jobs that the output is recognized as incomplete, useful if your run gets terminated before finishing.
-* ``[--cluster-config FILE]`` A JSON or YAML file that defines wildcards used for HPC.
+* ``[-w X, --latency-wait X]`` wait X seconds for the output files to appear 
+  before erroring out.
+* ``[--restart-times X]`` X is the number of time to restart a job if it fails. 
+  Defaults to 0, but is used in ``iguide`` to increase memory allocation.
+* ``[--resources mem_mb=X]`` Defined resources, for ``iguide`` the mem_mb is the
+  MB units to allow for memory allocation to the whole run. For HPC, this can be
+  coupled with ``--cluster-config`` to request specific resources for each job.
+* ``[--rerun-incomplete, --ri]`` Re-run all jobs that the output is recognized 
+  as incomplete, useful if your run gets terminated before finishing.
+* ``[--cluster-config FILE]`` A JSON or YAML file that defines wildcards used 
+  for HPC.
 
 
 An Example Run

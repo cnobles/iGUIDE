@@ -30,6 +30,9 @@ broken into a few parts:
 
    pages/install.rst
    pages/quickstart.rst
-   pages/configinfo.rst
+   pages/config_setup.rst
+   pages/config_run.rst
+   pages/config_nucs.rst
+   pages/config_proc.rst
    pages/sampleinfo.rst
    pages/changelog.rst   
