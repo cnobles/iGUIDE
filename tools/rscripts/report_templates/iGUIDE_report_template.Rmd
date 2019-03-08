@@ -124,7 +124,7 @@ blank_theme <- theme_bw() +
 # Captions
 tbl_caps <- c(
   "Specimen summary.",
-  "Guide RNAs and associated information.",
+  "Target sequences and associated information.",
   "Percent On-target.",
   "Off-target Loci.",
   "Cancer-associated Gene editing enrichment."
@@ -133,7 +133,7 @@ tbl_caps <- c(
 fig_caps <- c(
   "Distance distribution of observed incorporation sites from On-target loci.",
   "Genomic distribution of incorporation sites by bioinformatic characteristics.",
-  "Sequence similarity between off-target sites and targeting gRNA(s)."
+  "Sequence similarity between off-target sites and targeting sequence(s)."
 )
 
 if( args$format == "html" ){
@@ -165,7 +165,7 @@ if( args$format == "pdf" ){
 
 # Summary
 
-The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(gRNAs)` guide RNAs. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` inferred cells sampled.
+The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(target_tbl)` targeting sequences. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` inferred cells sampled.
 
 ```{r} 
 if( args$format == "pdf" ){
@@ -211,17 +211,17 @@ if( args$format == "pdf" ){
 
 # On-target analysis
 
-Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of RNA-guided nuclease targeted locations. The guide RNAs provided for these analyses and their On-target locations (loci) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
+Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of nuclease targeted locations. The target sequences provided for these analyses and their On-target locations (loci) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
-```{r gRNA_tbl}
-gRNAs$`Edit Locus` <- sapply(
-  gRNAs$Guide, 
+```{r target_tbl}
+target_tbl$`Edit Locus` <- sapply(
+  target_tbl$Target, 
   function(x) paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
 )
 
-emphasize.verbatim.cols(c(2,3))
+emphasize.verbatim.cols(c(3,4))
 pander(
-  gRNAs, 
+  target_tbl, 
   caption = tbl_caps[2], 
   justify = "center", 
   style = "multiline"
@@ -234,7 +234,7 @@ Analysis of On-target associated incorporation sites (**Table 3**) produces seve
 
 * Flanking **Paired** alignments: alignments can be found on either side of a DSB, and therefore identifying flanking alignments suggests a DSB could be found between the paired alignments. Flanking alignments were searched for in these data up to `r 2*unique(sapply(configs, "[[", "upstreamDist"))` bp from each other.
 
-* gRNA **Matched** alignments: searching for the guide RNA sequence upstream of the incorporation site can be an indicator of guided nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching treated gRNA sequences were searched for up to `r unique(sapply(configs, "[[", "upstreamDist"))` bp upstream of the incorporation sites and required to have no more than `r unique(sapply(configs, "[[", "maxGuideMismatch"))` mismatches.
+* Target **Matched** alignments: searching for the target sequences upstream of the incorporation site can be an indicator of targeted nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching target sequences were searched for up to `r unique(sapply(configs, "[[", "upstreamDist"))` bp upstream of the incorporation sites and required to have no more than `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches.
 
 Specimen specific tables with data relating to these criteria are found in **Table 3** for percent On-target editing and **Table 4** for identified Off-target loci.
 
@@ -285,8 +285,8 @@ if( args$format == "pdf" ){
 ```{r}
 incorp_len <- ifelse(
   nrow(eval_data$spec_info$supp_data) > 0,
-  length(unique(paste(on_tar_dists$condition, on_tar_dists$gRNA))), 
-  length(unique(on_tar_dists$gRNA))
+  length(unique(paste(on_tar_dists$condition, on_tar_dists$target))), 
+  length(unique(on_tar_dists$target))
 )
 ```
 
@@ -325,7 +325,7 @@ for( i in unique(ceiling(seq_len(incorp_len) / 2)) ){
   
       p <- incorp_plot + 
         facet_wrap_paginate(
-          condition ~ gRNA, ncol = 2, nrow = 1, page = i, scales = "free"
+          condition ~ target, ncol = 2, nrow = 1, page = i, scales = "free"
         )
       
       print(p)
@@ -334,7 +334,7 @@ for( i in unique(ceiling(seq_len(incorp_len) / 2)) ){
     
       p <- incorp_plot + 
         facet_wrap_paginate(
-          ~ gRNA, ncol = 2, nrow = 1, page = i, scales = "free"
+          ~ target, ncol = 2, nrow = 1, page = i, scales = "free"
         )
       
       print(p)
@@ -360,7 +360,7 @@ if( args$format == "pdf" ){
 # Off-target analysis
 ## Specimen breakdown
 
-Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table 4** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). Guide RNA **Matched** loci require a match in the upstream sequence to a treated gRNA (within `r unique(sapply(configs, "[[", "maxGuideMismatch"))` mismatches out of the `r unique(nchar(gRNAs$gRNA))` nts and zero PAM mismatches).
+Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table 4** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). Target **Matched** loci require a match in the upstream sequence to a treated target (within `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches out of the `r unique(nchar(target_tbl$Target))` nts).
 
 ```{r off_target_summary}
 pander(
@@ -392,7 +392,7 @@ if( args$format == "pdf" ){
 
 ## Off-target enrichment in cancer-associated genes
 
-Flanking **Paired** loci and gRNA **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists (adjusted in the config file) included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0).
+Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists (adjusted in the config file) included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0).
 
 ```{r onco_enrichment}
 names(enrich_df) <- gsub(" ", "\n", names(enrich_df))
@@ -424,7 +424,7 @@ if( args$format == "pdf" ){
 
 ## Genomic distribution of incorporation sites
 
-The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent rings plot the alignments associated with Pileups, Flanking Pairs, and gRNA Matched groups. The height of the bar within its associated ring is correlated to the number of incorporations identified within the **10 Mb window** (normalized logarithm base 10 of incorporation sites).
+The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent rings plot the alignments associated with Pileups, Flanking Pairs, and Target Matched groups. The height of the bar within its associated ring is correlated to the number of incorporations identified within the **10 Mb window** (normalized logarithm base 10 of incorporation sites).
 
 ```{r}
 gen_den_len <- length(unique(genomic_grl[[1]]$condition))
@@ -481,23 +481,35 @@ if( args$format == "pdf" ){
 }
 ```
 
-## Off-target gRNA sequence comparison
+## Off-target sequence comparison
 
-Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the gRNA matched sites are displayed below in Figure 3 along with the number of mismatches to the gRNA sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`gene_id`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate `*`) that the site is within the transcription unit of the gene, `~`) the gene appears on the cancer-association list, `!`) and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
+Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the target matched sites are displayed below in Figure 3 along with the number of mismatches to the targeting sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`gene_id`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate `*`) that the site is within the transcription unit of the gene, `~`) the gene appears on the cancer-association list, `!`) and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
 
 ```{r off_target_seqs, out.width="100%"}
 ft_seq_plots <- lapply(
   ft_seqs_list, 
   function(x){
     
-    ref_gRNA <- paste0(gRNAs$gRNA, gRNAs$PAM)[
-      match(unique(x$gRNA), gRNAs$Guide)
-    ]
+    ref_target_seqs <- sapply(seq_len(nrow(target_tbl)), function(i){
+      
+      prof <- nuc_profiles[[target_tbl$Nuclease[i]]]
+      
+      if( prof$PAM_Loc == "5p" ){
+        return(paste0(target_tbl$PAM[i], target_tbl$Sequence[i]))
+      }else if( prof$PAM_Loc == "3p" ){
+        return(paste0(target_tbl$Sequence[i], target_tbl$PAM[i]))
+      }else{
+        return(target_tbl$Sequence[i])
+      }
+      
+    })
+    
+    ref_seq <- ref_target_seqs[match(unique(x$target.seq), target_tbl$Target)]
     
     if( !is.null(args$support) ){
-      title <- paste0(unique(x$condition), "\ngRNA: ", unique(x$gRNA))
+      title <- paste0(unique(x$condition), "\nTarget: ", unique(x$target.seq))
     }else{
-      title <- paste0("gRNA: ", unique(x$gRNA))
+      title <- paste0("Target: ", unique(x$target.seq))
     }
     
     y <- head(x, n = 10)
@@ -507,7 +519,7 @@ ft_seq_plots <- lapply(
       ) %>%
       dplyr::mutate(MESL = format(round(MESL, digits = 1))) %>%
       plotSeqDiverge(
-        ref = ref_gRNA, padding = 7, text.size = 3.5, 
+        ref = ref_seq, padding = 7, text.size = 3.5, 
         font.family = "Courier", font.face = "plain", force.sq = TRUE) +
       labs(title = title) +
       blank_theme +

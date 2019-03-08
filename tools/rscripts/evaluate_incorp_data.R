@@ -12,7 +12,10 @@ options(stringsAsFactors = FALSE, scipen = 99, width = 999)
 # Set up and gather command line arguments ----
 parser <- argparse::ArgumentParser(
   description = "Evaluation of iGUIDE data from input run(s).",
-  usage = "iguide eval <config(s)> -o <output> [-h/--help, -v/--version] [optional args]"
+  usage = paste(
+    "iguide eval <config(s)> -o <output> [-h/--help, -v/--version]",
+    "[optional args]"
+  )
 )
 
 parser$add_argument(
@@ -287,82 +290,6 @@ specimen_levels <- unique(sample_info$specimen)
 
 sample_info$specimen <- factor(sample_info$specimen, levels = specimen_levels)
 
-## Identify all gRNAs used from config files
-gRNAs <- lapply(
-  do.call(c, lapply(configs, "[[", "Guide_RNA_Sequences")), 
-  toupper
-)
-
-gRNAs_grps <- stringr::str_extract(
-  string = names(gRNAs), 
-  pattern = "[\\w\\-\\_]+"
-)
-
-names(gRNAs) <- sub("[\\w\\-\\_]+.", "", names(gRNAs), perl = TRUE)
-gRNAs <- split(gRNAs, gRNAs_grps)
-
-pams <- lapply(
-  do.call(c, lapply(configs, "[[", "PAM_Sequence")), 
-  toupper
-)
-
-pams <- split(pams, stringr::str_extract(
-  string = names(pams), 
-  pattern = "[\\w\\-\\_]+"
-))
-
-gRNAs <- dplyr::bind_rows(
-    mapply(
-      function(seqs, pam){
-        
-        pam_mat <- matrix(unlist(
-          lapply(
-            pam, 
-            function(pat) stringr::str_detect(seqs, paste0(pat,"$")) 
-          )), 
-          ncol = length(pam)
-        )
-        
-        if( any(rowSums(pam_mat) > 1) ){ 
-          stop("Multiple PAM sequences detected on a single guide RNA.") 
-        }
-        
-        rownames(pam_mat) <- stringr::str_extract(
-          string = names(seqs), 
-          pattern = "[\\w\\-\\_\\.]+$"
-        )
-        
-        colnames(pam_mat) <- unlist(pam)
-        
-        data.frame(
-          row.names = rownames(pam_mat),
-          "Guide" = rownames(pam_mat),
-          "gRNA" = sapply(
-            seq_along(seqs), 
-            function(i){
-              stringr::str_replace(
-                string = seqs[[i]], 
-                pattern = paste0(colnames(pam_mat)[pam_mat[i,]], "$"), 
-                replacement = ""
-              )
-            }
-          ),
-          "PAM" = colnames(pam_mat)[
-            sapply(
-              seq_len(nrow(pam_mat)), 
-              function(i) which(pam_mat[i,])
-            )
-          ]
-        )
-        
-      }, 
-      seqs = gRNAs, 
-      pam = pams, 
-      SIMPLIFY = FALSE
-    ), 
-    .id = "run.set"
-  ) %>%
-  dplyr::distinct(Guide, gRNA, PAM)
 
 ## Identify on-target edit sites from config files
 on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites"))
@@ -381,6 +308,7 @@ on_targets <- structure(
   names = names(on_targets)[match(unique(on_targets), on_targets)]
 )
 
+
 ## Treatment across runs
 treatments <- lapply(configs, "[[", "Treatment")
 
@@ -396,6 +324,7 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
   }
   
   treatment_df <- data.frame(
+      run_set = sample_info$run_set,
       sampleName = sample_info[,sample_name_col], 
       treatment = sample_info[,info_col]
     ) %>%
@@ -403,10 +332,10 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
       specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
       specimen = factor(specimen, levels = specimen_levels)
     ) %>%
-    dplyr::distinct(specimen, treatment) %>%
+    dplyr::distinct(run_set, specimen, treatment) %>%
     dplyr::arrange(specimen) %>%
     dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
-    dplyr::select(specimen, treatment)
+    dplyr::select(run_set, specimen, treatment)
   
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
@@ -414,6 +343,7 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
 }else if( any(grepl("all", names(treatments[[1]]))) ){
   
   treatment_df <- data.frame(
+      run_set = sample_info$run_set,
       sampleName = sample_info[,sample_name_col], 
       treatment = unique(unlist(treatments))
     ) %>%
@@ -421,10 +351,10 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
       specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
       specimen = factor(specimen, levels = specimen_levels)
     ) %>%
-    dplyr::distinct(specimen, treatment) %>%
+    dplyr::distinct(run_set, specimen, treatment) %>%
     dplyr::arrange(specimen) %>%
     dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
-    dplyr::select(specimen, treatment)
+    dplyr::select(run_set, specimen, treatment)
   
   treatment <- strsplit(treatment_df$treatment, ";")
   names(treatment) <- treatment_df$specimen
@@ -437,6 +367,157 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
   )
   
 }
+
+
+## Nucleases used across runs
+nuc_profiles <- unlist(
+  unname(lapply(configs, "[[", "Nuclease_Profiles")), 
+  recursive = FALSE
+)
+
+nuc_profiles <- nuc_profiles[
+  match(unique(names(nuc_profiles)), names(nuc_profiles))
+]
+
+nucleases <- lapply(configs, "[[", "Nuclease")
+
+if( any(grepl("sampleInfo:", nucleases[[1]])) ){
+  
+  info_col <- match(
+    stringr::str_extract(string = nucleases[[1]], pattern = "[\\w]+$"), 
+    names(sample_info)
+  )
+  
+  if( length(info_col) != 1 ){
+    stop("Cannot parse nuclease data. Check config yaml and sampleInfo.")
+  }
+  
+  nuclease_df <- data.frame(
+    run_set = sample_info$run_set,
+    sampleName = sample_info[,sample_name_col], 
+    nuclease = sample_info[,info_col]
+  ) %>%
+    dplyr::mutate(
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
+      specimen = factor(specimen, levels = specimen_levels)
+    ) %>%
+    dplyr::distinct(run_set, specimen, nuclease) %>%
+    dplyr::arrange(specimen) %>%
+    dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
+    dplyr::select(run_set, specimen, nuclease)
+  
+  nuclease <- strsplit(nuclease_df$nuclease, ";")
+  names(nuclease) <- nuclease_df$specimen
+  
+}else if( any(grepl("all", names(nucleases[[1]]))) ){
+  
+  nuclease_df <- data.frame(
+    run_set = sample_info$run_set,
+    sampleName = sample_info[,sample_name_col], 
+    nuclease = unique(unlist(nucleases))
+  ) %>%
+    dplyr::mutate(
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
+      specimen = factor(specimen, levels = specimen_levels)
+    ) %>%
+    dplyr::distinct(run_set, specimen, nuclease) %>%
+    dplyr::arrange(specimen) %>%
+    dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
+    dplyr::select(run_set, specimen, nuclease)
+  
+  nuclease <- strsplit(nuclease_df$nuclease, ";")
+  names(nuclease) <- nuclease_df$specimen
+  
+}else{
+  
+  stop(
+    "\n  Nuclease information not accurately parsed from config(s).\n", 
+    "  Check config(s) formating."
+  )
+  
+}
+
+nuclease_treaments <- dplyr::left_join(
+  nuclease_df, treatment_df, by = c("run_set", "specimen")
+)
+
+target_combn <- structure(
+  strsplit(nuclease_treaments$treatment, ";"), 
+  names = as.character(nuclease_treaments$specimen)
+)
+
+combn_tbl <- data.frame(
+  run_set = nuclease_treaments$run_set[
+    as.vector(match(
+      S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
+      nuclease_treaments$specimen
+    ))
+  ],
+  nuclease = nuclease_treaments$nuclease[
+    as.vector(match(
+      S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
+      nuclease_treaments$specimen
+    ))
+  ],
+  target = unlist(target_combn),
+  row.names = NULL
+  ) %>%
+  dplyr::filter(target != "Mock") %>%
+  dplyr::distinct()
+
+
+## Identify all target sequences used from config files
+target_seqs <- lapply(
+  do.call(c, lapply(configs, "[[", "Target_Sequences")), 
+  toupper
+)
+
+target_grps <- stringr::str_extract(
+  string = names(target_seqs), 
+  pattern = "[\\w\\-\\_]+"
+)
+
+names(target_seqs) <- sub("[\\w\\-\\_]+.", "", names(target_seqs), perl = TRUE)
+target_seqs <- split(target_seqs, target_grps)
+
+target_seqs_df <- data.frame(
+  run_set = as.character(
+    S4Vectors::Rle(names(target_seqs), lengths(target_seqs))
+  ),
+  target = as.character(unlist(lapply(target_seqs, names))),
+  sequence = as.character(unlist(target_seqs))
+)
+
+
+## Identify PAM sequences associated with nucleases
+pam_seqs <- do.call(c, lapply(configs, function(x){
+  toupper(unlist(lapply(x$Nuclease_Profiles, "[[", "PAM")))
+}))
+
+pam_grps <- stringr::str_extract(
+  string = names(pam_seqs), 
+  pattern = "[\\w\\-\\_]+"
+)
+
+names(pam_seqs) <- sub("[\\w\\-\\_]+.", "", names(pam_seqs), perl = TRUE)
+pam_seqs <- split(pam_seqs, pam_grps)
+
+pam_seqs_df <- data.frame(
+  run_set = as.character(S4Vectors::Rle(names(pam_seqs), lengths(pam_seqs))),
+  nuclease = as.character(unlist(lapply(pam_seqs, names))),
+  PAM = as.character(unlist(pam_seqs))
+)
+
+
+## Combine into a single table for output
+combn_tbl <- combn_tbl %>%
+  dplyr::left_join(target_seqs_df, by = c("run_set", "target")) %>%
+  dplyr::left_join(pam_seqs_df, by = c("run_set", "nuclease"))
+
+### Log combination treatment table
+cat("\nTarget Sequence Table:\n")
+print(combn_tbl, right = FALSE, row.names = FALSE)
+
 
 ## Load in supporting information ----
 if( length(args$support) > 0 ){
@@ -528,10 +609,10 @@ input_data <- lapply(
 )
 
 ## Updating associated data
-# on_targets, gRNAs
-considered_gRNAs <- unique(unlist(treatment))
-gRNAs <- dplyr::filter(gRNAs, Guide %in% considered_gRNAs)
-on_targets <- on_targets[names(on_targets) %in% considered_gRNAs]
+# on_targets, target_seqs
+considered_target_seqs <- unique(unlist(treatment))
+target_tbl <- dplyr::filter(combn_tbl, target %in% considered_target_seqs)
+on_targets <- on_targets[names(on_targets) %in% considered_target_seqs]
 
 
 # Beginnin analysis ----
@@ -711,7 +792,7 @@ ot_tbl_summary <- Reduce(
 on_tar_dists <- input_data$matched_algns %>%
   dplyr::filter(on.off.target == "On-target") %>%
   dplyr::mutate(
-    gRNA = stringr::str_extract(string = guideRNA.match, pattern = "[\\w]+"),
+    target = stringr::str_extract(string = target.match, pattern = "[\\w]+"),
     pos = as.numeric(
       stringr::str_extract(string = edit.site, pattern = "[0-9]+$")
     ),
@@ -720,7 +801,7 @@ on_tar_dists <- input_data$matched_algns %>%
   ) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   dplyr::select(
-    run.set, specimen, gRNA, condition, 
+    run.set, specimen, target, condition, 
     edit.site, edit.site.dist, strand, contrib)
 
 on_tar_dens <- lapply(
@@ -740,7 +821,7 @@ on_tar_dens <- lapply(
 
 on_tar_dists <- dplyr::group_by(
     on_tar_dists, 
-    condition, gRNA, edit.site.dist, strand
+    condition, target, edit.site.dist, strand
   ) %>%
   dplyr::summarise(cnt = sum(contrib)) %>%
   dplyr::ungroup() %>%
@@ -754,9 +835,9 @@ if( length(unique(cond_overview$condition)) == 1 ){
 }
 
 if( is.null(args$support) ){
-  sites_included <- on_tar_dists %>% dplyr::group_by(gRNA)
+  sites_included <- on_tar_dists %>% dplyr::group_by(target)
 }else{
-  sites_included <- on_tar_dists %>% dplyr::group_by(condition, gRNA)
+  sites_included <- on_tar_dists %>% dplyr::group_by(condition, target)
 }
 
 sites_included <- dplyr::summarise(
@@ -820,7 +901,7 @@ tbl_ft_pair <- input_data$paired_regions %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
-# gRNA sequence matched
+# target sequence matched
 tbl_ft_match <- input_data$matched_summary %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
@@ -925,7 +1006,7 @@ enrich_df <- dplyr::bind_rows(
     list(
       "Reference" = rand_df, 
       "Flanking Pairs" = paired_df, 
-      "gRNA Matched" = matched_df), 
+      "Target Matched" = matched_df), 
     .id = "origin"
   ) %>%
   dplyr::filter(total > 0)
@@ -1009,8 +1090,8 @@ if( nrow(ft_MESL) > 0 ){
 
 ft_seqs <- input_data$matched_summary %>%
   dplyr::select(
-    specimen, aligned.sequence, guideRNA.match, edit.site,
-    guideRNA.mismatch, on.off.target, algns, gene_id
+    specimen, aligned.sequence, target.match, edit.site,
+    target.mismatch, on.off.target, algns, gene_id
   ) %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = levels(cond_overview$specimen))
@@ -1022,8 +1103,8 @@ if( is.null(args$support) ){
   
   ft_seqs <- dplyr::group_by(
       ft_seqs, 
-      guideRNA.match, edit.site, aligned.sequence, 
-      guideRNA.mismatch, on.off.target, gene_id
+      target.match, edit.site, aligned.sequence, 
+      target.mismatch, on.off.target, gene_id
     ) %>%
     dplyr::summarise(algns = sum(algns), MESL = max(MESL, na.rm = TRUE))
   
@@ -1031,15 +1112,15 @@ if( is.null(args$support) ){
   
   ft_seqs <- dplyr::group_by(
       ft_seqs,
-      condition, guideRNA.match, edit.site, aligned.sequence, 
-      guideRNA.mismatch, on.off.target, gene_id
+      condition, target.match, edit.site, aligned.sequence, 
+      target.mismatch, on.off.target, gene_id
     ) %>%
     dplyr::summarise(algns = sum(algns), MESL = max(MESL, na.rm = TRUE))
   
 }
 
 ft_seqs <- dplyr::arrange(
-    ft_seqs, desc(algns), desc(MESL), guideRNA.mismatch
+    ft_seqs, desc(algns), desc(MESL), target.mismatch
   ) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(
@@ -1047,24 +1128,25 @@ ft_seqs <- dplyr::arrange(
   ) %>%
   dplyr::rename(
     "target" = on.off.target, 
-    "mismatch" = guideRNA.mismatch, 
-    "gRNA" = guideRNA.match,
+    "mismatch" = target.mismatch, 
+    "target.seq" = target.match,
     "aligns" = algns
   )
 
 if( is.null(args$support) ){
   
-  ft_seqs_list <- split(ft_seqs, ft_seqs$gRNA)
+  ft_seqs_list <- split(ft_seqs, ft_seqs$target.seq)
   
 }else{
   
-  ft_seqs_conds <- dplyr::arrange(ft_seqs, condition, gRNA) %$% 
-    unique(paste0(condition, " - ", gRNA))
+  ft_seqs_conds <- dplyr::arrange(ft_seqs, condition, target.seq) %$% 
+    unique(paste0(condition, " - ", target.seq))
   
   ft_seqs_list <- split(
     x = ft_seqs, 
     f = factor(
-      paste0(ft_seqs$condition, " - ", ft_seqs$gRNA), levels = ft_seqs_conds
+      paste0(ft_seqs$condition, " - ", ft_seqs$target.seq), 
+      levels = ft_seqs_conds
     )
   )
   
@@ -1095,10 +1177,14 @@ saveRDS(
     ),
     "spec_info" = list(
       "sample_info" = sample_info, 
-      "gRNAs" = gRNAs, 
+      "target_seqs" = target_seqs,
+      "target_tbl" = target_tbl,
       "on_targets" = on_targets, 
       "treatment" = treatment, 
-      "treatment_df" = treatment_df, 
+      "treatment_df" = treatment_df,
+      "nuclease" = nuclease,
+      "nuclease_df" = nuclease_df,
+      "nuclease_profiles" = nuc_profiles,
       "supp_data" = supp_data, 
       "spec_overview" = spec_overview, 
       "cond_overview" = cond_overview

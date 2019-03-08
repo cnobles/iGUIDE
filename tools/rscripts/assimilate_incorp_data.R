@@ -73,6 +73,8 @@ args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
 if( !dir.exists(args$iguide_dir) ){
   root_dir <- Sys.getenv(args$iguide_dir)
+}else{
+  root_dir <- args$iguide_dir
 }
 
 if( !dir.exists(root_dir) ){
@@ -219,51 +221,9 @@ if( grepl(".fa", config$Ref_Genome) ){
 
 upstream_dist <- config$upstreamDist
 downstream_dist <- config$downstreamDist
-max_guide_mismatch <- config$maxGuideMismatch
+max_target_mismatch <- config$maxTargetMismatch
 pile_up_min <- config$pileUpMin
 on_target_sites <- config$On_Target_Sites 
-
-# Load Guide RNAs and sample metadata ----
-## Identify the guide RNA sequences used for the analysis and build an object 
-## use further on in processing to analyse the samples.
-
-guide_rna_seqs <- lapply(config$Guide_RNA_Sequences, toupper)
-pam_seq <- lapply(config$PAM_Sequence, toupper)
-
-pam_mat <- matrix(unlist(lapply(pam_seq, function(pat){
-    stringr::str_detect(guide_rna_seqs, paste0(pat,"$"))
-  })), 
-  ncol = length(pam_seq)
-)
-
-if( any(rowSums(pam_mat) > 1) ){ 
-  stop("Multiple PAM sequences detected on a single guide RNA.")
-}
-
-rownames(pam_mat) <- names(guide_rna_seqs)
-colnames(pam_mat) <- unlist(pam_seq)
-
-gRNA_tbl <- data.frame(
-  row.names = names(guide_rna_seqs),
-  "Guide" = names(guide_rna_seqs),
-  "gRNA" = sapply(seq_along(guide_rna_seqs), function(i){
-    
-    stringr::str_replace(
-      string = guide_rna_seqs[[i]], 
-      pattern = paste0(colnames(pam_mat)[pam_mat[i,]], "$"), 
-      replacement = ""
-    )
-    
-  }),
-  "PAM" = colnames(pam_mat)[
-    sapply(seq_len(nrow(pam_mat)), function(i) which(pam_mat[i,]))
-  ]
-)
-
-# Log guide RNA table
-cat("\nGuide RNA Sequence Table:")
-print(gRNA_tbl, right = FALSE, row.names = FALSE)
-
 
 # Load data related to how samples were processed ----
 ## The treatment object dictates how each sample was treated, or which guide 
@@ -321,9 +281,114 @@ if( any(grepl("sampleInfo:", treatment[1])) ){
   
 }
 
+
+## Identify the treatment of nucleases as well
+
+nuclease <- config$Nuclease
+
+if( any(grepl("sampleInfo:", nuclease[1])) ){
+  
+  info_col <- match(
+    x = stringr::str_extract(string = nuclease[1], pattern = "[\\w]+$"), 
+    table = names(sample_info)
+  )
+  
+  if( length(info_col) != 1 ){
+    stop("\n  Cannot parse nuclease data. Check config yaml and sampleInfo.\n")
+  }
+  
+  nuclease_df <- data.frame(
+    sampleName = sample_info$sampleName, 
+    nuclease = sample_info[,info_col]
+  )
+  
+  nuclease_df$specimen <- stringr::str_extract(
+    string = nuclease_df$sampleName, pattern = "[\\w]+"
+  )
+  
+  nuclease_df <- unique(nuclease_df[,c("specimen", "nuclease")])
+  nuclease <- strsplit(as.character(nuclease_df$nuclease), ";")
+  names(nuclease) <- nuclease_df$specimen
+  
+}else if( any(grepl("all", names(nuclease))) ){
+  
+  nuclease_df <- data.frame(
+    sampleName = sample_info$sampleName, 
+    nuclease = unique(unlist(nuclease))
+  )
+  
+  nuclease_df$specimen <- stringr::str_extract(
+    string = nuclease_df$sampleName, 
+    pattern = "[\\w]+"
+  )
+  
+  nuclease_df <- unique(nuclease_df[,c("specimen", "nuclease")])
+  nuclease <- strsplit(as.character(nuclease_df$nuclease), ";")
+  names(nuclease) <- nuclease_df$specimen
+  
+}else{
+  
+  nuclease_df <- data.frame(
+    "specimen" = names(nuclease), 
+    "nuclease" = sapply(nuclease, paste, collapse = ";")
+  )
+  
+}
+
+nuclease_treaments <- dplyr::left_join(
+  nuclease_df, treatment_df, by = "specimen"
+)
+
+target_combn <- structure(
+  strsplit(nuclease_treaments$treatment, ";"), 
+  names = nuclease_treaments$specimen
+)
+
+combn_tbl <- data.frame(
+    nuclease = nuclease_treaments$nuclease[
+      as.vector(match(
+        S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
+        nuclease_treaments$specimen
+      ))
+    ],
+    target = unlist(target_combn),
+    row.names = NULL
+  ) %>%
+  dplyr::filter(target != "Mock") %>%
+  dplyr::distinct()
+
+
+# Load target sequences and sample metadata ----
+## Identify the target sequences used for the analysis and build an object 
+## use further on in processing to analyse the samples.
+
+target_seqs <- lapply(config$Target_Sequences, toupper)
+
+pam_seq <- lapply(
+  unique(unlist(nuclease)), 
+  function(x) toupper(config$Nuclease_Profiles[[x]]$PAM)
+)
+
+names(pam_seq) <- unique(unlist(nuclease))
+  
+combn_tbl <- combn_tbl %>%
+  dplyr::mutate(
+    sequence = target_seqs[target],
+    PAM = pam_seq[nuclease]
+  )
+
+# Log combination treatment table
+cat("\nTarget Sequence Table:")
+print(combn_tbl, right = FALSE, row.names = FALSE)
+
+
 # Log treatment table
-cat("\nSample Treatment Table:\n")
-print(x = t(as.data.frame(treatment)), right = FALSE)
+cat("\nSpecimen Target Treatment:\n")
+null <- lapply(seq_along(treatment), function(i){
+  cat("  ", names(treatment)[i], ":\n", sep = "")
+  cat("    nuclease : ", nuclease[[i]], "\n", sep = "")
+  cat("    targets  : ", paste(treatment[[i]], collapse = ", "), "\n", sep = "")
+})
 
 
 # Load input data ----
@@ -556,52 +621,89 @@ algnmts_gr$paired.algn <- identifyPairedAlgnmts(
   maxgap = upstream_dist*2
 )
 
-## Create a GRange with only the unique cluster origins
-split_clus_id <- stringr::str_split(
-  string = unique(algnmts_gr$clus.ori), pattern = ":", simplify = TRUE
-)
+algnmts_grl <- split(algnmts_gr, unlist(nuclease)[algnmts_gr$specimen])
 
-algn_clusters <- GenomicRanges::GRanges(
-  seqnames = split_clus_id[,1],
-  ranges = IRanges::IRanges(start = as.numeric(split_clus_id[,3]), width = 1),
-  strand = split_clus_id[,2],
-  seqinfo = GenomeInfoDb::seqinfo(ref_genome)
-)
+annot_clust_info <- dplyr::bind_rows(lapply(
+  seq_along(algnmts_grl), 
+  function(i, grl){
+    
+    gr <- grl[[i]]
+    nuc <- names(grl)[i]
+    
+    if( !nuc %in% names(config$Nuclease_Profiles) ){
+      nuc_profile <- NULL
+    }else{
+      nuc_profile <- config$Nuclease_Profiles[[nuc]]
+    }
+    
+    ## Create a GRange with only the unique cluster origins
+    split_clus_id <- stringr::str_split(
+      string = unique(paste0(gr$specimen, ":", gr$clus.ori)), 
+      pattern = ":", 
+      simplify = TRUE
+    )
+    
+    algn_clusters <- GenomicRanges::GRanges(
+      seqnames = split_clus_id[,2],
+      ranges = IRanges::IRanges(
+        start = as.numeric(split_clus_id[,4]), width = 1
+      ),
+      strand = split_clus_id[,3],
+      seqinfo = GenomeInfoDb::seqinfo(ref_genome)
+    )
+    
+    algn_clusters$specimen <- split_clus_id[,1]
+    algn_clusters$clus.ori <- vcollapse(split_clus_id[, 2:4], sep = ":")
+    
+    algn_clusters$clus.seq <- getSiteSeqs(
+      gr = algn_clusters, 
+      upstream.flank = upstream_dist, 
+      downstream.flank = downstream_dist, 
+      ref.genome = ref_genome
+    )
+    
+    ## Identify which target sequences binding near clusters
+    if( !is.null(nuc_profile) ){
+      
+      algn_clusters <- compareTargetSeqs(
+        gr.with.sequences = algn_clusters, 
+        seq.col = "clus.seq", 
+        target.seqs = target_seqs,
+        tolerance = max_target_mismatch,
+        nuc.profile = nuc_profile,
+        submat = submat, 
+        upstream.flank = upstream_dist, 
+        downstream.flank = downstream_dist
+      )
+    
+    }else{
+      
+      algn_clusters$target.match <- "No_valid_match"
+      algn_clusters$target.mismatch <- NA
+      algn_clusters$target.score <- NA
+      algn_clusters$aligned.sequence <- NA
+      algn_clusters$edit.site <- NA
+      
+    }
+    
+    as.data.frame(GenomicRanges::mcols(algn_clusters))
+    
+  },
+  grl = algnmts_grl
+))
+  
 
-algn_clusters$clus.ori <- unique(algnmts_gr$clus.ori)
-
-algn_clusters$clus.seq <- getSiteSeqs(
-  gr = algn_clusters, 
-  upstream.flank = upstream_dist, 
-  downstream.flank = downstream_dist, 
-  ref.genome = ref_genome
-)
-
-## Identify which guideRNAs potentially bind near clusters
-algn_clusters <- compareGuideRNAs(
-  gr.with.sequences = algn_clusters, 
-  guide.rna.seqs = guide_rna_seqs, 
-  submat = submat, 
-  seq.col = "clus.seq", 
-  tolerance = max_guide_mismatch,
-  upstream.flank = upstream_dist, 
-  downstream.flank = downstream_dist
-)
-
-## Merge the guideRNA alignment information from the clusters back to all unique
-## alignments
+## Merge the target sequence alignment information from the clusters back to all
+## unique alignments
 algnmts <- as.data.frame(merge(
   x = as.data.frame(algnmts_gr), 
-  y = GenomicRanges::mcols(algn_clusters)[,c(
-    "clus.ori", "guideRNA.match", "guideRNA.mismatch", 
-    "aligned.sequence", "edit.site")
-  ],
-  by = "clus.ori"
+  y = dplyr::select(annot_clust_info, -clus.seq),
+  by = c("specimen", "clus.ori")
 ))
 
 ## Change guideRNA.match to No_Valid_Match if an inappropriate gRNA is annotated
-algnmts$guideRNA.match <- filterInappropriateComparisons(
-  guideRNA.match = algnmts$guideRNA.match, 
+algnmts$target.match <- filterInappropriateComparisons(
+  guideRNA.match = algnmts$target.match, 
   specimen = algnmts$specimen, 
   treatment = treatment
 )
@@ -619,13 +721,13 @@ tbl_clus_ori <- algnmts %>%
 
 idx_clus_ori <- which(algnmts$clus.ori %in% names(tbl_clus_ori))
 
-tbl_paried_algn <- algnmts %>%
+tbl_paired_algn <- algnmts %>%
   dplyr::filter(!is.na(paired.algn)) %$%
   table(paired.algn)
 
-idx_paired_algn <- which(algnmts$paired.algn %in% names(tbl_paried_algn))
+idx_paired_algn <- which(algnmts$paired.algn %in% names(tbl_paired_algn))
 
-idx_matched <- which(algnmts$guideRNA.match != "No_valid_match")
+idx_matched <- which(algnmts$target.match != "No_valid_match")
 
 idx_combined <- sort(unique(c(idx_clus_ori, idx_paired_algn, idx_matched)))
 
@@ -658,22 +760,21 @@ print(table(probable_algns$on.off.target))
 
 ## Matched alignments
 matched_algns <- probable_algns[
-  probable_algns$guideRNA.match != "No_valid_match",
+  probable_algns$target.match != "No_valid_match",
 ]
 
 matched_summary <- matched_algns %>%
   dplyr::mutate(
-    guideRNA.match = stringr::str_replace(
-      string = guideRNA.match, 
-      pattern = stringr::fixed(" (rev)"), 
-      replacement = ""
+    target.match = stringr::str_remove(
+      string = target.match, 
+      pattern = "\\:\\([\\w]+\\)$"
     )
   ) %>%
   dplyr::group_by(
-    specimen, edit.site, aligned.sequence, guideRNA.match, guideRNA.mismatch
+    specimen, edit.site, aligned.sequence, target.match, target.mismatch
   )
 
-if( config$UMItags ){
+if( config$UMItags & !is.null(args$umitags) ){
   
   matched_summary <- dplyr::summarise(
     matched_summary,
@@ -699,11 +800,12 @@ if( config$UMItags ){
 }
 
 matched_summary <- dplyr::ungroup(matched_summary) %>% 
+  dplyr::arrange(specimen, target.match, desc(algns)) %>%
   as.data.frame()
 
 ## Paired alignments
 paired_algns <- probable_algns[
-  probable_algns$paired.algn %in% names(tbl_paried_algn),
+  probable_algns$paired.algn %in% names(tbl_paired_algn),
 ]
 
 paired_regions <- paired_algns %>%
@@ -711,7 +813,7 @@ paired_regions <- paired_algns %>%
   dplyr::mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
   dplyr::group_by(specimen, paired.algn)
 
-if( config$UMItags ){
+if( config$UMItags & !is.null(args$umitags) ){
   
   paired_regions <- dplyr::summarise(
       paired_regions,
@@ -798,15 +900,14 @@ pile_up_algns <- probable_algns[
 
 pile_up_summary <- pile_up_algns %>%
   dplyr::mutate(
-    guideRNA.match = stringr::str_replace(
-      string = guideRNA.match, 
-      pattern = stringr::fixed(" (rev)"), 
-      replacement = ""
+    target.match = stringr::str_remove(
+      string = target.match, 
+      pattern = "\\:\\([\\w]+\\)$"
     )
   ) %>%
   dplyr::group_by(specimen, clus.ori)
 
-if( config$UMItags ){
+if( config$UMItags & !is.null(args$umitags) ){
   
   pile_up_summary <- dplyr::summarise(
     pile_up_summary,
@@ -830,6 +931,7 @@ if( config$UMItags ){
 }
 
 pile_up_summary <- dplyr::ungroup(pile_up_summary) %>% 
+  dplyr::arrange(specimen, desc(algns)) %>%
   as.data.frame()
 
 

@@ -282,15 +282,25 @@ sample_info <- eval_data$spec_info$sample_info
 
 specimen_levels <- eval_data$params$specimen_levels
 
-## Identify all gRNAs used from config files
-gRNAs <- eval_data$spec_info$gRNAs
+## Identify all targets used
+target_tbl <- eval_data$spec_info$target_tbl %>%
+  dplyr::select(-run_set) %>%
+  dplyr::distinct() %>%
+  dplyr::rename(
+    "Nuclease" = nuclease,
+    "Target" = target,
+    "Sequence" = sequence
+  )
 
-## Identify on-target edit sites from config files
+## Identify on-target edit sites
 on_targets <- eval_data$spec_info$on_targets
 
 ## Treatment across runs
 treatment <- eval_data$spec_info$treatment
 treatment_df <- eval_data$spec_info$treatment_df
+
+## Nuclease profiles
+nuc_profiles <- eval_data$spec_info$nuclease_profiles
 
 ## Load in supporting information ----
 supp_data <- eval_data$spec_info$supp_data
@@ -335,10 +345,13 @@ names(genomic_grl) <- c(
 
 
 # On-target summary ----
-ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary
+ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary[
+  , c("specimen", "condition", "ot_algns_pct", 
+      "ot_pile_pct", "ot_pair_pct", "ot_match_pct")
+]
 names(ot_tbl_summary) <- c(
   "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
-  "Flanking\nPairs", "gRNA\nMatched"
+  "Flanking\nPairs", "Target\nMatched"
 )
 
 
@@ -347,10 +360,13 @@ on_tar_dists <- eval_data$edit_models$on_tar_dists
 sites_included <- eval_data$edit_models$sites_included
 
 # Off-target summary ----
-ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary
+ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary[
+  , c("specimen", "condition", "ft_algns", "ft_pile", "ft_pair", "ft_match")
+]
+
 names(ft_tbl_summary) <- c(
   "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
-  "Flanking\nPairs", "gRNA\nMatched"
+  "Flanking\nPairs", "Target\nMatched"
 )
 
 
