@@ -831,12 +831,20 @@ compareTargetSeqs <- function(gr.with.sequences, seq.col,
     }
   }
   
+  fwd_df <- dplyr::filter(
+    fwd_df, start >= 1, end <= upstream.flank + downstream.flank + 1
+  )
+  
   fwd_df$aln.seq <- as.character(Biostrings::DNAStringSet(
     x = seqs[fwd_df$names], 
     start = fwd_df$start, 
     end = fwd_df$end
   ))
-
+  
+  rev_df <- dplyr::filter(
+    rev_df, start >= 1, end <= upstream.flank + downstream.flank + 1
+  )
+  
   rev_df$aln.seq <- as.character(Biostrings::DNAStringSet(
     x = Biostrings::reverseComplement(seqs[rev_df$names]), 
     start = rev_df$start, 
@@ -909,6 +917,37 @@ compareTargetSeqs <- function(gr.with.sequences, seq.col,
   }
   
   all_sites <- all_sites[order(all_sites$siteID)]
+  
+  if( any(duplicated(all_sites$siteID)) ){
+    
+    dup_ids <- names(table(all_sites$siteID))[table(all_sites$siteID) > 1]
+    dup_sites <- all_sites[all_sites$siteID %in% dup_ids]
+    
+    adj_sites <- unlist(GenomicRanges::GRangesList( 
+      lapply(
+        split(dup_sites, dup_sites$siteID), 
+        function(gr){
+          
+          if( length(unique(gr$target.mismatch)) > 1){
+            gr <- gr[gr$target.mismatch == min(gr$target.mismatch)]
+          }
+          
+          if( length(gr) > 1){
+            dists <- abs(start(gr) - 
+              as.numeric(stringr::str_extract(gr$edit.site, "[\\d]+$")))
+            gr <- gr[dists == min(dists)]
+          }
+          
+          gr
+          
+        }
+      )
+    ))
+    
+    all_sites <- c(all_sites[!all_sites$siteID %in% dup_ids], adj_sites)
+    all_sites <- all_sites[order(all_sites$siteID)]
+    
+  }
   
   if( any(duplicated(all_sites$siteID)) ){
     cat(

@@ -32,7 +32,6 @@ Target_Sequences:
     B2M : "GAGTAGCGCGAGCACAGCTA"
     TRAC : "TGTGCTAGACATGAGGTCTA"
     TRBC : "GGAGAATGACGAGTGGACCC"
-#PAM_Sequence : "NGG"
 On_Target_Sites :
     B2M : "chr15:-:44711569"
     TRAC : "chr14:+:22547664"

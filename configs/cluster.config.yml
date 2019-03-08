@@ -1,6 +1,6 @@
 __default__ :
     nCPUs     : 1
-    memory    : 24000
+    memory    : 4000
     resources : "\"span[hosts=1]\""
     name      : "JOBNAME.{rule}.{wildcards}"
     output    : "{RUN_DIR}/logs/{rule}.{wildcards}.out"
