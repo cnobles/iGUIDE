@@ -306,7 +306,8 @@ nuc_profiles <- eval_data$spec_info$nuclease_profiles
 supp_data <- eval_data$spec_info$supp_data
 
 ## Consolidate supplementary data ----
-spec_overview <- eval_data$spec_info$spec_overview
+spec_overview <- eval_data$spec_info$spec_overview %>%
+  dplyr::select(-run_set)
 
 cond_overview <- eval_data$spec_info$cond_overview
 
