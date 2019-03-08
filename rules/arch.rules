@@ -2,25 +2,6 @@
 # Architecture Rules
 # Related to setting up analysis directories and consolidating data
 
-rule setup_working_dir:
-  input: "configs/" + RUN + ".config.yml"
-  output: directory("analysis/" + RUN)
-  shell:
-    """
-    WORK_DIR="{ROOT_DIR}/analysis/{RUN}"
-    mkdir ${{WORK_DIR}}
-    cd ${{WORK_DIR}}
-    ln -s ../../{input} config.yml
-    mkdir input_data
-    mkdir logs
-    mkdir process_data
-    mkdir output
-    mkdir reports
-    cd ../
-
-    echo "'{RUN}' setup has completed."
-    """
-
 rule generate_stat_matrix:
   input:
     demulti=RUN_DIR + "/process_data/" + RUN + ".demulti.stat",
@@ -45,6 +26,8 @@ rule generate_stat_matrix:
   params:
     dir=RUN_DIR + "/process_data",
     tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell:
     """
     Rscript {params.tool} {params.dir} -o {output}

@@ -90,6 +90,7 @@ Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
 
 # Memory Management (in MB units)
+defaultMB : 2000
 demultiMB : 16000
 trimMB : 4000
 filtMB : 4000
