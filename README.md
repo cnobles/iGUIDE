@@ -106,6 +106,13 @@ conda deactivate
 
 ### Changelog:
 
+**v0.9.8 (March 8th, 2019)**
+
+* iGUIDE can now support non-Cas9 nucleases as well!
+  + Implemented nuclease profiles into configs
+  + Updated assimilation, evaluation, and reporting scripts
+* Added default resources to allow simpler HPC processing.
+
 **v0.9.7 (March 6th, 2019)**
 
 * Hotfix to workflow.
