@@ -306,8 +306,13 @@ nuc_profiles <- eval_data$spec_info$nuclease_profiles
 supp_data <- eval_data$spec_info$supp_data
 
 ## Consolidate supplementary data ----
-spec_overview <- eval_data$spec_info$spec_overview %>%
-  dplyr::select(-run_set)
+spec_overview <- eval_data$spec_info$spec_overview
+
+if( length(unique(spec_overview$run_set)) == 1 ){
+  spec_overview <- dplyr::select(spec_overview, -run_set)
+}else{
+  spec_overview <- dplyr::rename(spec_overview, "Run Name" = run_set)
+}
 
 cond_overview <- eval_data$spec_info$cond_overview
 

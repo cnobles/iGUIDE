@@ -6,7 +6,7 @@
 #' within a data.frame).
 #' Names with ".": arguments / options for functions
 
-options(stringsAsFactors = FALSE, scipen = 99, width = 999)
+options(stringsAsFactors = FALSE, scipen = 99, width = 180)
 
 
 # Set up and gather command line arguments ----
@@ -291,6 +291,38 @@ specimen_levels <- unique(sample_info$specimen)
 sample_info$specimen <- factor(sample_info$specimen, levels = specimen_levels)
 
 
+## Load in supporting information ----
+if( length(args$support) > 0 ){
+  
+  if( file.exists(file.path(root_dir, args$support)) ){
+    support_path <- file.path(root_dir, args$support)
+  }else if( file.exists(args$support) ){
+    support_path <- args$support
+  }else{
+    stop("\n  Cannot find supporting data file: ", args$support, ".\n")
+  }
+  
+  supp_data <- data.table::fread(support_path, data.table = FALSE) %>%
+    dplyr::mutate(run_set = "supp_data")
+  
+  specimen_levels <- supp_data$specimen[supp_data$specimen %in% specimen_levels]
+  
+  supp_data <- dplyr::filter(supp_data, specimen %in% specimen_levels) %>%
+    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels))
+  
+  sample_info <- dplyr::filter(sample_info, specimen %in% specimen_levels) %>%
+    dplyr::mutate(
+      specimen = factor(as.character(specimen), levels = specimen_levels)
+    ) %>%
+    dplyr::arrange(specimen)
+  
+}else{
+  
+  supp_data <- data.frame()
+  
+}
+
+
 ## Identify on-target edit sites from config files
 on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites"))
 names(on_targets) <- stringr::str_replace(
@@ -320,7 +352,7 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
   )
   
   if( length(info_col) != 1 ){
-    stop("Cannot parse treatment data. Check config yaml and sampleInfo.")
+    stop("\n  Cannot parse treatment data. Check config yaml and sampleInfo.\n")
   }
   
   treatment_df <- data.frame(
@@ -329,16 +361,17 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
       treatment = sample_info[,info_col]
     ) %>%
     dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
-      specimen = factor(specimen, levels = specimen_levels)
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
     ) %>%
+    dplyr::filter(specimen %in% specimen_levels) %>%
+    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
     dplyr::distinct(run_set, specimen, treatment) %>%
     dplyr::arrange(specimen) %>%
     dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
     dplyr::select(run_set, specimen, treatment)
   
   treatment <- strsplit(treatment_df$treatment, ";")
-  names(treatment) <- treatment_df$specimen
+  names(treatment) <- as.character(treatment_df$specimen)
   
 }else if( any(grepl("all", names(treatments[[1]]))) ){
   
@@ -348,9 +381,10 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
       treatment = unique(unlist(treatments))
     ) %>%
     dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
-      specimen = factor(specimen, levels = specimen_levels)
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
     ) %>%
+    dplyr::filter(specimen %in% specimen_levels) %>%
+    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
     dplyr::distinct(run_set, specimen, treatment) %>%
     dplyr::arrange(specimen) %>%
     dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
@@ -363,7 +397,7 @@ if( any(grepl("sampleInfo:", treatments[[1]])) ){
   
   stop(
     "\n  Treatment information not accurately parsed from config(s).\n", 
-    "  Check config(s) formating."
+    "  Check config(s) formating.\n"
   )
   
 }
@@ -396,11 +430,12 @@ if( any(grepl("sampleInfo:", nucleases[[1]])) ){
     run_set = sample_info$run_set,
     sampleName = sample_info[,sample_name_col], 
     nuclease = sample_info[,info_col]
-  ) %>%
-    dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
-      specimen = factor(specimen, levels = specimen_levels)
     ) %>%
+    dplyr::mutate(
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
+    ) %>%
+    dplyr::filter(specimen %in% specimen_levels) %>%
+    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
     dplyr::distinct(run_set, specimen, nuclease) %>%
     dplyr::arrange(specimen) %>%
     dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
@@ -415,11 +450,12 @@ if( any(grepl("sampleInfo:", nucleases[[1]])) ){
     run_set = sample_info$run_set,
     sampleName = sample_info[,sample_name_col], 
     nuclease = unique(unlist(nucleases))
-  ) %>%
-    dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+"),
-      specimen = factor(specimen, levels = specimen_levels)
     ) %>%
+    dplyr::mutate(
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
+    ) %>%
+    dplyr::filter(specimen %in% specimen_levels) %>%
+    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
     dplyr::distinct(run_set, specimen, nuclease) %>%
     dplyr::arrange(specimen) %>%
     dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
@@ -432,7 +468,7 @@ if( any(grepl("sampleInfo:", nucleases[[1]])) ){
   
   stop(
     "\n  Nuclease information not accurately parsed from config(s).\n", 
-    "  Check config(s) formating."
+    "  Check config(s) formating.\n"
   )
   
 }
@@ -510,50 +546,19 @@ pam_seqs_df <- data.frame(
 
 
 ## Combine into a single table for output
-combn_tbl <- combn_tbl %>%
+considered_target_seqs <- unique(unlist(treatment))
+considered_nucleases <- unique(unlist(nuclease))
+
+target_tbl <- combn_tbl %>%
   dplyr::left_join(target_seqs_df, by = c("run_set", "target")) %>%
-  dplyr::left_join(pam_seqs_df, by = c("run_set", "nuclease"))
+  dplyr::left_join(pam_seqs_df, by = c("run_set", "nuclease")) %>%
+  dplyr::filter(
+    target %in% considered_target_seqs & nuclease %in% considered_nucleases
+    )
 
 ### Log combination treatment table
 cat("\nTarget Sequence Table:\n")
-print(combn_tbl, right = FALSE, row.names = FALSE)
-
-
-## Load in supporting information ----
-if( length(args$support) > 0 ){
-  
-  if( file.exists(file.path(root_dir, args$support)) ){
-    support_path <- file.path(root_dir, args$support)
-  }else if( file.exists(args$support) ){
-    support_path <- args$support
-  }else{
-    stop("\n  Cannot find supporting data file: ", args$support, ".\n")
-  }
-  
-  supp_data <- data.table::fread(support_path, data.table = FALSE)
-  specimen_levels <- supp_data$specimen[supp_data$specimen %in% specimen_levels]
-  
-  supp_data <- dplyr::filter(supp_data, specimen %in% specimen_levels) %>%
-    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels))
-  
-  treatment_df <- dplyr::filter(treatment_df, specimen %in% specimen_levels) %>%
-    dplyr::mutate(
-      specimen = factor(as.character(specimen), levels = specimen_levels)
-    ) %>%
-    dplyr::arrange(specimen)
-  
-  treatment <- treatment[names(treatment) %in% specimen_levels]
-  sample_info <- dplyr::filter(sample_info, specimen %in% specimen_levels) %>%
-    dplyr::mutate(
-      specimen = factor(as.character(specimen), levels = specimen_levels)
-    ) %>%
-    dplyr::arrange(specimen)
-  
-}else{
-  
-  supp_data <- data.frame()
-  
-}
+print(target_tbl, right = FALSE, row.names = FALSE)
 
 
 ## Consolidate supplementary data ----
@@ -566,7 +571,7 @@ if( is.null(args$support) ){
 cond_overview <- spec_overview %>%
   dplyr::mutate(
     condition = vcollapse(
-      d = dplyr::select(spec_overview, -specimen), 
+      d = dplyr::select(spec_overview, -run_set, -specimen), 
       sep = " - ", 
       fill = "NA"
     ),
@@ -608,15 +613,12 @@ input_data <- lapply(
   function(x) x[x$specimen %in% spec_overview$specimen,] 
 )
 
-## Updating associated data
-# on_targets, target_seqs
-considered_target_seqs <- unique(unlist(treatment))
-target_tbl <- dplyr::filter(combn_tbl, target %in% considered_target_seqs)
+## Updating on-target data if needed
 on_targets <- on_targets[names(on_targets) %in% considered_target_seqs]
 
 
 # Beginnin analysis ----
-cat("Starting analysis...\n")
+cat("\nStarting analysis...\n")
 
 ## Specimen summary ----
 # Summarize components and append to specimen table

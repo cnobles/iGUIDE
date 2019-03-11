@@ -89,7 +89,8 @@ def main( argv = sys.argv ):
     )
 
     parser.add_argument(
-        "-t", "--format", nargs = 1, choices=["pdf", "html"], default = "html",
+        "-t", "--format", nargs = 1, 
+        choices=["pdf", "html"], default = ["html"],
         help = str(
             "Output format for report. Either 'pdf' or 'html' (default). "
             "Will append the appropriate extension to the output file name."
@@ -228,6 +229,7 @@ def main( argv = sys.argv ):
         r_comps.append("-d")
     if args.graphic:
         r_comps.append("-g")
+    r_comps = r_comps + ["-t"] + args.format
     r_comps = r_comps + ["--template", str(r_template)]
     r_comps = r_comps + ["--iguide_dir", str(iguide_directory)]
 
