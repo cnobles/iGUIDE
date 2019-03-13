@@ -1234,6 +1234,104 @@ calcCutSite <- function(sites, matched.seqs, upstream.flank,
   
 }
 
+#' Expand position range notation to position identifier strings
+#' 
+#' @usage expandPosStr(posStr, delim = ":")
+#' 
+#' @param pos.str character vector of position strings, in the format of seqname,
+#' orientation, and position. For position, if two numbers are given, then they 
+#' specify a range that will be expanded. For orientation, "+" and "-" indicates
+#' the possible orientation, but if "*" is used, then the posStr will be 
+#' expanded to "+" and "-".
+#' 
+#' @param delim character string indicating the symbol delimiting the 
+#' information within `posStr`. A range should always be delimited by a "-" 
+#' between two numbers.
+#' 
+#' @param return character string of either "vector" (default) or "list", 
+#' indicating the type of output that is returned from the function. The vector
+#' option will return a single vector of all possible position strings for the 
+#' given input, while the list option will return a listed object where each 
+#' object in the list is related to the expansion of the input. If the 
+#' input object is named, then the vecotr / list names will be the same as the 
+#' input names, otherwise the vector / list will be unnamed. 
+#' 
+#' @description Given position strings and string ranges, for example 
+#' "chr2:+:392" and "chr2:+:392-394", expand to all possible position strings
+#' of the format seqnames, orientation ("+"/"-"), and position delimited by the
+#' symbol included as `delim`. Orientation will also be expanded. For example,
+#' "chr2:+:392-394" will be expanded to "chr2:+:392", "chr2:+:393", and 
+#' "chr2:+:394". Additionally, "chr2:*:392" will be expanded to "chr2:+:392" and
+#' "chr2:-:392".
+#' 
+expandPosStr <- function(pos.str, delim = ":", return = "vector"){
+  
+  # Check
+  if( !return %in% c("vector", "list") ){
+    stop("\n  Output from expandPosStr must be either 'vector' or 'list'.\n")
+  }
+  
+  # Split input into a matrix
+  pos_mat <- stringr::str_split(
+    pos.str, pattern = delim, n = 3, simplify = TRUE
+  )
+  
+  # Expand matrix based on orientation
+  exp_ort <- lapply(pos_mat[, 2, drop = TRUE], function(x){
+    if( x %in% c("+", "-")){
+      return(x)
+    }else{
+      return(c("+", "-"))
+    }
+  })
+  
+  pos_mod <- pos_mat[rep(seq_along(pos.str), lengths(exp_ort)), , drop = FALSE]
+  pos_mod[,2] <- unlist(exp_ort)
+  
+  # Expand the matrix based on position ranges
+  exp_pos <- stringr::str_split(
+    pos_mod[, 3, drop = TRUE], pattern = "-", simplify = FALSE
+  )
+  
+  exp_pos <- lapply(exp_pos, function(x){
+    x <- as.numeric(x)
+    if( length(x) == 1 ) x <- c(x, x)
+    seq(from = x[1], to = x[2])
+  })
+  
+  pos_mod <- pos_mod[
+    rep(seq_len(nrow(pos_mod)), lengths(exp_pos)), , drop = FALSE
+  ]
+  
+  pos_mod[,3] <- unlist(exp_pos)
+  
+  # Expand names if needed and return character vector of position strings
+  if( !is.null(names(pos.str)) ){
+    
+    nam <- names(pos.str)[rep(seq_along(pos.str), lengths(exp_ort))]
+    nam <- nam[rep(seq_along(nam), lengths(exp_pos))]
+    
+    if( return == "vector" ){
+      return(structure(vcollapse(pos_mod, sep = delim), names = nam))
+    }else if( return == "list" ){
+      return(split(vcollapse(pos_mod, sep = delim), nam))
+    }
+    
+  }else{
+    
+    idx <- rep(seq_along(pos.str), lengths(exp_ort))
+    idx <- idx[rep(seq_along(idx), lengths(exp_pos))]
+    
+    if( return == "vector" ){
+      return(vcollapse(pos_mod, sep = delim))
+    }else if( return == "list" ){
+      return(unname(split(vcollapse(pos_mod, sep = delim), idx)))
+    }
+    
+  }
+  
+}
+
 #' Filter out inappropriate comparisons based on experimental conditions
 #' 
 #' @usage filterInappropriateComparisons(guideRNA.match, specimen, treatment)

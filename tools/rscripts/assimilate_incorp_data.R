@@ -746,7 +746,7 @@ cat(paste0("\nTotal number of templates: ", nrow(algnmts), "\n"))
 probable_algns <- algnmts[idx_combined,]
 
 probable_algns$on.off.target <- ifelse(
-  probable_algns$edit.site %in% unlist(on_target_sites), 
+  probable_algns$edit.site %in% expandPosStr(unlist(on_target_sites)), 
   "On-target", 
   "Off-target"
 )
@@ -854,13 +854,13 @@ if( nrow(paired_regions) > 0 ){
     dplyr::mutate(
       on.off.target = ifelse(
         any(sapply(
-          unlist(on_target_sites[
+          expandPosStr(unlist(on_target_sites[
             which(
               stringr::str_extract(
                 names(on_target_sites), "[\\w\\-\\_\\.]+") %in% 
-                  treatment[[specimen]]
+              treatment[[specimen]]
             )
-          ]),
+          ])),
           function(x, seq, st, en){
             
             match_seq <- seq == stringr::str_extract(x, "[\\w]+")

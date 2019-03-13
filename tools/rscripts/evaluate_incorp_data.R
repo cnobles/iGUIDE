@@ -694,8 +694,12 @@ tbl_ot_algn <- input_data$algnmts %>%
   ) %>%
   dplyr::group_by(specimen) %>%
   dplyr::summarise(
-    ot_algns = pNums(sum(contrib * as.integer(edit.site %in% on_targets))),
-    ot_algns_pct = 100 * sum(contrib * as.integer(edit.site %in% on_targets)) /
+    ot_algns = pNums(
+      sum(contrib * as.integer(edit.site %in% expandPosStr(on_targets)))
+    ),
+    ot_algns_pct = 100 * sum(
+        contrib * as.integer(edit.site %in% expandPosStr(on_targets))
+      ) /
       sum(contrib)
   ) %>%
   dplyr::ungroup() %>% 
@@ -708,8 +712,12 @@ tbl_ot_prob <- input_data$probable_algns %>%
   ) %>%
   dplyr::group_by(specimen) %>%
   dplyr::summarise(
-    ot_prob = pNums(sum(contrib * as.integer(edit.site %in% on_targets))),
-    ot_prob_pct = 100 * sum(contrib * as.integer(edit.site %in% on_targets)) /
+    ot_prob = pNums(
+      sum(contrib * as.integer(edit.site %in% expandPosStr(on_targets)))
+    ),
+    ot_prob_pct = 100 * sum(
+        contrib * as.integer(edit.site %in% expandPosStr(on_targets))
+      ) /
       sum(contrib)
   ) %>%
   dplyr::ungroup() %>% 
@@ -722,8 +730,12 @@ tbl_ot_pile <- input_data$pile_up_algns %>%
   ) %>%
   dplyr::group_by(specimen) %>%
   dplyr::summarise(
-    ot_pile = pNums(sum(contrib * as.integer(edit.site %in% on_targets))),
-    ot_pile_pct = 100 * sum(contrib * as.integer(edit.site %in% on_targets)) /
+    ot_pile = pNums(
+      sum(contrib * as.integer(edit.site %in% expandPosStr(on_targets)))
+    ),
+    ot_pile_pct = 100 * sum(
+        contrib * as.integer(edit.site %in% expandPosStr(on_targets))
+      ) /
       sum(contrib)
   ) %>%
   dplyr::ungroup() %>% 
@@ -864,7 +876,7 @@ tbl_ft_algn <- input_data$algnmts %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
-  dplyr::filter(!edit.site %in% on_targets) %>%
+  dplyr::filter(!edit.site %in% expandPosStr(on_targets)) %>%
   dplyr::group_by(specimen) %>%
   dplyr::summarise(ft_algns = dplyr::n_distinct(clus.ori)) %>%
   dplyr::ungroup() %>% 

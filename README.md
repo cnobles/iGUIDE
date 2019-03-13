@@ -106,12 +106,15 @@ conda deactivate
 
 ### Changelog:
 
-**v0.9.8 (March 8th, 2019)**
+**v0.9.8 (March 13th, 2019)**
 
 * iGUIDE can now support non-Cas9 nucleases as well!
   + Implemented nuclease profiles into configs
   + Updated assimilation, evaluation, and reporting scripts
-* Added default resources to allow simpler HPC processing.
+* Added default resources to allow simpler HPC processing
+* Included flexible system for identifying on-target sites
+  + Config can accept a range rather than a single site
+  + Acceptable notation: chr4:+:397-416 and chr3:*:397
 
 **v0.9.7 (March 6th, 2019)**
 

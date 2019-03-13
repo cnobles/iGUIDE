@@ -75,14 +75,14 @@ ssanmat <- function(){
         "K", "M", "B", "V", "H", "D", "N")))
 }
 
-#' A Unsymmetric Scaled Ambiguous Nucleotide scoring Matrix (USAN Mat)
+#' An Asymmetric Scaled Ambiguous Nucleotide scoring Matrix (USAN Mat)
 #' 
 #' @usage usanmat()
 #' 
 #' @description Meant for comparing ambiguous sequences against other sequences
 #' possibly containing ambiguous nucleotides. The scores are scaled between 0
 #' and 1 for ambiguous matches based on overlaping proportions and the matrix is
-#' unsymmetric. This is meant for proper scoreing between different ambiguous
+#' asymmetric. This is meant for proper scoreing between different ambiguous
 #' bases. For example, comparing a "S" (meaning a "C" or "G") to a "V" (meaning
 #' a "C", "G", or "A") would be if either nucleotide was chosen (score = 1), but
 #' comparing a "V" to an "S" would only be correct 2 out of three times 
@@ -91,7 +91,7 @@ ssanmat <- function(){
 #' 
 #' @author Christopher Nobles, Ph.D.
 
-usanmat <- function(){
+asanmat <- function(){
   matrix(c(
     # A T G C  S     W     R     Y     K     M     B     V     H     D     N
     1,0,0,0, 0   , 1   , 1   , 0   , 0   , 1   , 0   , 1   , 1   , 1   , 1, #A

@@ -143,13 +143,17 @@ Target sequence information
   format should follow ``{target_name} : "{seqname}:{+/-}:{position}"``, where 
   'target_name' matches the name of the given target sequence, and if multiple 
   on-target sites exist, then the names can be expanded using a 
-  ``{target_name}'#`` notation. The value for each on-target site specifies the 
-  location or genomic coordinates of nuclease activity. The 'seqname' indicates 
-  the chromosome or sequence name, an orientation of '+' or '-' is given to the 
-  location depending on the editing orientation (in line with positional 
-  numbering is '+' and opposite is '-'), and the 'position' indicates the 
-  nucleotide of editing. For Cas9, the position of editing is commonly between 
-  the 3rd and 4th nucleotide from the 3' end of the targeting sequence 
+  ``{target_name}'#`` notation. Additionally, the notation can be expanded to
+  ``{target_name} : "{seqname}:{+/-/*}:{min.position}-{max.position}"``, where
+  '*' indicates either orientation and 'min.position' and 'max.position' 
+  represent the numerical range for the on-target site. The value for each 
+  on-target site specifies the location or genomic coordinates of nuclease 
+  activity. The 'seqname' indicates the chromosome or sequence name, an 
+  orientation of '+' or '-' is given to the location depending on the editing 
+  orientation (in line with positional numbering is '+' and opposite is '-', 
+  unknown or both is '*'), and the 'position' or 'min/max.position' indicates 
+  the nucleotide(s) of editing. For Cas9, the position of editing is commonly 
+  between the 3rd and 4th nucleotide from the 3' end of the targeting sequence 
   (not including the PAM). Being off by a nucleotide or so will not cause any 
   problems. Example below.
   
@@ -160,8 +164,8 @@ Target sequence information
       TRBC.4'1 : "chr7:+:142792020"
       TRBC.4'2 : "chr7:+:142801367"
       PD1.3 : "chr2:-:241858808"
-      TRAC.3.4 : "chr14:-:22550626"
-      B2M.3 : "chr15:-:44711569"
+      TRAC.3.4 : "chr14:-:22550616-22550625"
+      B2M.3 : "chr15:*:44711569-44711570"
       CIITA.15.1 : "chr16:+:10916399"
 
 
