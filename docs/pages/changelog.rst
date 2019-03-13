@@ -15,6 +15,8 @@ ChangeLog
 * Included flexible system for identifying on-target sites
   + Config can accept a range rather than a single site
   + Acceptable notation: chr4:+:397-416 and chr3:*:397
+* Changed build nomenclature from v0.9.3 to b0.9.3
+  + So as not to confuse with version
 
 **v0.9.7 (March 6th, 2019)**
 
