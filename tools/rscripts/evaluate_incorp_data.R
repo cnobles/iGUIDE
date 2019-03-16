@@ -41,6 +41,11 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "-q", "--quiet", action = "store_true", 
+  help = "Hide standard output messages."
+)
+
+parser$add_argument(
   "--iguide_dir", nargs = 1, type = "character", default = "IGUIDE_DIR",
   help = "iGUIDE install directory path, do not change for normal applications."
 )
@@ -83,17 +88,20 @@ input_table <- input_table[
     input_table$Variables),
 ]
 
-cat("\niGUIDE Evaluation Inputs:\n")
+if( !args$quiet ){
+  
+  cat("\niGUIDE Evaluation Inputs:\n")
+  
+  print(
+    data.frame(input_table),
+    right = FALSE, 
+    row.names = FALSE
+  )
 
-print(
-  data.frame(input_table),
-  right = FALSE, 
-  row.names = FALSE
-)
-
+}
 
 # Load dependancies ----
-cat("\nLoading dependencies.\n")
+if( !args$quiet ) cat("\nLoading dependencies.\n")
 
 add_packs <- c("magrittr", "knitr")
 
@@ -126,7 +134,7 @@ source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
 
 
 # Import metadata and consolidate objects ----
-cat("Importing experimental data and configurations.\n\n")
+if( !args$quiet ) cat("Importing experimental data and configurations.\n\n")
 
 ## Load config files
 configs <- lapply(args$config, function(x){
@@ -223,26 +231,26 @@ build_version <- list.files(file.path(root_dir, "etc")) %>%
 
 
 ## Load reference files
-ref_genes <- loadRefFiles(
+ref_genes <- suppressMessages(loadRefFiles(
   configs[[1]]$refGenes, 
   type = "GRanges", 
   freeze = configs[[1]]$Ref_Genome,
   root = root_dir
-)
+))
 
-onco_genes <- loadRefFiles(
+onco_genes <- suppressMessages(loadRefFiles(
   configs[[1]]$oncoGeneList, 
   type = "gene.list", 
   freeze = configs[[1]]$Ref_Genome,
   root = root_dir
-)
+))
 
-special_genes <- loadRefFiles(
+special_genes <- suppressMessages(loadRefFiles(
   configs[[1]]$specialGeneList, 
   type = "gene.list", 
   freeze = config[[1]]$Ref_Genome,
   root = root_dir
-)
+))
 
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 
@@ -557,8 +565,10 @@ target_tbl <- combn_tbl %>%
     )
 
 ### Log combination treatment table
-cat("\nTarget Sequence Table:\n")
-print(target_tbl, right = FALSE, row.names = FALSE)
+if( !args$quiet ){
+  cat("\nTarget Sequence Table:\n")
+  print(target_tbl, right = FALSE, row.names = FALSE)
+}
 
 
 ## Consolidate supplementary data ----
@@ -618,7 +628,7 @@ on_targets <- on_targets[names(on_targets) %in% considered_target_seqs]
 
 
 # Beginnin analysis ----
-cat("\nStarting analysis...\n")
+if( !args$quiet ) cat("\nStarting analysis...\n")
 
 ## Specimen summary ----
 # Summarize components and append to specimen table
@@ -1166,7 +1176,7 @@ if( is.null(args$support) ){
   
 }
 
-cat("Analysis complete.\nStarting report generation...\n")
+if( !args$quiet ) cat("Analysis complete.\nStarting report generation...\n")
 
 # Data consolidated for output object ----
 set_names <- ifelse(
@@ -1226,7 +1236,9 @@ saveRDS(
 if( !file.exists(args$output) ){
   stop("\n  Cannot verify existence of output file: ", args$output, "\n")
 }else{
-  cat("Evaluation complete, output writen to:", args$output, "\n")
+  if( !args$quiet ){
+    cat("Evaluation complete, output writen to:", args$output, "\n")
+  }
   q(status = 0)
 }
 
