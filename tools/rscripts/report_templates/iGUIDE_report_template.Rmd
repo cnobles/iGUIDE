@@ -483,7 +483,7 @@ if( args$format == "pdf" ){
 
 ## Off-target sequence comparison
 
-Off-target sites are identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the target matched sites are displayed below in Figure 3 along with the number of mismatches to the targeting sequence (`mismatch`), an indication if the site is associated with an on- or off-target location (`target`), the total number of unique alignments associated with the site (`algns`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`gene_id`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `gene_id` is the nearest gene to the genomic location. Further, symbols after the gene name indicate: `*` that the site is within the transcription unit of the gene, `~` the gene appears on the cancer-association list, `!` and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
+Off-target sites can be identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the target matched sites are displayed below in Figure 3 along with the number of mismatches to the targeting sequence (`Mismatch`), an indication if the site is associated with an on- or off-target location (`Target`), the total number of unique alignments associated with the site (`Abund.`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`Gene_ID`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `Gene_ID` is the nearest gene to the genomic location. Further, symbols after the gene name indicate: `*` that the site is within the transcription unit of the gene, `~` the gene appears on the cancer-association list, `!` and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
 
 ```{r off_target_seqs, out.width="100%"}
 ft_seq_plots <- lapply(
@@ -516,6 +516,10 @@ ft_seq_plots <- lapply(
     
     dplyr::select(
         y, aligned.sequence, mismatch, target, aligns, MESL, gene_id
+      ) %>%
+      dplyr::rename(
+        "Mismatch" = mismatch, "Target" = target, 
+        "Abund." = aligns, "Gene_ID" = gene_id
       ) %>%
       dplyr::mutate(MESL = format(round(MESL, digits = 1))) %>%
       plotSeqDiverge(
@@ -602,3 +606,43 @@ if( args$format == "pdf"){
 cat(fig_caps[3]) 
 ```
 
+```{r} 
+if( args$format == "pdf" ){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+## Off-target site tables
+
+```{r off_target_tbls}
+
+null <- lapply(seq_along(ft_seqs_list), function(i){
+  
+  cat(paste0("**Table ", i+5, ". Off-Target Loci: ", names(ft_seqs_list)[i], "**"))
+
+  df <- dplyr::select(
+      ft_seqs_list[[i]], target, gene_id, edit.site, aligns, MESL, 
+      aligned.sequence, mismatch
+    ) %>%
+    dplyr::mutate(
+      aligned.sequence = divSeq(aligned.sequence, aligned.sequence[1])
+    ) %>%
+    dplyr::rename(
+      "Target" = target, "Gene ID" = gene_id, "Edit Site" = edit.site,
+      "Abund." = aligns, "Aligned Sequence" = aligned.sequence,
+      "Mismatch" = mismatch
+    )
+  
+  pander::pandoc.table.return(
+      t = df,
+      style = "simple",
+      emphasize.verbatim.cols = 6,
+      justify = c(rep("centre", 3), "right", "right", "centre", "centre")
+    ) %>%
+    cat()
+  
+})
+
+```

@@ -29,6 +29,7 @@ dependencies:
   - r-scales
   - r-rcolorbrewer
   - r-digest
+  - r-statmod
   - r-devtools
   - bioconductor-biocgenerics
   - bioconductor-iranges

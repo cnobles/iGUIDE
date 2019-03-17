@@ -150,7 +150,10 @@ def main( argv = sys.argv ):
 
     # Evaluate first if required
     if eval_first:
-        final_output = "".join(args.output)
+        if args.output is None:
+            final_output = "".join(args.config)
+        else: #!!!!!!!!!!!!!!
+            final_output = "".join(args.output)
         final_path = final_output.split("/")
         final_path.remove(final_path[len(final_path)-1])
         output_path = Path("/".join(final_path))
