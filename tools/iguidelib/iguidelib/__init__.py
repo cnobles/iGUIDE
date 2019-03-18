@@ -1,4 +1,4 @@
-from os import getenv, getcwd, path
+from os import getenv, getcwd, path, chdir
 from subprocess import run, PIPE
 
 def import_sample_info(filePath, sampleColName, delim):
@@ -31,9 +31,9 @@ def choose_sequence_data(config_input, sampleInfo):
     return seq
 
 def get_iguide_version(with_hash = False):
-    iguide_version_path = getenv("IGUIDE_DIR", "None")
-    
-    if iguide_version_path in ["None"]:
+    iguide_path = getenv("IGUIDE_DIR", None)
+
+    if iguide_path is None:
         raise SystemExit(
           print("  IGUIDE_DIR cannot be found as an environmental variable.\n"
                 "  Check to make sure your iGUIDE environment is active,   \n"
@@ -41,8 +41,8 @@ def get_iguide_version(with_hash = False):
                 "  reinstall iGUIDE with the install.sh script.")
         )
     else:
-        iguide_version_path = iguide_version_path + "/.version"
-    
+        iguide_version_path = iguide_path + "/.version"
+
     if not path.exists(iguide_version_path):
         raise SystemExit(
           print("  iGUIDE version cannot be located. Check environmental\n"
@@ -50,15 +50,20 @@ def get_iguide_version(with_hash = False):
                 "  to restart your environment, update, or reinstall    \n"
                 "  iGUIDE using the install.sh script.")
         )
-    
+
     iguide_version = open(iguide_version_path, "r").readlines()[0].rstrip()
-    
+
+    wd = getcwd()
+    chdir(str(iguide_path))
+
     commit_hash = run(
       ["git", "rev-parse", "--short", "HEAD"], stdout=PIPE
     )
-    
+
+    chdir(wd)
+
     commit_str = commit_hash.stdout.decode('utf-8').rstrip()
-    
+
     if with_hash:
         return iguide_version + "+" + commit_str
     else:
