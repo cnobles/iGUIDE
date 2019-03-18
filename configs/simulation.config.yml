@@ -90,14 +90,14 @@ Genomic_Reads : ["R1", "R2"]
 
 # Memory Management (in MB units)
 defaultMB : 2000
-demultiMB : 16000
-trimMB : 4000
+demultiMB : 40000
+trimMB : 8000
 filtMB : 4000
 consolMB : 4000
-alignMB : 4000
-coupleMB : 4000
-assimilateMB : 4000
-evaluateMB : 4000
+alignMB : 20000
+coupleMB : 16000
+assimilateMB : 16000
+evaluateMB : 8000
 reportMB : 4000
 
 # Demultiplexing parameters
