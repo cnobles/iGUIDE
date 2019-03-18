@@ -32,3 +32,17 @@ rule generate_stat_matrix:
     """
     Rscript {params.tool} {params.dir} -o {output}
     """
+
+rule gen_stat_report:
+  input: RUN_DIR + "/output/stats." + RUN + ".csv"
+  output: RUN_DIR + "/reports/runstats." + RUN + ".html"
+  params: 
+    tool = ROOT_DIR + "/tools/rscripts/write_stat_report.R",
+    config = RUN_DIR + "/" + "config.yml"
+  log: RUN_DIR + "/logs/" + RUN + ".runstats.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output} -c {params.config} > {log} 2>&1
+    """

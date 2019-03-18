@@ -103,7 +103,7 @@ rule all:
       uniq_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
       incorp_sites=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
       report=RUN_DIR + "/reports/report." + RUN + ".html",
-      stats=RUN_DIR + "/output/stats." + RUN + ".csv"
+      stats=RUN_DIR + "/reports/runstats." + RUN + ".html"
 
 # Architecture Rules
 include: "rules/arch.rules"

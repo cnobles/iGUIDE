@@ -227,7 +227,7 @@ soft_version <- as.character(read.delim(
 
 build_version <- list.files(file.path(root_dir, "etc")) %>%
   grep(pattern = "build.b[0-9\\.]+.*", x = ., value = TRUE) %>%
-  stringr::str_extract(pattern = "b[0-9]+\\.[0-9]+.[0-9]+")
+  stringr::str_extract(pattern = "b[0-9]+\\.[0-9]+\\.[0-9]+")
 
 
 ## Load reference files
