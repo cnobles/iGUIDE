@@ -6,7 +6,7 @@
 ChangeLog 
 =========
 
-**v0.9.8 (March 13th, 2019)**
+**v0.9.8 (March 18th, 2019)**
 
 * iGUIDE can now support non-Cas9 nucleases as well!
   + Implemented nuclease profiles into configs
