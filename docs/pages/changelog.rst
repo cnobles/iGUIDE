@@ -9,16 +9,24 @@ ChangeLog
 **v0.9.8 (March 18th, 2019)**
 
 * iGUIDE can now support non-Cas9 nucleases as well!
+
   - Implemented nuclease profiles into configs
   - Updated assimilation, evaluation, and reporting scripts
+
 * Added default resources to allow simpler HPC processing
 * Included flexible system for identifying on-target sites
+
   - Config can accept a range rather than a single site
   - Acceptable notation: chr4:+:397-416 and chr3:*:397
+
 * Changed build nomenclature from v0.9.3 to b0.9.3
+
   - So as not to confuse with version
+
 * Added 'summary' subcommand to generate a consise text-based report
+
   - Working in the same manner as 'report', can generate from config(s) or eval file
+
 * Added short stats-based report to be produced at the end of processing
 
 **v0.9.7 (March 6th, 2019)**
@@ -30,12 +38,19 @@ ChangeLog
 **v0.9.6 (March 5th, 2019)**
 
 * Introduced process workflow steps: assimilate and evaluate
+
   - Assimilate aligned data and compare with targeting sequences
+
     + Core data object that can be combined across runs / projects
+
   - Evaluated data incorporates reference data and statistical models
+
     + A staple data object for reports and can be constructed from multiple runs
+
 * Included new subcommands 'eval' and modified 'report'
+
   - report from either config(s) or eval dataset
+
 * Cleaned up file structure
 * Updated documentation in code and docs.
 * Implemented accuracy and retention checks with simulation dataset.
@@ -45,21 +60,28 @@ ChangeLog
 
 * Updated demultiplexing to be more efficient and better HPC compatible.
 * Added RefSeq Extended* reference gene sets
+
   - 'ext' includes curated, predicted, and other RefSeq sets
   - 'ext.nomodel' includes only curated and other RefSeq sets
+
 * Incorporated resource allocation for job dependent memory consumption
+
   - Works great with HPC to specify memory requirements
+
 * Streamlined input for report generation by only requiring config(s)
 
 **v0.9.4 (January 30th, 2019)**
 
 * Updated 'report' utility and formating
+
   - custom templates now accepted
   - included as subcommand, check with 'iguide report -h'
   - pdf and html options report 'nicely' even when printed from either
+
 * Updated build to v0.9.2 to support new formating in report
 * Builds are constructed from spec files rather than yaml requirements
 * Included the 'clean' subcommand to reduce size of processed projects
+
   - after cleaning a project, only terminal data files will remain
 
 **v0.9.3 (January 11th, 2019)**
