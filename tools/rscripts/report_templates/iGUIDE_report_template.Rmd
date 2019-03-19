@@ -506,7 +506,7 @@ ft_seq_plots <- lapply(
     
     ref_seq <- ref_target_seqs[match(unique(x$target.seq), target_tbl$Target)]
     
-    if( !is.null(args$support) ){
+    if( support_present ){
       title <- paste0(unique(x$condition), "\nTarget: ", unique(x$target.seq))
     }else{
       title <- paste0("Target: ", unique(x$target.seq))

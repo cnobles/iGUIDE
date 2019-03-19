@@ -6,7 +6,7 @@
 #' within a data.frame).
 #' Names with ".": arguments / options for functions
 
-options(stringsAsFactors = FALSE, scipen = 99, width = 999)
+options(stringsAsFactors = FALSE, scipen = 99, width = 180)
 
 
 # Set up and gather command line arguments ----
@@ -281,6 +281,8 @@ if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
 sample_info <- eval_data$spec_info$sample_info
 
 specimen_levels <- eval_data$params$specimen_levels
+
+support_present <- nrow(eval_data$spec_info$supp_data) > 0
 
 ## Identify all targets used
 target_tbl <- eval_data$spec_info$target_tbl %>%
