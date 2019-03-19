@@ -33,7 +33,7 @@ iGUIDE configuration
 Memory Management
 """""""""""""""""
 
-``defaultMB / demultiMB / trimMB / filtMB / consolMB / alignMB / coupleMB / processMB / reportMB``
+``defaultMB / demultiMB / trimMB / filtMB / consolMB / alignMB / coupleMB / assimilateMB / evaluateMB / reportMB``
   Controls the amount of memory allocated to each of these processes during 
   snakemake processing. While working on a server or multicored machine, these
   parameters will work internally to help schedule jobs. Each value will act as
