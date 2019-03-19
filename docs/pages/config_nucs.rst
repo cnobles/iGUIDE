@@ -23,10 +23,8 @@ sure you have a profile named "Cas9v2".
 
 Below is some ascii art that indicates the differences between nucleases. 
 Additionally, below the art are example profiles for input into the iGUIDE 
-software.
+software.::
 
-  .. code-block:: shell
-  
   Editing strategies by designer nucleases
   
   Cas9 :
@@ -74,9 +72,7 @@ software.
   TAGGA TACGTACGTACGTACGTACG AATTGGCCAATTGGCC ATGCATGCATGCATGCATGC GCCAG
 
 
-Below are the example profiles:
-  
-  .. code-block:: shell
+Below are the example profiles:::
   
   Nuclease_Profiles :
   Cas9 :
