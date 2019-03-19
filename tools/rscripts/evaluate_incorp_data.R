@@ -858,14 +858,9 @@ if( length(unique(cond_overview$condition)) == 1 ){
   on_tar_dists$condition <- " "
 }
 
-if( is.null(args$support) ){
-  sites_included <- on_tar_dists %>% dplyr::group_by(target)
-}else{
-  sites_included <- on_tar_dists %>% dplyr::group_by(condition, target)
-}
-
-sites_included <- dplyr::summarise(
-    sites_included,
+sites_included <- on_tar_dists %>% 
+  dplyr::group_by(condition, target) %>%
+  dplyr::summarise(
     prop = 100 * sum(cnt[
       abs(edit.site.dist) <= upstream_dist & 
         abs(edit.site.dist) >= -downstream_dist
@@ -1176,7 +1171,6 @@ if( is.null(args$support) ){
   
 }
 
-if( !args$quiet ) cat("Analysis complete.\nStarting report generation...\n")
 
 # Data consolidated for output object ----
 set_names <- ifelse(
