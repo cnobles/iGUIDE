@@ -24,8 +24,8 @@ sure you have a profile named "Cas9v2".
 Below is some ascii art that indicates the differences between nucleases. 
 Additionally, below the art are example profiles for input into the iGUIDE 
 software.
-
 ::
+
   Editing strategies by designer nucleases
   Cas9 :
                    ><   PAM
@@ -38,6 +38,7 @@ software.
   
   
 ::  
+
   Cpf1 : Also known as Cas12a
                           ><         # Dominant cutpoint
   GTTTG ATGCATGCATGCATGCATGCATGCATGC (sense strand)
@@ -48,6 +49,7 @@ software.
                               ><     # Dominant cutpoint
   
 ::  
+
   TALEN : Protin-DNA binding domain fused with FokI nickase
   ATATATATATATATATATAT GCATGCATGCATGCAT GCGCGCGCGCGCGCGCGCGC (sense strand)
   \\\\\\\\\\\\\\\\\\\\
@@ -58,6 +60,7 @@ software.
   # Proteins bind flanking the cleavage site and cut in the "insert" sequence.
   
 ::  
+
   CasCLOVER : Clo051 or another nickases with CRISPR-based binding domains
   ATCCT ATGCATGCATGCATGCATGC TTAACCGGTTAACCGG TACGTACGTACGTACGTACG CGGTC
     ||| ||||||||||||||||||||                              (sense strand)
@@ -68,8 +71,8 @@ software.
 
 
 Below are the example profiles:
-
 ::  
+
   Nuclease_Profiles :
   Cas9 :
     PAM : "NGG"
