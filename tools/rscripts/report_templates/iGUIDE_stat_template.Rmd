@@ -1,0 +1,219 @@
+---
+title: |
+    | iGUIDE Run Stat Report: 
+    |   `r config$Run_Name`
+date: |
+    | report generated : `r Sys.Date()`
+    | software version : `r soft_version`
+    | environment build : `r build_version`
+    | 
+    | author(s): `r signature`
+output: 
+  html_document:
+    toc: false
+    toc_depth: 2
+    toc_float: 
+      collapsed: false
+    number_sections: false
+    fig_caption: true
+    theme: cerulean 
+    highlight: tango
+    smart: false
+  pdf_document:
+    toc: false
+    toc_depth: 2
+    number_sections: false
+    fig_caption: true
+header-includes: 
+  - \usepackage{float}
+  - \usepackage{indentfirst}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{caption}
+  - \setlength{\defaultaddspace}{0em}
+  - \setlength{\parindent}{2em}
+  - \captionsetup{width=6.5in}
+fontsize: 11pt
+geometry: margin=0.5in
+---
+
+```{r setup, include=FALSE}
+packs <- c(
+  "magrittr", "knitr", "scales", "RColorBrewer", "tidyverse", "ggforce", 
+  "pander", "kableExtra"
+)
+
+packs_loaded <- suppressMessages(sapply(packs, require, character.only = TRUE))
+
+if( !all(packs_loaded) ){
+  
+  print(
+    data.frame(
+      "R-Packages" = names(packs_loaded), 
+      "Loaded" = packs_loaded
+    ), 
+    row.names = FALSE
+  )
+  stop("Check dependancies.")
+  
+}
+
+options(
+  stringsAsFactors = FALSE, 
+  scipen = 99, 
+  knitr.table.format = "latex"
+)
+
+panderOptions('table.split.table', Inf)
+
+knitr::opts_chunk$set(
+  echo = FALSE,
+  comment = "",
+  warning = FALSE,
+  error = TRUE,
+  message = FALSE,
+  cache = FALSE,
+  results = "asis",
+  fig.align = "center",
+  fig.pos = "H",
+  fig.width = 7
+)
+
+# Custom theme
+custom_theme <- theme_bw() +
+  theme(
+    panel.background = element_rect(color = "black", fill = "white"),
+    axis.line = element_blank(),
+    axis.ticks = element_line(color = "black"),
+    axis.text = element_text(color = "black"),
+    axis.text.x = element_text(face = "bold", angle = 0),
+    axis.title = element_text(color = "black", face = "bold"),
+    strip.background = element_rect(color = "black", fill = "white"),
+    strip.text = element_text(face = "bold"),
+    panel.grid = element_blank(),
+    legend.key = element_rect(fill = "white"),
+    title = element_text(face = "bold"))
+
+# Captions
+tbl_caps <- c(
+  "Read Attrition - The number of reads associated with respective samples during different steps of processing.",
+  "Alignment Outcomes - Information about the alignments is displayed in the number of aligning reads, number of alignments, or the number of loci. Alignments and loci are associated with uniquely aligning sequences while lengths and clusters are associated with multihit sequences.",
+  "Incorporation Breakdown - The number of unique alignments associated with different characteristic criteria with respect to samples. These criteria are not mutually exclusive and therefore a single alignment can be consided by multiple criteria."
+)
+
+if( output_format == "html_document" ){
+  tbl_caps <- paste0("Table ", seq_along(tbl_caps), ". ", tbl_caps)
+}
+
+tbl_format <- ifelse(output_format == "html_document", "html", "latex")
+
+```
+
+***
+
+# Summary
+
+The following report highlights read attrition, alignment outcomes, and an initial summary of the incorporation breakdown. Below is a short description of each of these pieces of information:
+
+* **Read Attrition (Table 1) :** Initially reads are demultiplexed (demulti) from their sequencing run. These reads are then subjected to a number of processing steps, ranging from trimming to aligning. Table 1 displays the number of reads associated with specimens after demultiplexing and remaining after each of the processing steps have completed. Trimming occurs to remove the linker (R1), primer and dsODN sequences (R2). The number of reads containing an appropriate UMItag sequence are included as `UMItags`. After trimming, reads from R1 and R2 are compared against eachother to filter out non-paired reads remaining. Consolidated (Consol) sequences are unique sequences that occur in either R1 or R2, as each are aligned independently. Alignment yeilds either unique sites, multihits, or artifactual chimeras.
+
+* **Alignment Outcomes (Table 2) :** After alignment, information contained in the sequences is broken down into genomic locations. These can be further processed to understand the number of unique alignments (algns / lengths) and unique genomic locations (loci / clusters). Multihits occur when sequences map legitimately to multiple locations across the genome. Chimeras are sequences that fall outside the alignment specifications or map to seemingly illocgical locations, for example when R2 maps to chromosome 5 and R1 maps to chromosome 19. While this may be considered a translocation, the current software is not designed to handle this type of information and therefore these sequences are removed as they fall outside the scope of this analysis.
+
+* **Incorporation Breakdown (Table 3) :** Double strand breaks (DSBs) are marked by the introduction of the small dsODN and then targeted by amplifying from the dsODN to ligated linker sequences. Therefore, DSBs cannot be identified in this assay unless the dsODN is **incorporated** into the DSB. When looking at incorporations sites, many display a specific characteristics. The numbers in Table 3 represent the number of unique alignments associated with the specific criteria. `Total` refers to all the alignments associated with the samples and should match column 3 of Table 2. `Combined` are the number of alignments that are associated with the following characteristic criteria: `Pileups` are alignments which overlap in the same orientation, `Paired` are alignments that occur in opposite orientation within a short range, `Target-Matched` are alignments with sequences in close proximity to the 5' end of the incorporation that have some similarity to the target sequences (i.e. gRNAs). `Target-Matched` can be further broken down into either `On-target` or `Off-target`.
+
+```{r} 
+if( output_format == "pdf_document" ){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r read_attrition}
+names(read_tbl) <- c(
+  "sampleName", "demulti", "linker", "primer", "dsODN", "UMItags", "filter", 
+  "R1", "R2", "unique", "multihit", "chimera"
+)
+
+read_print <- kable(
+    read_tbl, format = tbl_format, row.names = FALSE, caption = tbl_caps[1], 
+    format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE
+  ) %>%
+  kableExtra::add_header_above(
+    c(" ", " ", "Trimming" = 3, " ", " ", "Consol" = 2, "Alignment" = 3)
+  ) %>%
+  kableExtra::kable_styling(full_width = TRUE)
+
+if( tbl_format == "latex" ){
+  read_print <- kableExtra::kable_styling(
+      read_print, latex_options = c("repeat_header")
+    ) %>%
+    kableExtra::landscape()
+}
+
+read_print
+```
+
+```{r} 
+if( output_format == "pdf_document" ){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r align_outcome}
+names(algn_tbl) <- c(
+  "sampleName", "reads", "algns", "loci", 
+  "reads", "lengths", "clusters", "reads"
+)
+
+algn_print <- kable(
+    algn_tbl, format = tbl_format, row.names = FALSE, caption = tbl_caps[2], 
+    format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE
+  ) %>%
+  kableExtra::add_header_above(
+    c(" ", "Unique" = 3, "Multihit" = 3, "Chimera")
+  ) %>%
+  kableExtra::kable_styling(full_width = TRUE)
+
+if( tbl_format == "latex" ){
+  algn_print <- kableExtra::kable_styling(
+    algn_print, latex_options = c("repeat_header")
+  )
+}
+
+algn_print
+```
+
+```{r} 
+if( output_format == "pdf_document" ){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+```{r on_target_summary}
+names(incorp_tbl) <- c(
+  "sampleName", "Total", "Combined", "Pileups", "Paired", "Total", "On", "Off"
+)
+
+incorp_print <- kable(
+    incorp_tbl, format = tbl_format, row.names = FALSE, caption = tbl_caps[3], 
+    format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE
+  ) %>%
+  kableExtra::add_header_above(
+    c(" " = 5, "Target-Matched" = 3)
+  ) %>%
+  kableExtra::kable_styling(full_width = TRUE)
+
+if( tbl_format == "latex" ){
+  incorp_print <- kableExtra::kable_styling(
+    incorp_print, latex_options = c("repeat_header")
+  )
+}
+
+incorp_print
+```
+

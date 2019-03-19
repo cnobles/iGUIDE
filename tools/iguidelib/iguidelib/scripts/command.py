@@ -9,6 +9,7 @@ from iguidelib.scripts.setup import main as Setup
 from iguidelib.scripts.list_samples import main as ListSamples
 from iguidelib.scripts.evaluate import main as Eval
 from iguidelib.scripts.report import main as Report
+from iguidelib.scripts.summary import main as Summary
 from iguidelib.scripts.clean import main as Clean
 
 def main():
@@ -20,6 +21,7 @@ def main():
         "  run          \tExecute the iGUIDE pipeline.\n"
         "  eval         \tEvaluate a set or sets of assimilated iGUIDE outputs.\n"
         "  report       \tGenerate a custom report from iGUIDE output files.\n"
+        "  summary      \tGenerate a consise summary from iGUIDE output files.\n"
         "  list_samples \tOutput a list of samples from a project.\n"
         "  config       \t[inDev] Modify or update iGUIDE config files.\n"
         "  clean        \tCleanup project directory to reduce size. Keeps terminal files."
@@ -45,7 +47,10 @@ def main():
 
     args, remaining = parser.parse_known_args()
     
-    sub_cmds = ["setup", "run", "eval", "report", "config", "list_samples", "clean"]
+    sub_cmds = [
+        "setup", "run", "eval", "report", 
+        "summary", "config", "list_samples", "clean"
+    ]
     
     if not args.command in sub_cmds:
         parser.print_help()
@@ -59,6 +64,12 @@ def main():
         Setup(remaining)
     elif args.command == "run":
         Run(remaining)
+    elif args.command == "eval":
+        Eval(remaining)
+    elif args.command == "report":
+        Report(remaining)
+    elif args.command == "summary":
+        Summary(remaining)
     elif args.command == "config":
         raise SystemExit(
           print("  'iguide config' subcommand is currently under development.\n"
@@ -69,10 +80,6 @@ def main():
         #Config(remaining)
     elif args.command == "list_samples":
         ListSamples(remaining)
-    elif args.command == "eval":
-        Eval(remaining)
-    elif args.command == "report":
-        Report(remaining)
     elif args.command == "clean":
         Clean(remaining)
     else:

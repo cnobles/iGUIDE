@@ -9,12 +9,13 @@ Initializing a Run
 ------------------
 
 Once the config and sampleInfo files have been configured, a run directory can 
-be created using the command below where {ConfigFile} is the path to your configuration file::
+be created using the command below where {ConfigFile} is the path to your 
+configuration file::
 
   cd path/to/iGUIDE
   iguide setup {ConfigFile}
 
-The directory should look like this (RunName is specified in the ConfigFile}::
+The directory should look like this (RunName is specified in the ConfigFile)::
   
   > tree analysis/{RunName}
   analysis/{RunName}/
@@ -87,18 +88,26 @@ processed using the following command::
 Snakemake offers a great number of resources for managing the processing through 
 the pipeline. I recommend familiarizing yourself with the utility 
 (https://snakemake.readthedocs.io/en/stable/). Here are some helpful snakemake
-options that can be passed to iGUIDE by appending to the iguide command after ``--``:
+options that can be passed to iGUIDE by appending to the iguide command after 
+``--``:
 
-* ``[--configfile X]`` associate a specific configuration for processing, essential for processing but already passed in by ``iguide``.
+* ``[--configfile X]`` associate a specific configuration for processing, 
+  essential for processing but already passed in by ``iguide``.
 * ``[--cores X]`` multicored processing, specified cores to use by X.
 * ``[--nolock]`` process multiple runs a the same time, from different sessions.
 * ``[--notemp]`` keep all temporary files, otherwise removed.
 * ``[--keep-going]`` will keep processing if one or more job error out.
-* ``[-w X, --latency-wait X]`` wait X seconds for the output files to appear before erroring out.
-* ``[--restart-times X]`` X is the number of time to restart a job if it fails. Defaults to 0, but is used in ``iguide`` to increase memory allocation.
-* ``[--resources mem_mb=X]`` Defined resources, for ``iguide`` the mem_mb is the MB units to allow for memory allocation to the whole run. For HPC, this can be coupled with ``--cluster-config`` to request specific resources for each job.
-* ``[--rerun-incomplete, --ri]`` Re-run all jobs that the output is recognized as incomplete, useful if your run gets terminated before finishing.
-* ``[--cluster-config FILE]`` A JSON or YAML file that defines wildcards used for HPC.
+* ``[-w X, --latency-wait X]`` wait X seconds for the output files to appear 
+  before erroring out.
+* ``[--restart-times X]`` X is the number of time to restart a job if it fails. 
+  Defaults to 0, but is used in ``iguide`` to increase memory allocation.
+* ``[--resources mem_mb=X]`` Defined resources, for ``iguide`` the mem_mb is the
+  MB units to allow for memory allocation to the whole run. For HPC, this can be
+  coupled with ``--cluster-config`` to request specific resources for each job.
+* ``[--rerun-incomplete, --ri]`` Re-run all jobs that the output is recognized 
+  as incomplete, useful if your run gets terminated before finishing.
+* ``[--cluster-config FILE]`` A JSON or YAML file that defines wildcards used 
+  for HPC.
 
 
 An Example Run
@@ -114,13 +123,14 @@ terminal, so you can see what snakemake is about to perform. Next, the test data
 is moved to the input directory underneath the new test run directory. Then the 
 entirety of processing can start.::
 
-  # After constructing the config file and having reference files (i.e. sampleinfo)
-  # You can check the samples associated with the run.
+  # After constructing the config file and having reference files 
+  # (i.e. sampleinfo). You can check the samples associated with the run.
   
   iguide list_samples configs/simulation.config.yml
 
   # Create test analysis directory
-  # (The simulation configuration file is used by default and does not need to be specified)
+  # (The simulation configuration file is used by default and does not need to 
+  # be specified)
   
   iguide setup configs/simulation.config.yml
 
@@ -130,9 +140,9 @@ entirety of processing can start.::
   iguide run configs/simulation.config.yml -- --latency-wait 30
   zcat analysis/simulation/output/unique_sites.simulation.csv.gz
 
-  # Processing will complete with a report, but if additional analyses are required,
-  # you can reevaluate the 'incorp_sites' object. Multiple objects can be evaluated
-  # together, just include the run files.
+  # Processing will complete with a report, but if additional analyses are 
+  # required, you can reevaluate the 'incorp_sites' object. Multiple objects 
+  # can be evaluated together, just include the run files.
 
   iguide eval analysis/simulation/output/incorp_sites.simulation.rds \
     -o analysis/simulation/output/iguide.eval.simulation.test.rds \
@@ -140,15 +150,23 @@ entirety of processing can start.::
 
   # After evaluation, generate a report in a different format than standard.
   # Additionally the evaluation and report generation step can be combined using 
-  # config file(s) as inputs for the 'report' subcommand.
+  # config file(s) as inputs for the 'report' subcommand. For PDF output, you'll
+  # need to verify that your system has the correct latex-based software
+  # support, such as 'texlive'.
 
   iguide report -e analysis/simulation/output/iguide.eval.simulation.test.rds \
     -o analysis/simulation/reports/report.simulation.pdf \
     -s sampleInfo/simulation.supp.csv \
     -t pdf
 
-  # When you are all finished and ready to archive / remove excess files, a minimal configuration
-  # can be achived with the 'clean' subcommand.
+  # If you are looking for a quick and consise report of the output, use the 
+  # 'summary' subcommand with input of either a config file(s) or a single 
+  # evaluation file, generated by the 'eval' subcommand. 
+  
+  iguide summary -e analysis/simulation/output/iguide.eval.simulation.test.rds
+
+  # When you are all finished and ready to archive / remove excess files, a 
+  # minimal configuration can be achived with the 'clean' subcommand.
 
   iguide clean configs/simulation.config.yml
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from iguidelib.scripts.evaluate import main as Eval
 
 def main( argv = sys.argv ):
-    """Generate a custom report from iGUIDE output files."""
+    """Generate a consise report from iGUIDE output files."""
 
     try:
         conda_prefix = os.environ.get("CONDA_PREFIX")
@@ -25,12 +25,13 @@ def main( argv = sys.argv ):
     )
 
     description_str = str(
-        "Generate a custom report from an evaluated iGUIDE output or specify "
-        "config file(s) to use for generating a report."
+        "Generate a consise report from an evaluated iGUIDE output or specify "
+        "config file(s) to use for generating a short report. If no output is "
+        "specified, report will be printed to terminal."
     )
     
     parser = argparse.ArgumentParser(
-        prog = "report",
+        prog = "summary",
         usage = usage_str,
         description = description_str
     )
@@ -58,8 +59,12 @@ def main( argv = sys.argv ):
     )
 
     parser.add_argument(
-        "-o", "--output", nargs = 1, required = True,
-        help = "Output report file, extention not required.",
+        "-o", "--output", nargs = 1, default = None,
+        help = str(
+          "Output report file, extention not required. Will be writen as text "
+          "file. If no output given, results will be printed to screen. "
+          "Example output name: summary.iGUIDE_Run.txt or summary.iguide_run"
+        ),
         metavar = "OUTPUT"
     )
 
@@ -74,40 +79,23 @@ def main( argv = sys.argv ):
     )
 
     parser.add_argument(
-        "-f", "--figures", action="store_true",
+        "-p", "--power_filt", default = None,
         help = str(
-            "Generate figures along with output report (pdf and png formats)."
-        )
-    )
-
-    parser.add_argument(
-        "-d", "--savedata", action="store_true",
-        help = str(
-            "Data to generate the report will be saved as an R image with "
-            "output. Helpful for debuging templates."
-        )
-    )
-
-    parser.add_argument(
-        "-t", "--format", nargs = 1, 
-        choices=["pdf", "html"], default = ["html"],
-        help = str(
-            "Output format for report. Either 'pdf' or 'html' (default). "
-            "Will append the appropriate extension to the output file name."
+            "Specify a integer between 0 and 100 indicating the percent for "
+            "which to filter statistical comparisons for gene enrichment based "
+            "on power."
         ),
-        metavar = "PDF_or_HTML"
+        metavar = "INT"
     )
 
     parser.add_argument(
-        "-g", "--graphic", action="store_true",
-        help = "Includes an opening graphic on the report."
-    )
-
-    parser.add_argument(
-        "--template", nargs = 1,
-        default = "tools/rscripts/report_templates/iGUIDE_report_template.Rmd",
-        help = "File path to standard or custom iGUIDE report template.",
-        metavar = "RMD_FILE"
+        "-m", "--mesl_filt", default = None,
+        help = str(
+            "Specify a integer between 0 and 100 indicating the likelyhood for "
+            "which to filter off-target sites based on the Mean Edit Site "
+            "Likelyhood (MESL) model."
+        ),
+        metavar = "INT"
     )
 
     parser.add_argument(
@@ -133,12 +121,12 @@ def main( argv = sys.argv ):
         sys.exit(1)
     
     # iGUIDE report script(s)
-    r_script = iguide_directory / "tools/rscripts/generate_iGUIDE_report.R"
+    r_script = iguide_directory / "tools/rscripts/generate_iGUIDE_summary.R"
     
     if not r_script.is_file():
         sys.stderr.write(
             "Error: Could not find a {0} in directory '{1}'\n".format(
-                "generate_iGUIDE_report.R", args.iguide_dir + "/tools/rscripts/"
+                "generate_iGUIDE_summary.R", args.iguide_dir + "/tools/rscripts/"
             )
         )
         sys.exit(1)
@@ -153,18 +141,6 @@ def main( argv = sys.argv ):
             )
             sys.exit(1)
     
-    r_template = iguide_directory / "".join(args.template)
-    
-    if not r_template.exists():
-        r_template = Path(str(args.template))
-        if not r_template.exists():
-            sys.stderr.write(
-                "Error: Could not find a report template: '{}'\n".format(
-                    "".join(args.template)
-                )
-            )
-            sys.exit(1)
-    
     # Decide processing method, prioritize '-e' over '-c'
     eval_first = False
     if args.config is not None:
@@ -174,7 +150,10 @@ def main( argv = sys.argv ):
 
     # Evaluate first if required
     if eval_first:
-        final_output = "".join(args.output)
+        if args.output is None:
+            final_output = "".join(args.config)
+        else: #!!!!!!!!!!!!!!
+            final_output = "".join(args.output)
         final_path = final_output.split("/")
         final_path.remove(final_path[len(final_path)-1])
         output_path = Path("/".join(final_path))
@@ -214,15 +193,13 @@ def main( argv = sys.argv ):
         )
         sys.exit(1)
     
-    r_comps = ["Rscript", str(r_script)] + [eval_input, "-o"] + args.output
-    if args.figures:
-        r_comps.append("-f")
-    if args.savedata:
-        r_comps.append("-d")
-    if args.graphic:
-        r_comps.append("-g")
-    r_comps = r_comps + ["-t"] + args.format
-    r_comps = r_comps + ["--template", str(r_template)]
+    r_comps = ["Rscript", str(r_script)] + [eval_input]
+    if args.output is not None:
+      r_comps = r_comps + ["-o"] + args.output
+    if args.power_filt is not None:
+      r_comps = r_comps + ["-p", args.power_filt]
+    if args.mesl_filt is not None:
+      r_comps = r_comps + ["-m", args.mesl_filt]
     r_comps = r_comps + ["--iguide_dir", str(iguide_directory)]
 
     cmd = subprocess.run(r_comps)

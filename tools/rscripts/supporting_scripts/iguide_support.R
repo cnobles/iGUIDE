@@ -708,11 +708,11 @@ getSiteSeqs <- function(gr, upstream.flank, downstream.flank, ref.genome){
       fl_starts, 
       shift = ifelse(
         GenomicRanges::strand(fl_starts) == "+", 
-        downstream.flank, 
-        -downstream.flank
+        downstream.flank + 1, 
+        -downstream.flank - 1
       )
     ),
-    width = upstream.flank + downstream.flank,
+    width = upstream.flank + downstream.flank + 1,
     start = TRUE
   ))
   
@@ -723,11 +723,11 @@ getSiteSeqs <- function(gr, upstream.flank, downstream.flank, ref.genome){
   
 }
 
-#' Compare gRNA sequences with those sequences found around incorporation sites
+#' Compare target sequences with those found flanking incorporation sites
 #' 
-#' @usage compareGuideRNAs(
-#'   gr.with.sequences, seq.col, guide.rna.seqs, submat = NULL, tolerance = 6L, 
-#'   upstream.flank, downstream.flank, PAM = "NGG", offset.nt = 4L
+#' @usage compareTargetSeqs(
+#'   gr.with.sequences, seq.col, target.seqs, tolerance = 6L, 
+#'   nuc.profile = NULL, submat = NULL, upstream.flank, downstream.flank
 #' )
 #' 
 #' @param gr.with.sequences GRanges object with a metadata column, specified by
@@ -736,40 +736,56 @@ getSiteSeqs <- function(gr, upstream.flank, downstream.flank, ref.genome){
 #' @param seq.col character string indicating the metadata column containing 
 #' sequence information for the range.
 #' 
-#' @param guide.rna.seqs a list of gRNA sequences to compare against the ranges.
+#' @param target.seqs a list of target sequences to compare against the ranges.
+#' 
+#' @param tolerance integer specifying the number of mismatches tolerated for a
+#' target sequence alignment.
+#' 
+#' @param nuc.profile a listed object with the following named objects: "PAM" is
+#' a character string specifying the PAM sequence (ambiguous nucleotides 
+#' allowed, FALSE if no PAM sequence), "PAM_Loc" or PAM location with respect to
+#' the target sequences ('5p', '3p', or FALSE), "PAM_Tol" is a positive integer
+#' value specifying the allowed mismatch in the PAM sequence alignment (will be
+#' ignored if PAM is FALSE), "Editing" is a character string indicating if 
+#' editing by the nuclease is "upstream", "downstream", or "internal" with 
+#' repect to the PAM sequence (or target sequence if PAM is FALSE), "Cut_Offset"
+#' is an integer value specifying the nucleotide from the 5' nucleotide of the 
+#' PAM sequence (or target sequence if PAM is FALSE) to call the predicted edit 
+#' site (positive indicates downstream and negative indicates upstream, can also
+#' specify "mid_insert" to indicate the middle of two paired alignments), 
+#' "Insert_size" may be an integer value (15) or a string that will be converted
+#' into a range ("15:20") indicating the distance between two paired alignments 
+#' for editing (relates to TALEN and other dual-nickase systems). 
 #' 
 #' @param submat matrix that functions as the substitution matrix for sequence
 #' alignment scores. Typically binary to calculate exact mismatches.
 #' 
-#' @param tolerance integer specifying the number of mismatches tolerated for an
-#' alignment.
 #' 
 #' @param upstream.flank,downstream.flank integer value specifying the distance 
 #' that was previously used to capture sequences flanking the incorporation 
 #' sites.
 #' 
-#' @param PAM character string indicating the patter to recognize the PAM
-#' sequence.
-#' 
-#' @param offset.nt integer value specifying the base in the gRNA sequence where
-#' editing occurs most often. Numbered bases from the 3' end of the gRNA
-#' sequences, not including the PAM.
-#' 
 #' @description Scan through sequences flanking incorporation sites for matches 
-#' to gRNA sequences and PAM motifs. This will create an all by all comparison
-#' and return a GRanges object with the input information and additional 
-#' metadata cols with matching information.
+#' to target sequences and PAM motifs (if appliciable). This will create an all 
+#' by all comparison and return a GRanges object with the input information and 
+#' additional metadata cols with matching information.
 #' 
-compareGuideRNAs <- function(gr.with.sequences, seq.col, 
-                             guide.rna.seqs, submat = NULL, tolerance = 6L,
-                             upstream.flank, downstream.flank,
-                             PAM = "NGG", offset.nt = 4L){ 
+compareTargetSeqs <- function(gr.with.sequences, seq.col, 
+                              target.seqs, tolerance = 6L,
+                              nuc.profile = NULL, submat = NULL,
+                              upstream.flank, downstream.flank
+                              ){ 
   
-  #23 matching all, -6 mismatches in guide
-
   if( is.null(submat) ) submat <- banmat()
   
-  pam <- paste0(gsub("N", ".", PAM), "$")
+  if( is.null(nuc.profile) ){
+    
+    nuc.profile <- list(
+      "PAM" = FALSE, "PAM_Loc" = FALSE, "PAM_Tol" = FALSE,
+      "Cut_Offset" = 0, "Insert_size" = FALSE
+    )
+    
+  }
   
   sites <- gr.with.sequences
   sites$siteID <- seq_len(length(sites))
@@ -786,9 +802,38 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
     
   }
   
-  fwd_df <- alnGuideRNAs(seqs, guide.rna.seqs, tolerance)
+  fwd_df <- alnTargetSeqs(seqs, target.seqs, tolerance)
   
-  rev_df <- alnGuideRNAs(reverseComplement(seqs), guide.rna.seqs, tolerance)
+  rev_df <- alnTargetSeqs(
+    Biostrings::reverseComplement(seqs), target.seqs, tolerance
+  )
+
+  if( nuc.profile$PAM != FALSE ){
+    if( nuc.profile$PAM_Loc == "5p" ){
+      
+      fwd_df$start <- fwd_df$start - nchar(nuc.profile$PAM)
+      rev_df$start <- rev_df$start - nchar(nuc.profile$PAM)
+      
+    }else if( nuc.profile$PAM_Loc == "3p" ){
+      
+      fwd_df$end <- fwd_df$end + nchar(nuc.profile$PAM)
+      rev_df$end <- rev_df$end + nchar(nuc.profile$PAM)
+      
+    }else{
+      
+      stop(
+        "\n  Config input error in Nuclease profile:\n",
+        "    'PAM_Loc' must be [5p]rime or [3p]rime of the target ",
+        "sequence if 'PAM' is not FALSE.\n",
+        "    Acceptable inputs: '5p', '3p', FALSE."
+      )
+      
+    }
+  }
+  
+  fwd_df <- dplyr::filter(
+    fwd_df, start >= 1, end <= upstream.flank + downstream.flank + 1
+  )
   
   fwd_df$aln.seq <- as.character(Biostrings::DNAStringSet(
     x = seqs[fwd_df$names], 
@@ -796,24 +841,48 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
     end = fwd_df$end
   ))
   
+  rev_df <- dplyr::filter(
+    rev_df, start >= 1, end <= upstream.flank + downstream.flank + 1
+  )
+  
   rev_df$aln.seq <- as.character(Biostrings::DNAStringSet(
     x = Biostrings::reverseComplement(seqs[rev_df$names]), 
     start = rev_df$start, 
     end = rev_df$end
   ))
   
-  rev_df$guideRNA <- paste0(rev_df$guideRNA, rep(" (rev)", nrow(rev_df)))
+  fwd_df$target <- paste0(fwd_df$target, rep(":(sense)", nrow(fwd_df)))
+  rev_df$target <- paste0(rev_df$target, rep(":(antisense)", nrow(rev_df)))
   
   matched_seqs <- rbind(fwd_df, rev_df)
-  matched_seqs <- matched_seqs[ grepl(pam, matched_seqs$aln.seq), ]
+  
+  # Filter by PAM match if PAM present in nuclease profile.
+  if( nuc.profile$PAM != FALSE ){
+    
+    pam_matched <- alnTargetSeqs(
+      seqs = matched_seqs$aln.seq, 
+      target.seqs = nuc.profile$PAM, 
+      tolerance = nuc.profile$PAM_Tol, 
+      fixed = FALSE
+    )
+    
+    if( nuc.profile$PAM_Loc == "5p" ){
+      pam_matched <- dplyr::filter(pam_matched, start == 1)
+    }else if( nuc.profile$PAM_Loc == "3p" ){
+      pam_matched <- dplyr::filter(pam_matched, end == nt_width)
+    }
+    
+    matched_seqs <- matched_seqs[ unique(as.numeric(pam_matched$names)), ]
+    
+  }
   
   good_alns <- as.numeric(matched_seqs$names)
   
   if( length(good_alns) == 0 ){
     
-    sites$guideRNA.match <- "No_valid_match"
-    sites$guideRNA.mismatch <- NA
-    sites$guideRNA.score <- NA
+    sites$target.match <- "No_valid_match"
+    sites$target.mismatch <- NA
+    sites$target.score <- NA
     sites$aligned.sequence <- NA
     sites$edit.site <- NA
     return(sites)
@@ -822,9 +891,9 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
   
   if( length(good_alns) != length(sites) ){
     
-    non_probable_sites <- sites[-good_alns]
-    non_probable_sites$guideRNA.match <- "No_valid_match"
-    non_probable_sites$guideRNA.mismatch <- NA
+    non_probable_sites <- sites[!sites$siteID %in% good_alns]
+    non_probable_sites$target.match <- "No_valid_match"
+    non_probable_sites$target.mismatch <- NA
     non_probable_sites$aligned.sequence <- NA
     non_probable_sites$edit.site <- NA
     
@@ -832,13 +901,14 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
   
   potential_sites <- sites[good_alns]
   
-  potential_sites$guideRNA.match <- matched_seqs$guideRNA
-  potential_sites$guideRNA.mismatch <- matched_seqs$guideRNA.mismatch
+  potential_sites$target.match <- matched_seqs$target
+  potential_sites$target.mismatch <- matched_seqs$target.mismatch
   potential_sites$aligned.sequence <- matched_seqs$aln.seq
   
   potential_sites$edit.site <- calcCutSite(
     potential_sites, matched_seqs, upstream.flank, 
-    downstream.flank, PAM, offset.nt)
+    downstream.flank, nuc.profile
+  )
   
   if( length(good_alns) != length(sites) ){
     all_sites <- c(potential_sites, non_probable_sites)
@@ -849,8 +919,41 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
   all_sites <- all_sites[order(all_sites$siteID)]
   
   if( any(duplicated(all_sites$siteID)) ){
-    message("Some alignments with multiple guideRNA matches. 
-            Total number of alignments expanded. See siteID.")
+    
+    dup_ids <- names(table(all_sites$siteID))[table(all_sites$siteID) > 1]
+    dup_sites <- all_sites[all_sites$siteID %in% dup_ids]
+    
+    adj_sites <- unlist(GenomicRanges::GRangesList( 
+      lapply(
+        split(dup_sites, dup_sites$siteID), 
+        function(gr){
+          
+          if( length(unique(gr$target.mismatch)) > 1){
+            gr <- gr[gr$target.mismatch == min(gr$target.mismatch)]
+          }
+          
+          if( length(gr) > 1){
+            dists <- abs(start(gr) - 
+              as.numeric(stringr::str_extract(gr$edit.site, "[\\d]+$")))
+            gr <- gr[dists == min(dists)]
+          }
+          
+          gr
+          
+        }
+      )
+    ))
+    
+    all_sites <- c(all_sites[!all_sites$siteID %in% dup_ids], adj_sites)
+    all_sites <- all_sites[order(all_sites$siteID)]
+    
+  }
+  
+  if( any(duplicated(all_sites$siteID)) ){
+    cat(
+      "  Note: Some alignments with multiple target matches. Total number of", 
+      "alignments expanded. See siteID.\n"
+    )
   }else{  
     all_sites$siteID <- NULL
   }
@@ -859,24 +962,33 @@ compareGuideRNAs <- function(gr.with.sequences, seq.col,
   
 }
 
-#' Align gRNA sequences against flanking sequences around incorporation sites
+#' Align target sequences against flanking sequences around incorporation sites
 #' 
-#' @usage alnGuideRNAs(seqs, guide.rna.seqs, tolerance)
+#' @usage alnTargetSeqs(seqs, target.seqs, tolerance)
 #' 
 #' @param seqs sequences in either Biostrings object or character vector.
 #' 
-#' @param guide.rna.seqs a list of gRNA sequences to compare against the ranges.
+#' @param target.seqs a list of target sequences to compare against the ranges.
 #' 
 #' @param tolerance integer specifying the number of mismatches tolerated for an
 #' alignment.
 #' 
-#' @description Companion function to `compareGuideRNAs` which aligns gRNA 
+#' @param fixed string following the behavior of 
+#' Biostrings::vmatchPattern(fixed = ...). Options include logical where TRUE
+#' indicates that ambiguous nucleotides can only match the same ambiguous nts,
+#' FALSE refers to allowing for IUPAC ambiguity matching, 'subject' and 
+#' 'pattern' can be used to fix one or the other where subject is the 'seqs' 
+#' object and 'pattern' is the 'target.seqs' object.
+#' 
+#' @description Companion function to `compareTargetSeqs` which aligns target 
 #' sequences to input sequences to determine potential locations of matched 
 #' alignments.
 #' 
-alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
-
+alnTargetSeqs <- function(seqs, target.seqs, tolerance, fixed = 'subject'){
+  
   if( is.null(names(seqs)) ) names(seqs) <- seq_along(seqs)
+  if( class(seqs) != "DNAStringSet") seqs <- Biostrings::DNAStringSet(seqs)
+  if( is.null(names(target.seqs)) ) names(target.seqs) <- target.seqs
   
   nt_widths <- data.frame(
     names = names(seqs),
@@ -885,24 +997,24 @@ alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
   
   alns <- lapply(
     0:tolerance, 
-    function(tol, guides, seqs){
+    function(tol, targets, seqs){
       
       lapply(
-        guides, 
-        function(guide){
+        targets, 
+        function(target){
           
           unlist(Biostrings::vmatchPattern(
-            pattern = guide, 
+            pattern = target, 
             subject = seqs, 
             max.mismatch = tol, 
-            fixed = 'subject'
+            fixed = fixed
           ))
           
         }
       )
       
     }, 
-    guides = guide.rna.seqs, 
+    targets = target.seqs, 
     seqs = seqs
   )
   
@@ -919,7 +1031,7 @@ alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
             function(j){
               
               d <- as.data.frame(alns[[i]][[j]])
-              d$guideRNA <- rep(names(alns[[i]][j]), nrow(d))
+              d$target <- rep(names(alns[[i]][j]), nrow(d))
               d$mismatches <- rep(i-1, nrow(d))
               d
               
@@ -930,12 +1042,11 @@ alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
       }
     )
   )
-        
-
-  dplyr::group_by(df, start, end, width, names, guideRNA) %>%
-    dplyr::mutate(guideRNA.mismatch = min(mismatches)) %>%
+  
+  dplyr::group_by(df, start, end, width, names, target) %>%
+    dplyr::mutate(target.mismatch = min(mismatches)) %>%
     dplyr::ungroup() %>%
-    dplyr::select(names, guideRNA, guideRNA.mismatch, start, end, width) %>%
+    dplyr::select(names, target, target.mismatch, start, end, width) %>%
     dplyr::distinct() %>%
     dplyr::left_join(., nt_widths, by = "names") %>%
     dplyr::mutate(
@@ -973,35 +1084,251 @@ alnGuideRNAs <- function(seqs, guide.rna.seqs, tolerance){
 #' sequences and known upstream and downstream flanking distances.
 #' 
 calcCutSite <- function(sites, matched.seqs, upstream.flank, 
-                         downstream.flank, PAM, offset.nt){
-  df <- data.frame(
-    "chr" = GenomicRanges::seqnames(sites),
-    "strand" = GenomicRanges::strand(sites),
-    "pos" = GenomicRanges::start(GenomicRanges::flank(sites, -1, start = TRUE)),
-    "guideRNA" = matched.seqs$guideRNA,
-    "guide.aln" = ifelse(!grepl("(rev)", matched.seqs$guideRNA), "+", "-"),
-    "guide.start" = matched.seqs$start,
-    "guide.end" = matched.seqs$end
-  )
+                         downstream.flank, nuc.profile){
   
-  df$true.ort <- ifelse(
-    as.character(df$strand) == as.character(df$guide.aln), "+", "-"
-  )
+  # Include PAM if present
+  if( nuc.profile$PAM != FALSE ){
+    
+    PAM <- nuc.profile$PAM
+    pam_present <- TRUE
+    pam_loc <- nuc.profile$PAM_Loc
+    
+  }else{
+    
+    PAM <- ""
+    pam_present <- FALSE
+    pam_loc <- FALSE
+    
+  }
   
-  df$edit.pos <- ifelse(
-    df$strand == "+",
-    ifelse(
-      df$guide.aln == "+",
-      df$pos - upstream.flank + df$guide.end - nchar(PAM) - offset.nt,
-      df$pos - df$guide.end + downstream.flank + nchar(PAM) + offset.nt - 1),
-    ifelse(
-      df$guide.aln == "+",
-      df$pos + upstream.flank - df$guide.end + nchar(PAM) + offset.nt,
-      df$pos + df$guide.end - downstream.flank - nchar(PAM) - offset.nt + 1
+  # Determine offset from PAM or target sequence
+  if( is.numeric(nuc.profile$Cut_Offset) ){
+    
+    offset_nt <- nuc.profile$Cut_Offset
+    
+  }else if( nuc.profile$Cut_Offset == "mid_insert" ){
+    
+    insert_size <- nuc.profile$Insert_size
+    
+    if( grepl("\\:", insert_size) & length(insert_size) == 1 ){
+      
+      insert_size <- seq(
+        unlist(strsplit(insert_size, ":"))[1],
+        unlist(strsplit(insert_size, ":"))[2]
+      )
+      
+    }
+    
+    offset_nt <- unname(round(quantile(insert_size, probs = 0.5)))
+    
+  }else{
+    
+    stop(
+      "\n  Config input error in Nuclease profile:\n",
+      "    'Cut_Offset' must be an integer value specifying the editing\n",
+      "      distance in nucleotides from the 5' end of the PAM sequence\n", 
+      "      or target sequence (if no PAM is present).\n",
+      "      Acceptable inputs: positive and negative integer values, and\n",
+      "      'mid_insert'.\n",
+      "    'Insert_Size' should also be an integer value or a range,\n", 
+      "      indicated by 'min:max'. FALSE can be provided if not \n", 
+      "      applicable. Refer to documentation for more information.\n"
     )
-  )
+    
+  }
+  
+  # Combine alignment information and determine predicted cutsites
+  df <- data.frame(
+      "chr" = GenomicRanges::seqnames(sites),
+      "strand" = GenomicRanges::strand(sites),
+      "pos" = GenomicRanges::start(
+        GenomicRanges::flank(sites, -1, start = TRUE)
+      ),
+      "target" = matched.seqs$target,
+      "target.aln" = ifelse(
+        !grepl(":(antisense)", matched.seqs$target, fixed = TRUE), "+", "-"
+      ),
+      "target.start" = matched.seqs$start,
+      "target.end" = matched.seqs$end
+    ) %>%
+    dplyr::mutate(
+      true.ort = ifelse(
+        as.character(strand) == as.character(target.aln), "+", "-"
+      ),
+      flank.start = ifelse(
+        strand == "+", pos - upstream.flank, pos - downstream.flank + 1
+      ),
+      flank.end = ifelse(
+        strand == "+", pos + downstream.flank, pos + upstream.flank - 1
+      ),
+      tar.start = ifelse(
+        strand == "+", 
+        ifelse(
+          target.aln == "+", 
+          flank.start + target.start - 1,
+          flank.end - target.end + 1
+        ),
+        ifelse(
+          target.aln == "+",
+          flank.end - target.end + 2,
+          flank.start + target.start - 2
+        )
+      ),
+      tar.end = tar.start + (target.end - target.start)
+    )
+  
+  if( pam_present ){
+    if( pam_loc == "5p" ){
+      
+      df <- df %>%
+        dplyr::mutate(
+          pam.start = ifelse(
+            true.ort == "+", tar.start, tar.end - nchar(PAM) + 1
+          ),
+          pam.end = ifelse(
+            true.ort == "+", tar.start + nchar(PAM) - 1, tar.end
+          ),
+          edit.pos = ifelse(
+            true.ort == "+", pam.start + offset_nt, pam.end - offset_nt
+          )
+        )
+      
+    }else if( pam_loc == "3p" ){
+      
+      df <- df %>%
+        dplyr::mutate(
+          pam.start = ifelse(
+            true.ort == "+", tar.end - nchar(PAM) + 1, tar.start
+          ),
+          pam.end = ifelse(
+            true.ort == "+", tar.end, tar.start + nchar(PAM) - 1
+          ),
+          edit.pos = ifelse(
+            true.ort == "+", pam.start + offset_nt, pam.end - offset_nt
+          )
+        )
+      
+    }else{
+      
+      stop(
+        "\n  Config input error in Nuclease profile:\n",
+        "    'PAM_Loc' must be [5p]rime or [3p]rime of the target ",
+        "sequence if 'PAM' is not FALSE.\n",
+        "    Acceptable inputs: '5p', '3p', FALSE."
+      )
+      
+    }
+    
+  }else{
+    
+    df <- df %>%
+      dplyr::mutate(
+        edit.pos = ifelse(
+          true.ort == "+", tar.start + offset_nt, tar.end - offset_nt
+        )
+      )
+    
+  }
   
   return(paste0(df$chr, ":", df$true.ort, ":", df$edit.pos))
+  
+}
+
+#' Expand position range notation to position identifier strings
+#' 
+#' @usage expandPosStr(posStr, delim = ":")
+#' 
+#' @param pos.str character vector of position strings, in the format of seqname,
+#' orientation, and position. For position, if two numbers are given, then they 
+#' specify a range that will be expanded. For orientation, "+" and "-" indicates
+#' the possible orientation, but if "*" is used, then the posStr will be 
+#' expanded to "+" and "-".
+#' 
+#' @param delim character string indicating the symbol delimiting the 
+#' information within `posStr`. A range should always be delimited by a "-" 
+#' between two numbers.
+#' 
+#' @param return character string of either "vector" (default) or "list", 
+#' indicating the type of output that is returned from the function. The vector
+#' option will return a single vector of all possible position strings for the 
+#' given input, while the list option will return a listed object where each 
+#' object in the list is related to the expansion of the input. If the 
+#' input object is named, then the vecotr / list names will be the same as the 
+#' input names, otherwise the vector / list will be unnamed. 
+#' 
+#' @description Given position strings and string ranges, for example 
+#' "chr2:+:392" and "chr2:+:392-394", expand to all possible position strings
+#' of the format seqnames, orientation ("+"/"-"), and position delimited by the
+#' symbol included as `delim`. Orientation will also be expanded. For example,
+#' "chr2:+:392-394" will be expanded to "chr2:+:392", "chr2:+:393", and 
+#' "chr2:+:394". Additionally, "chr2:*:392" will be expanded to "chr2:+:392" and
+#' "chr2:-:392".
+#' 
+expandPosStr <- function(pos.str, delim = ":", return = "vector"){
+  
+  # Check
+  if( !return %in% c("vector", "list") ){
+    stop("\n  Output from expandPosStr must be either 'vector' or 'list'.\n")
+  }
+  
+  # Split input into a matrix
+  pos_mat <- stringr::str_split(
+    pos.str, pattern = delim, n = 3, simplify = TRUE
+  )
+  
+  # Expand matrix based on orientation
+  exp_ort <- lapply(pos_mat[, 2, drop = TRUE], function(x){
+    if( x %in% c("+", "-")){
+      return(x)
+    }else{
+      return(c("+", "-"))
+    }
+  })
+  
+  pos_mod <- pos_mat[rep(seq_along(pos.str), lengths(exp_ort)), , drop = FALSE]
+  pos_mod[,2] <- unlist(exp_ort)
+  
+  # Expand the matrix based on position ranges
+  exp_pos <- stringr::str_split(
+    pos_mod[, 3, drop = TRUE], pattern = "-", simplify = FALSE
+  )
+  
+  exp_pos <- lapply(exp_pos, function(x){
+    x <- as.numeric(x)
+    if( length(x) == 1 ) x <- c(x, x)
+    seq(from = x[1], to = x[2])
+  })
+  
+  pos_mod <- pos_mod[
+    rep(seq_len(nrow(pos_mod)), lengths(exp_pos)), , drop = FALSE
+  ]
+  
+  pos_mod[,3] <- unlist(exp_pos)
+  
+  # Expand names if needed and return character vector of position strings
+  if( !is.null(names(pos.str)) ){
+    
+    nam <- names(pos.str)[rep(seq_along(pos.str), lengths(exp_ort))]
+    nam <- nam[rep(seq_along(nam), lengths(exp_pos))]
+    
+    if( return == "vector" ){
+      return(structure(vcollapse(pos_mod, sep = delim), names = nam))
+    }else if( return == "list" ){
+      return(split(vcollapse(pos_mod, sep = delim), nam))
+    }
+    
+  }else{
+    
+    idx <- rep(seq_along(pos.str), lengths(exp_ort))
+    idx <- idx[rep(seq_along(idx), lengths(exp_pos))]
+    
+    if( return == "vector" ){
+      return(vcollapse(pos_mod, sep = delim))
+    }else if( return == "list" ){
+      return(unname(split(vcollapse(pos_mod, sep = delim), idx)))
+    }
+    
+  }
   
 }
 

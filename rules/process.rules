@@ -8,6 +8,8 @@ rule all_uniq_sites:
     RUN_DIR + "/output/unique_sites." + RUN + ".csv"
   params:
     RUN_DIR + "/process_data"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell:
     """
     head -n 1 -q {params}/*.uniq.csv | uniq > {output}
@@ -21,6 +23,8 @@ rule compress_uniq_sites:
     sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
     edits=RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
   output: RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "gzip {input.sites}"
 
 
@@ -103,4 +107,18 @@ rule run_report:
   shell:
     """
     Rscript {params.tool} {input} -o {output} {params.supp} > {log} 2>&1
+    """
+
+rule run_summary:
+  input: RUN_DIR + "/output/iguide.eval." + RUN + ".rds"
+  output: RUN_DIR + "/reports/summary." + RUN + ".txt"
+  params: 
+    tool = ROOT_DIR + "/tools/rscripts/generate_iGUIDE_summary.R",
+    config = RUN_DIR + "/" + "config.yml"
+  log: RUN_DIR + "/logs/" + RUN + ".summary.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output} > {log} 2>&1
     """
