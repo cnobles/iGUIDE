@@ -1,7 +1,9 @@
 .. _configinfo:
 
 .. contents::
-   :depth: 4
+   :depth: 2
+
+
 
 Config - Nuclease Profiles
 ==========================
@@ -29,13 +31,12 @@ software::
   Cas9 :
                    ><   PAM
   ATGCATGCATGCATGCATGCA TGG (sense strand)
-
+  
    TGCATGCATGCATGCATGCA NGG # gRNA
    |||||||||||||||||||| |||
   TACGTACGTACGTACGTACGT ACC (anti-sense strand)
                    ><       # Dominant cutpoint
   
- 
   Cpf1 : Also known as Cas12a
                           ><         # Dominant cutpoint
   GTTTG ATGCATGCATGCATGCATGCATGCATGC (sense strand)
@@ -45,7 +46,6 @@ software::
   CTAAC TACGTACGTACGTACGTACGTACGTACG (anti-sense strand)
                               ><     # Dominant cutpoint
   
-
   TALEN : Protin-DNA binding domain fused with FokI nickase
   ATATATATATATATATATAT GCATGCATGCATGCAT GCGCGCGCGCGCGCGCGCGC (sense strand)
   \\\\\\\\\\\\\\\\\\\\
@@ -55,7 +55,6 @@ software::
   TATATATATATATATATATA CGTACGTACGTACGTA CGCGCGCGCGCGCGCGCGCG (anti-sense strand)
   # Proteins bind flanking the cleavage site and cut in the "insert" sequence.
   
-
   CasCLOVER : Clo051 or another nickases with CRISPR-based binding domains
   ATCCT ATGCATGCATGCATGCATGC TTAACCGGTTAACCGG TACGTACGTACGTACGTACG CGGTC
     ||| ||||||||||||||||||||                              (sense strand)
