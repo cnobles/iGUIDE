@@ -378,7 +378,7 @@ combn_tbl <- combn_tbl %>%
   )
 
 # Log combination treatment table
-cat("\nTarget Sequence Table:")
+cat("\nTarget Sequence Table:\n")
 print(combn_tbl, right = FALSE, row.names = FALSE)
 
 
