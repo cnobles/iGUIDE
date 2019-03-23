@@ -2260,18 +2260,55 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
 #' @param match.chr character used to replace characters in `seqs` that match in
 #' the same position in `ref`.
 #' 
+#' @param fill character string specifying if sequences of length less than the
+#' reference should be filled in. Fill should be either "left" (insert blank 
+#' spaces on the left) or "right" (for inserting blank spaces on the right). 
+#' 
 #' @description Given a vector of character strings, compare them to the
 #' reference. Any character that matches the reference, in the same position,
 #' will be converted into the `match.chr` while any sequence diverging from the
 #' reference will be left unchanged. This allows the user to easily identify the
 #' differences between sequence strings.
 #' 
-divSeq <- function(seqs, ref, match.chr = "."){
+divSeq <- function(seqs, ref, match.chr = ".", fill = "left"){
   
   seqs <- as.character(seqs)
   ref <- as.character(ref)
   
-  stopifnot( all(nchar(seqs) == nchar(ref)) )
+  if( !all(nchar(as.character(seqs)) == nchar(ref)) ){
+    
+    fill_idx <- which(nchar(seqs) != nchar(ref))
+    fill_width <- nchar(ref) - nchar(seqs)[fill_idx]
+    
+    if( fill == "left" ){
+      
+      seqs[fill_idx] <- sapply(
+        seq_along(fill_idx), 
+        function(i){
+          paste0(
+            paste(rep("N", fill_width[i]), collapse = ""), seqs[fill_idx[i]])
+        }
+      )
+      
+    }else if( fill == "right" ){
+      
+      seqs[fill_idx] <- sapply(
+        seq_along(fill_idx), 
+        function(i){
+          paste0(
+            seqs[fill_idx[i]], paste(rep("N", fill_width[i]), collapse = ""))
+        }
+      )
+      
+    }else{
+      
+      stop("fill parameter must be either left or right.")
+      
+    }
+    
+  }
+  
+  stopifnot( all(nchar(as.character(seqs)) == nchar(ref)) )
   
   seq_mat <- stringr::str_split(seqs, pattern = "", simplify = TRUE)
   ref_splt <- unlist(stringr::str_split(ref, pattern = ""))
@@ -2377,7 +2414,7 @@ plotSeqDiverge <- function(df, ref, nuc.col = NULL, padding = 4,
   nuc_len <- nchar(ref)
   
   # Convert seqs
-  if( convert.seq ) seqs <- divSeq(seqs, ref)
+  if( convert.seq ) seqs <- divSeq(seqs, ref, fill = fill)
   
   # Nucleotide color
   nucleotide_levels <- c("A", "T", "G", "C", ".", "N")
