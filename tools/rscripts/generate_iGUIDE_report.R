@@ -32,6 +32,11 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "-b", "--tables", action = "store_true",
+  help = "Generate tables along with output report (csv formats)."
+)
+
+parser$add_argument(
   "-f", "--figures", action = "store_true",
   help = "Generate figures along with output report (pdf and png formats)."
 )
@@ -113,8 +118,8 @@ input_table <- data.frame(
 input_table <- input_table[
   match(
     c(
-      "eval :", "output :", "figures :", "data :", "graphic :", "format :", 
-      "template :", "iguide_dir :"
+      "eval :", "output :", "tables :", "figures :", "data :", "graphic :", 
+      "format :", "template :", "iguide_dir :"
     ),
     input_table$Variables),
 ]
@@ -403,7 +408,18 @@ if( args$format == "pdf" & !stringr::str_detect(output_file, ".pdf$") ){
 figure_path <- file.path(
   output_dir, gsub("[\\w]+$", "figures", output_file, perl = TRUE)
 )
+
 null <- dir.create(figure_path)
+
+if( args$tables ){
+  
+  tables_path <- file.path(
+    output_dir, gsub("[\\w]+$", "tables", output_file, perl = TRUE)
+  )
+  
+  null <- dir.create(tables_path)
+  
+}
 
 if( args$data ){
 

@@ -123,7 +123,9 @@ blank_theme <- theme_bw() +
     panel.grid = element_blank(),
     legend.position = "none",
     title = element_text(face = "bold"))
-  
+
+bootstrap_options <- c("striped", "hover")
+latex_options <- c("hold_position", "repeat_header")
 
 # Captions
 tbl_caps <- c(
@@ -184,14 +186,24 @@ if( args$format == "pdf" ){
 ```{r spec_summary}
 spec_overview[is.na(spec_overview)] <- 0
 
+if( args$tables ){
+  
+  write.csv(
+    x = spec_overview, 
+    file = file.path(tables_path, "tbl1.specimen.overview.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+  
+}
+
 kable(
     x = spec_overview, format = report_format, row.names = FALSE,
     booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[1],
     format.args = list(big.mark = ",")
   ) %>%
   kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    latex_options = c("hold_position", "repeat_header")
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
   )
 
 ```
@@ -220,6 +232,15 @@ target_tbl$`Edit Locus` <- sapply(
   function(x) paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
 )
 
+if( args$tables ){
+  
+  write.csv(
+    x = target_print, 
+    file = file.path(tables_path, "tbl2.target.sequences.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+}
+
 target_print <- target_tbl %>%
   dplyr::mutate(
     Sequence = kableExtra::cell_spec(
@@ -236,8 +257,8 @@ kable(
     align = "c"
   ) %>%
   kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    latex_options = c("hold_position", "repeat_header"), 
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options, 
     full_width = FALSE
   )
 
@@ -268,6 +289,23 @@ if( args$format == "pdf" ){
 ```{r on_target_summary}
 ot_tbl_summary[is.na(ot_tbl_summary)] <- 0
 
+if( args$tables ){
+  
+  ot_tbl_save <- ot_tbl_summary
+  
+  names(ot_tbl_save) <- c(
+    "Specimen", "Condition", "All percent", "Pileup percent", 
+    "Paired percent", "Matched percent"
+  )
+  
+  write.csv(
+    x = ot_tbl_save, 
+    file = file.path(tables_path, "tbl3.ontarget.summary.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+  
+}
+
 ot_tbl_summary <- ot_tbl_summary %>%
   dplyr::mutate(
     ot_algns_pct = sprintf("%.2f", round(ot_algns_pct, digits = 2)),
@@ -289,8 +327,8 @@ kable(
     c(" " = 2, "All", "Pileup", "Paired", "Matched")
   ) %>%
   kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    latex_options = c("hold_position", "repeat_header")
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
   )
 
 ```
@@ -434,6 +472,22 @@ names(ft_tbl_summary) <- c(
   "Specimen", "Condition", "loci", "loci", "loci", "loci"
 )
 
+if( args$tables ){
+
+  ft_tbl_save <- ft_tbl_summary
+  
+  names(ft_tbl_save) <- c(
+    "Specimen", "Condition", "All loci", "Pileup loci", "Paired loci", 
+    "Matched loci"
+  )
+  
+  write.csv(
+    x = ft_tbl_save, 
+    file = file.path(tables_path, "tbl4.offtarget.summary.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+}
+
 kable(
     x = ft_tbl_summary, format = report_format, digits = 1, row.names = FALSE,
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
@@ -443,8 +497,8 @@ kable(
     c(" " = 2, "All", "Pileup", "Paired", "Matched")
   ) %>%
   kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    latex_options = c("hold_position", "repeat_header")
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
   )
 
 ```
@@ -464,13 +518,36 @@ Flanking **Paired** loci and Target **Matched** loci are tested for enrichment a
 ```{r onco_enrichment}
 enrich_df <- enrich_df %>%
   dplyr::mutate(
+    onco.p.value = round(onco.p.value, digits = 3),
+    special.p.value = round(special.p.value, digits = 3)
+  )
+
+if( args$tables ){
+  
+  enrich_save <- enrich_df
+  
+  names(enrich_save) <- c(
+    "Origin", "Condition", "Total genes", "Onco genes", "Onco p-value", 
+    "Spcial genes", "Special p-value"
+  )
+  
+  write.csv(
+    x = enrich_save, 
+    file = file.path(tables_path, "tbl5.gene.enrichment.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+  
+}
+
+enrich_df <- enrich_df %>%
+  dplyr::mutate(
     onco.is.sig = onco.p.value <= 0.05,
-    onco.p.value = sprintf("%.3f", round(onco.p.value, digits = 3)),
+    onco.p.value = sprintf("%.3f", onco.p.value),
     onco.p.value = kableExtra::cell_spec(
       onco.p.value, format = report_format, bold = onco.is.sig
     ),
     special.is.sig = special.p.value <= 0.05,
-    special.p.value = sprintf("%.3f", round(special.p.value, digits = 3)),
+    special.p.value = sprintf("%.3f", special.p.value),
     special.p.value = kableExtra::cell_spec(
       special.p.value, format = report_format, bold = special.is.sig
     )
@@ -491,8 +568,8 @@ kable(
     c(" " = 2, "Total", "Onco Enrich." = 2, "Special Enrich." = 2)
   ) %>%
   kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    latex_options = c("hold_position", "repeat_header")
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
   )
 
 ```
@@ -642,7 +719,7 @@ ft_seq_plots <- lapply(
         "Mismatch" = mismatch, "Target" = target, 
         "Abund." = aligns, "Gene_ID" = gene_id
       ) %>%
-      dplyr::mutate(MESL = format(round(MESL, digits = 1))) %>%
+      dplyr::mutate(MESL = sprintf("%.1f", round(MESL, digits = 1))) %>%
       plotSeqDiverge(
         ref = ref_seq, padding = 7, text.size = 3.5, 
         font.family = "Courier", font.face = "plain", force.sq = TRUE) +
@@ -745,13 +822,34 @@ for( i in seq_along(ft_seqs_list) ){
   
   if( report_format == "html" ) cap <- paste0("Table ", i+5, ". ", cap)
 
-  dplyr::select(
+  df <- dplyr::select(
       ft_seqs_list[[i]], target, gene_id, edit.site, aligns, MESL, 
       aligned.sequence, mismatch
     ) %>%
     dplyr::mutate(
-      MESL = sprintf("%.1f", round(MESL, digits = 1)),
       aligned.sequence = divSeq(aligned.sequence, aligned.sequence[1]),
+      MESL = round(MESL, digits = 1)
+    )
+  
+  if( args$tables ){
+    
+    df %>%
+      dplyr::rename(
+        "Target" = target, "Gene ID" = gene_id, "Edit Site" = edit.site, 
+        "Abund." = aligns, "Aligned Sequence" = aligned.sequence, 
+        "Mismatch" = mismatch
+      )%>%
+      write.csv(
+        x = df, 
+        file = file.path(tables_path, paste0("tbl", i+5, ".offtargets.csv")),
+        quote = TRUE, row.names = FALSE
+      )
+    
+  }
+
+  dplyr::mutate(
+      df,
+      MESL = sprintf("%.1f", MESL),
       aligned.sequence = ifelse(
         rep(report_format, n()) == rep("html", n()),
         gsub(".", "\\.", aligned.sequence, fixed = TRUE),
@@ -773,8 +871,8 @@ for( i in seq_along(ft_seqs_list) ){
       escape = FALSE, align = c(rep("c", 3), "r", "r", "c", "c"), caption = cap
     ) %>%
     kableExtra::kable_styling(
-      bootstrap_options = c("striped", "hover"),
-      latex_options = c("hold_position", "repeat_header")
+      bootstrap_options = bootstrap_options,
+      latex_options = latex_options
     ) %>%
     print()
   

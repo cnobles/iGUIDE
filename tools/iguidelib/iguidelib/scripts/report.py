@@ -72,7 +72,14 @@ def main( argv = sys.argv ):
         ),
         metavar = "SUPPORT"
     )
-
+    
+    parser.add_argument(
+        "-b", "--tables", action="store_true",
+        help = str(
+            "Generate tables along with output report (csv format)."
+        )
+    )
+    
     parser.add_argument(
         "-f", "--figures", action="store_true",
         help = str(
@@ -215,6 +222,8 @@ def main( argv = sys.argv ):
         sys.exit(1)
     
     r_comps = ["Rscript", str(r_script)] + [eval_input, "-o"] + args.output
+    if args.tables:
+        r_comps.append("-b")
     if args.figures:
         r_comps.append("-f")
     if args.savedata:
