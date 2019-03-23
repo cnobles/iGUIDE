@@ -148,6 +148,7 @@ recoverMultihits : FALSE
 
 # Report
 suppFile : TRUE
+tables : FALSE
 figures : TRUE
 reportData : FALSE
 infoGraphic : TRUE

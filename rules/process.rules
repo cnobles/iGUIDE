@@ -86,6 +86,8 @@ rule iguide_evaluation:
 
 def report_supp(wildcards):
   supp_str = str()
+  if (config["tables"]): 
+      supp_str = supp_str + "-b "
   if (config["figures"]): 
       supp_str = supp_str + "-f "
   if (config["reportData"]):
