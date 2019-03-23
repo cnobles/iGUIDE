@@ -357,10 +357,6 @@ ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary[
   , c("specimen", "condition", "ot_algns_pct", 
       "ot_pile_pct", "ot_pair_pct", "ot_match_pct")
 ]
-names(ot_tbl_summary) <- c(
-  "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
-  "Flanking\nPairs", "Target\nMatched"
-)
 
 
 # On-target distribution of incorporations ----
@@ -372,21 +368,16 @@ ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary[
   , c("specimen", "condition", "ft_algns", "ft_pile", "ft_pair", "ft_match")
 ]
 
-names(ft_tbl_summary) <- c(
-  "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
-  "Flanking\nPairs", "Target\nMatched"
-)
-
 
 # Off-target sequence analysis ----
 ft_seqs_list <- eval_data$ft_data
 
 
 # Onco-gene enrichment analysis ----
-enrich_df <- eval_data$enrich_data$enrich_df
-names(enrich_df) <- c(
-  "Origin", "Condition", "Total Gene Count", "Onco Related Count", 
-  "Special Gene Count", "Onco Enrich. p-value", "Special Enrich. p-value")
+enrich_df <- eval_data$enrich_data$enrich_df %>%
+  dplyr::select(
+    origin, condition, total, onco, onco.p.value, special, special.p.value
+  )
 
 
 # Data passed to Rmd for report generation ----
@@ -457,19 +448,16 @@ if( args$format == "html" ){
 
 if( !args$figures ){
   
-  tmp_fig_paths <- sapply(
-    seq_along(ft_seqs_list),
-    function(i, fp){
-      
-      file <- c(
-        sprintf("off_target_seqs-%s.pdf", i),
-        sprintf("off_target_seqs-%s.png", i)
-      )
-      
-      path <- file.path(fp, file)
-      
-    },
-    fp = figure_path
+  tmp_fig_paths <- c(
+    list.files(
+      path = figure_path, pattern = "incorp_dist", full.names = TRUE
+    ),
+    list.files(
+      path = figure_path, pattern = "genomic_dens", full.names = TRUE
+    ),
+    list.files(
+      path = figure_path, pattern = "off_target_seqs", full.names = TRUE
+    )
   )
   
   cat(sprintf("Removing temporary files: %s\n", tmp_fig_paths), sep = "")

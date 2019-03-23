@@ -365,26 +365,6 @@ null <- catOrWrite("", args)
 
 # Onco-gene enrichment analysis ----
 enrich_df <- eval_data$enrich_data$enrich_df %>%
-  dplyr::mutate(
-    onco.power = sapply(seq_len(n()), function(i){
-      
-      statmod::power.fisher.test(
-        p1 = onco[1] / (total[1] - onco[1]),
-        p2 = onco[i] / (total[i] - onco[i]),
-        n1 = total[1], n2 = total[2]
-      )
-      
-    }),
-    special.power = sapply(seq_len(n()), function(i){
-      
-      statmod::power.fisher.test(
-        p1 = special[1] / (total[1] - special[1]),
-        p2 = special[i] / (total[i] - special[i]),
-        n1 = total[1], n2 = total[2]
-      )
-      
-    })
-  ) %>%
   dplyr::select(
     origin, condition, total, 
     onco, onco.p.value, onco.power, 
@@ -393,6 +373,7 @@ enrich_df <- eval_data$enrich_data$enrich_df %>%
   dplyr::filter(
     onco.power >= args$power_filt / 100 | special.power >= args$power_filt / 100
   )
+
 
 names(enrich_df) <- c(
   "Origin", "Condition", "Total Gene Count", "Onco Related Count", 

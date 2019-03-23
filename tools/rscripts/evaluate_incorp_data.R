@@ -1068,6 +1068,32 @@ enrich_df$special.p.value <- p.adjust(
   method = "BH"
 )
 
+enrich_df <- enrich_df %>%
+  dplyr::mutate(
+    onco.power = sapply(seq_len(n()), function(i){
+      
+      statmod::power.fisher.test(
+        p1 = onco[1] / total[1],
+        p2 = onco[i] / total[i],
+        n1 = total[1], n2 = total[i]
+      )
+      
+    }),
+    special.power = sapply(seq_len(n()), function(i){
+      
+      statmod::power.fisher.test(
+        p1 = special[1] / total[1],
+        p2 = special[i] / total[i],
+        n1 = total[1], n2 = total[i]
+      )
+      
+    })
+  ) %>%
+  dplyr::select(
+    origin, condition, total, 
+    onco, onco.p.value, onco.power, 
+    special, special.p.value, special.power
+  ) 
 
 ## Off-target sequence analysis ----
 ft_MESL <- input_data$matched_algns %>%
