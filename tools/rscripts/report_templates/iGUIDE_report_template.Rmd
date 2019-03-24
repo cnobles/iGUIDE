@@ -248,7 +248,8 @@ target_print <- target_tbl %>%
     ),
     PAM = kableExtra::cell_spec(
       PAM, format = report_format, monospace = TRUE
-    )
+    ),
+    "Edit Locus" = kableExtra::linebreak(`Edit Locus`)
   )
 
 kable(
@@ -586,15 +587,7 @@ if( args$format == "pdf" ){
 
 The figure(s) below display the genomic distribution of identified incorporation sites. The inner most ring plots all alignments identified within the associated data, while subsequent rings plot the alignments associated with Pileups, Flanking Pairs, and Target Matched groups. The height of the bar within its associated ring is correlated to the number of incorporations identified within the **10 Mb window** (logarithm base 10 of incorporation site abundances).
 
-```{r}
-gen_den_len <- length(unique(genomic_grl[[1]]$condition))
-plots_per_row <- 2
-row_idx <- ceiling(seq_len(gen_den_len) / plots_per_row)
-layout_list <- split(seq_len(gen_den_len), row_idx)
-```
-
 ```{r genomic_distribution}
-
 genomic_den_plot <- plotGenomicDensity(
     genomic_grl, 
     res = 1E7, 
@@ -609,6 +602,10 @@ genomic_den_plot <- plotGenomicDensity(
     legend.position = "top"
   )
 
+gen_den_len <- length(unique(genomic_den_plot$data$cond))
+plots_per_row <- 2
+row_idx <- ceiling(seq_len(gen_den_len) / plots_per_row)
+layout_list <- split(seq_len(gen_den_len), row_idx)
 
 null <- lapply(
   seq_along(layout_list),
