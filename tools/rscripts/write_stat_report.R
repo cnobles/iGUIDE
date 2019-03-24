@@ -87,7 +87,9 @@ if( !dir.exists(iguide_dir) ){
 if( length(grep("-t", args)) > 0 ){
   template_path <- args[grep("-t", args) + 1]
 }else{
-  template_path <- "tools/rscripts/report_templates/iGUIDE_stat_template.Rmd"
+  template_path <- file.path(
+    iguide_dir, "tools/rscripts/report_templates/iGUIDE_stat_template.Rmd"
+  )
 }
 
 ## Resolve template file path.
