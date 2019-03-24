@@ -354,7 +354,7 @@ genomic_grl <- GenomicRanges::GRangesList(lapply(
 num_conds <- max(length(unique(cond_overview$condition)), 1)
 
 names(genomic_grl) <- c(
-  "All Align.", "Pileup Align.", "Flanking Pairs", "gRNA Matched")
+  "All Align.", "Pileup Align.", "Flanking Pairs", "Target Matched")
 
 
 # On-target summary ----
