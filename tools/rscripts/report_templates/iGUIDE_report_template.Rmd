@@ -234,11 +234,15 @@ target_tbl$`Edit Locus` <- sapply(
 
 if( args$tables ){
   
-  write.csv(
-    x = target_print, 
-    file = file.path(tables_path, "tbl2.target.sequences.csv"),
-    quote = TRUE, row.names = FALSE
-  )
+  target_tbl %>%
+    dplyr::mutate(
+      "Edit Locus" = gsub("\n", ";", `Edit Locus`)
+    ) %>%
+    write.csv(
+      file = file.path(tables_path, "tbl2.target.sequences.csv"),
+      quote = TRUE, row.names = FALSE
+    )
+  
 }
 
 target_print <- target_tbl %>%
@@ -248,9 +252,24 @@ target_print <- target_tbl %>%
     ),
     PAM = kableExtra::cell_spec(
       PAM, format = report_format, monospace = TRUE
-    ),
-    "Edit Locus" = kableExtra::linebreak(`Edit Locus`)
+    )
   )
+
+if( report_format == "html" ){
+
+  target_print <- dplyr::mutate(
+    target_print,
+    "Edit Locus" = gsub("\n", "<br>", `Edit Locus`)
+  )
+  
+}else{
+  
+  target_print <- dplyr::mutate(
+    target_print,
+    "Edit Locus" = kableExtra::linebreak(`Edit Locus`, align = "c")
+  )
+  
+}
 
 kable(
     x = target_print, format = report_format, row.names = FALSE,
@@ -855,6 +874,24 @@ for( i in seq_along(ft_seqs_list) ){
       aligned.sequence = kableExtra::cell_spec(
         aligned.sequence, format = report_format, monospace = TRUE, 
         escape = FALSE
+      ),
+      gene_id = ifelse(
+        rep(report_format, n()) == rep("html", n()),
+        gene_id,
+        gsub("_", "\\_", gene_id, fixed = TRUE)
+      ),
+      gene_id = ifelse(
+        rep(report_format, n()) == rep("html", n()),
+        gene_id,
+        gsub("~", "\\~", gene_id, fixed = TRUE)
+      ),
+      gene_id = ifelse(
+        rep(report_format, n()) == rep("html", n()),
+        gene_id,
+        gsub("!", "\\!", gene_id, fixed = TRUE)
+      ),
+      gene_id = kableExtra::cell_spec(
+        gene_id, format = report_format, escape = FALSE
       )
     ) %>%
     dplyr::rename(
