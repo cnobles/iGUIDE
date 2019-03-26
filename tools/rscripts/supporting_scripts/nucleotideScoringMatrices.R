@@ -77,7 +77,7 @@ ssanmat <- function(){
 
 #' An Asymmetric Scaled Ambiguous Nucleotide scoring Matrix (USAN Mat)
 #' 
-#' @usage usanmat()
+#' @usage asanmat()
 #' 
 #' @description Meant for comparing ambiguous sequences against other sequences
 #' possibly containing ambiguous nucleotides. The scores are scaled between 0
