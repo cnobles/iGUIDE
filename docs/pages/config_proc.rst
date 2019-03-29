@@ -177,10 +177,11 @@ Report
   ``Supplemental_Info`` should be used in the default report generated at the
   end of processing.
 
-``figures``
-  Logical indicating if figures should be generated from the report. Figures
-  will be included under the ``reports`` directory in the run directory. Both
-  PDF and PNG formats will be generated if set to ``TRUE`` at 300 dpi.
+``{tables/figures}``
+  Logicals indicating if tables and figures should be generated from the report. 
+  Data will be included under the ``reports`` directory in the project run directory. 
+  For figures, both PDF and PNG formats will be generated if set to ``TRUE`` at 300 dpi
+  while tables will be generated in a comma-separated values (csv) format.
 
 ``reportData``
   Logical indicating if a RData object should be saved during the report 

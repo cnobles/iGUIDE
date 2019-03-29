@@ -37,7 +37,7 @@ software::
   TACGTACGTACGTACGTACGT ACC (anti-sense strand)
                    ><       # Dominant cutpoint
   
-  Cpf1 : Also known as Cas12a
+  Cpf1 : Also known as Cas12a (similar nuclease structure for CasX)
                           ><         # Dominant cutpoint
   GTTTG ATGCATGCATGCATGCATGCATGCATGC (sense strand)
     PAM
@@ -78,7 +78,14 @@ Below are the example profiles::
     PAM : "TTTV"
     PAM_Loc : "5p"
     PAM_Tol : 1
-    Cut_Offset : 26     #(Any where between 23 and 28)
+    Cut_Offset : 26     #(Anywhere between 23 and 28)
+    Insert_size : FALSE
+
+  CasX :
+    PAM : "TTCN"
+    PAM_Loc : "5p"
+    PAM_Tol : 1
+    Cut_Offset : 22     #(Anywhere between 16 and 29)
     Insert_size : FALSE
 
   TALEN :
