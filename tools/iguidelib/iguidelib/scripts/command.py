@@ -16,15 +16,17 @@ def main():
 
     usage_str = "\n  %(prog)s [-h/--help,-v/--version] <subcommand> <path/to/config.file> <options> -- <snakemake.options>"
     description_str = (
-        "subcommands:\n"
-        "  setup        \tCreate a new config file for a project using local data.\n"
-        "  run          \tExecute the iGUIDE pipeline.\n"
-        "  eval         \tEvaluate a set or sets of assimilated iGUIDE outputs.\n"
-        "  report       \tGenerate a custom report from iGUIDE output files.\n"
-        "  summary      \tGenerate a consise summary from iGUIDE output files.\n"
-        "  list_samples \tOutput a list of samples from a project.\n"
-        "  config       \t[inDev] Modify or update iGUIDE config files.\n"
-        "  clean        \tCleanup project directory to reduce size. Keeps terminal files."
+        "list of subcommands:\n\n"
+        "  primary:\n"
+        "    setup        \tCreate a new config file for a project using local data.\n"
+        "    run          \tExecute the iGUIDE pipeline.\n\n"
+        "  accessory:\n"
+        "    eval         \tEvaluate a set or sets of assimilated iGUIDE outputs.\n"
+        "    report       \tGenerate a custom report from iGUIDE output files.\n"
+        "    summary      \tGenerate a consise summary from iGUIDE output files.\n"
+        "    list_samples \tOutput a list of samples from a project.\n"
+        "    config       \t[inDev] Modify or update iGUIDE config files.\n"
+        "    clean        \tCleanup project directory to reduce size. Keeps terminal files.\n\n"
     ).format(version=__version__)
 
     parser = argparse.ArgumentParser(
