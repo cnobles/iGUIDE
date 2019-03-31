@@ -1254,10 +1254,10 @@ saveRDS(
 )
   
 if( !file.exists(args$output) ){
-  stop("\n  Cannot verify existence of output file: ", args$output, "\n")
+  stop("\n  Cannot verify existence of output file:\n  ", args$output, "\n")
 }else{
   if( !args$quiet ){
-    cat("Evaluation complete, output writen to:", args$output, "\n")
+    cat("Evaluation complete, output writen to:\n  ", args$output, "\n")
   }
   q(status = 0)
 }
