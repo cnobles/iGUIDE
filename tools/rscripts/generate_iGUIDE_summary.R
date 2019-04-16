@@ -391,8 +391,10 @@ if( nrow(enrich_df) > 0 ){
   names(enrich_df) <- gsub(" ", "\n", names(enrich_df))
   enriched_idx <- which(enrich_df <= 0.05, arr.ind = TRUE)
   enriched_idx <- enriched_idx[enriched_idx[,2] >= 6, , drop = FALSE]
+  enrich_df[,5] <- sprintf("%.3f", round(enrich_df[,5], digits = 3))
   enrich_df[,6] <- sprintf("%.3f", round(enrich_df[,6], digits = 3))
-  enrich_df[,7] <- sprintf("%.3f", round(enrich_df[,7], digits = 3))
+  enrich_df[,8] <- sprintf("%.3f", round(enrich_df[,8], digits = 3))
+  enrich_df[,9] <- sprintf("%.3f", round(enrich_df[,9], digits = 3))
   
   null <- catOrWrite(
     enrich_df, args,
