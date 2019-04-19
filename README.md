@@ -106,7 +106,7 @@ conda deactivate
 
 ### Changelog:
 
-**v0.9.8 (March 18th, 2019)**
+**v0.9.8 (April 19th, 2019)**
 
 * iGUIDE can now support non-Cas9 nucleases as well!
   + Implemented nuclease profiles into configs
@@ -120,6 +120,7 @@ conda deactivate
 * Added 'summary' subcommand to generate a consise text-based report
   + Working in the same manner as 'report', can generate from config(s) or eval file
 * Added short stats-based report to be produced at the end of processing
+* Additional bugfixes.
 
 **v0.9.7 (March 6th, 2019)**
 

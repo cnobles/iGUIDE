@@ -856,7 +856,6 @@ for( i in seq_along(ft_seqs_list) ){
         "Mismatch" = mismatch
       )%>%
       write.csv(
-        x = df, 
         file = file.path(tables_path, paste0("tbl", i+5, ".offtargets.csv")),
         quote = TRUE, row.names = FALSE
       )
