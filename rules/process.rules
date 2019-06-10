@@ -5,7 +5,7 @@ rule all_uniq_sites:
   input:
     expand(RUN_DIR + "/process_data/{sample}.uniq.csv", sample=SAMPLES)
   output:
-    RUN_DIR + "/output/unique_sites." + RUN + ".csv"
+    temp(RUN_DIR + "/output/unique_sites." + RUN + ".csv")
   params:
     RUN_DIR + "/process_data"
   resources:
@@ -17,15 +17,6 @@ rule all_uniq_sites:
         tail -n +2 $UNIQ >> {output}
     done
     """
-
-rule compress_uniq_sites:
-  input: 
-    sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv",
-    edits=RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
-  output: RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz"
-  resources:
-    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "gzip {input.sites}"
 
 
 def all_umitag_inputs(wildcards):
@@ -69,7 +60,9 @@ rule assimilate_sites:
 
 rule iguide_evaluation:
   input: RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
-  output: temp(RUN_DIR + "/output/iguide.eval." + RUN + ".rds")
+  output: 
+    eval=temp(RUN_DIR + "/output/iguide.eval." + RUN + ".rds"),
+    stat=temp(RUN_DIR + "/process_data/" + RUN + ".eval.stat")
   params: 
     tool = ROOT_DIR + "/tools/rscripts/evaluate_incorp_data.R",
     config = RUN_DIR + "/" + "config.yml"
@@ -77,10 +70,10 @@ rule iguide_evaluation:
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["evaluateMB"]
   run:
-    call_str="Rscript {params.tool} {params.config} -o {output}"
+    call_str="Rscript {params.tool} {params.config} -o {output.eval}"
     if (config["suppFile"]):
       call_str=call_str + " -s " + ROOT_DIR + "/" + config["Supplemental_Info"]
-    call_str=call_str + " > {log} 2>&1"
+    call_str=call_str + " --stat {output.stat} > {log} 2>&1"
     shell(call_str)
 
 
@@ -110,6 +103,7 @@ rule run_report:
     """
     Rscript {params.tool} {input} -o {output} {params.supp} > {log} 2>&1
     """
+
 
 rule run_summary:
   input: RUN_DIR + "/output/iguide.eval." + RUN + ".rds"

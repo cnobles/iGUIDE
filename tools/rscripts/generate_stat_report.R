@@ -178,9 +178,9 @@ names(algn_tbl) <- stringr::str_replace(names(algn_tbl), "align.", "")
 
 # Incorporation breakdown table ----
 incorp_tbl <- dplyr::select(
-    stat_df, sampleName, assim.total.algns, assim.combined.algns, 
-    assim.pileup.algns, assim.paired.algns, assim.matched.algns, 
-    assim.ontarget.algns, assim.offtarget.algns
+    stat_df, sampleName, eval.total.algns, eval.combined.algns, 
+    eval.pileup.algns, eval.paired.algns, eval.matched.algns, 
+    eval.ontarget.algns, eval.offtarget.algns
   ) %>%
   dplyr::filter(sampleName %in% sampleNames) %>%
   dplyr::mutate(sampleName = factor(sampleName, levels = sampleNames)) %>%

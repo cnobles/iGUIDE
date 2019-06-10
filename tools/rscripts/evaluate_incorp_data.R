@@ -41,6 +41,14 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "--stat", nargs = 1, type = "character", default = FALSE, 
+  help = paste(
+    "File name to be written in output directory of read couts for each",
+    "sample. CSV file format. ie. test.stat.csv."
+  )
+)
+
+parser$add_argument(
   "-q", "--quiet", action = "store_true", 
   help = "Hide standard output messages."
 )
@@ -131,6 +139,7 @@ code_dir <- dirname(sub(
 ))
 
 source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
+source(file.path(code_dir, "supporting_scripts/nucleotideScoringMatrices.R"))
 
 
 # Import metadata and consolidate objects ----
@@ -252,17 +261,49 @@ special_genes <- suppressMessages(loadRefFiles(
   root = root_dir
 ))
 
+submat <- banmat()
+
+## Determine processing parameters
+## Some parameters will need to be an "all or nothing" approach, including:
+##   - UMItags
+##   - recoverMultihits
+## Depending on these parameters others (upstream/downstream_dist, ...) may need
+## to be consistent between runs otherwise, the primary config file (first one),
+## will be used for parameterization.
+
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
+multihit_option <- all(unlist(lapply(configs, "[[", "recoverMultihits")))
 
-upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
-downstream_dist <- unique(sapply(configs, function(x) x$downstreamDist))
+if( multihit_option ){
+  
+  upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
+  downstream_dist <- unique(sapply(configs, function(x) x$downstreamDist))
+  pile_up_min <- unique(sapply(configs, function(x) x$pileUpMin))
 
-if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
-  stop(
-    "\n  Inconsistant upstream or downstream distances between config files.\n",
-    "  Comparisons between groups with different run specific criteria\n", 
-    "  is not recommended.\n")
+  if( 
+    length(upstream_dist) > 1 | 
+    length(downstream_dist) > 1 | 
+    length(pile_up_min) > 1 
+  ){
+    
+    stop(
+      "\n  Inconsistant upstream or downstream distances between config files.\n",
+      "  Comparisons between groups with different run specific criteria\n", 
+      "  is not recommended when considering the recover multihit option.\n"
+    )
+    
+  }
+  
+}else{
+  
+  upstream_dist <- configs[[1]]$upstreamDist
+  downstream_dist <- configs[[1]]$downstreamDist
+  pile_up_min <- configs[[1]]$pileUpMin
+  
 }
+
+max_target_mismatch <- configs[[1]]$maxTargetMismatch
+
 
 ## Combine sampleInfo files
 
@@ -310,8 +351,7 @@ if( length(args$support) > 0 ){
     stop("\n  Cannot find supporting data file: ", args$support, ".\n")
   }
   
-  supp_data <- data.table::fread(support_path, data.table = FALSE) %>%
-    dplyr::mutate(run_set = "supp_data")
+  supp_data <- data.table::fread(support_path, data.table = FALSE)
   
   specimen_levels <- supp_data$specimen[supp_data$specimen %in% specimen_levels]
   
@@ -532,7 +572,6 @@ target_seqs_df <- data.frame(
   sequence = as.character(unlist(target_seqs))
 )
 
-
 ## Identify PAM sequences associated with nucleases
 pam_seqs <- do.call(c, lapply(configs, function(x){
   toupper(unlist(lapply(x$Nuclease_Profiles, "[[", "PAM")))
@@ -557,12 +596,22 @@ pam_seqs_df <- data.frame(
 considered_target_seqs <- unique(unlist(treatment))
 considered_nucleases <- unique(unlist(nuclease))
 
+on_targets <- on_targets[names(on_targets) %in% considered_target_seqs]
+
 target_tbl <- combn_tbl %>%
   dplyr::left_join(target_seqs_df, by = c("run_set", "target")) %>%
   dplyr::left_join(pam_seqs_df, by = c("run_set", "nuclease")) %>%
   dplyr::filter(
     target %in% considered_target_seqs & nuclease %in% considered_nucleases
     )
+
+uniq_target_df <- target_tbl %>%
+  dplyr::distinct(target, sequence, PAM)
+
+uniq_target_seqs <- Biostrings::DNAStringSet(
+  structure(uniq_target_df$sequence, names = uniq_target_df$target),
+  use.names = TRUE
+)
 
 ### Log combination treatment table
 if( !args$quiet ){
@@ -575,7 +624,8 @@ if( !args$quiet ){
 if( is.null(args$support) ){
   spec_overview <- treatment_df
 }else{
-  spec_overview <- supp_data
+  spec_overview <- supp_data %>%
+    dplyr::mutate(run_set = "supp_data")
 }
 
 cond_overview <- spec_overview %>%
@@ -590,7 +640,10 @@ cond_overview <- spec_overview %>%
   dplyr::select(specimen, condition)
 
 
-## Read in experimental data and contatenate different sets ----
+# Beginnin analysis ----
+if( !args$quiet ) cat("\nStarting analysis...\n")
+
+## Read in experimental data and contatenate different sets
 input_data_paths <- lapply(configs, function(x){
   name <- x$Run_Name
   file.path(
@@ -609,30 +662,466 @@ input_data <- lapply(input_data_paths, function(x){
 })
 
 names(input_data) <- names(configs)
-data_type_names <- names(input_data[[1]])
+input_data <- dplyr::bind_rows(input_data, .id = "run.set") %>%
+  dplyr::mutate(
+    specimen = stringr::str_extract(sampleName, pattern = "[\\w]+")
+  ) %>%
+  dplyr::filter(specimen %in% spec_overview$specimen)
 
-input_data <- lapply(
-  seq_along(input_data[[1]]), 
-  function(i) dplyr::bind_rows(lapply(input_data, "[[", i), .id = "run.set")
+if( !multihit_option ){
+  input_data <- dplyr::filter(input_data, type == "uniq")
+}
+
+
+## Format input alignments ----
+algnmts <- input_data
+
+## Determine abundance metrics, with or without UMItags
+if( umitag_option ){
+  
+  algnmts <- dplyr::arrange(algnmts, desc(contrib)) %>%
+    dplyr::group_by(seqnames, start, end, strand, specimen, sampleName) %>%
+    dplyr::summarise(
+      count = sum(contrib),
+      umitag = sum(as.integer(!duplicated(umitag[!is.na(umitag)])) * contrib),
+      contrib = max(contrib)
+    ) %>%
+    dplyr::ungroup() %>%
+    as.data.frame()
+  
+}else{
+  
+  algnmts <- dplyr::arrange(algnmts, desc(contrib)) %>%
+    dplyr::group_by(seqnames, start, end, strand, specimen, sampleName) %>%
+    dplyr::summarize(
+      count = sum(contrib), 
+      contrib = max(contrib)
+    ) %>%
+    dplyr::ungroup() %>%
+    as.data.frame()
+  
+}
+
+## Generate a sample table of the data for log purposes
+sample_index <- ifelse(nrow(algnmts) > 10, 10, nrow(algnmts))
+sample_index <- sample(seq_len(nrow(algnmts)), sample_index, replace = FALSE)
+
+cat("\nSample of aligned templates:\n")
+
+print(
+  data.frame(algnmts[sample_index,]),
+  right = FALSE,
+  row.names = FALSE
 )
 
-names(input_data) <- data_type_names
+cat(paste0("\nNumber of alignments: ", nrow(algnmts), "\n"))
 
-input_data <- lapply(
-  input_data, 
-  function(x) x[x$specimen %in% spec_overview$specimen,] 
+rm(sample_index)
+
+## Transform the data into a GRanges object
+algnmts_gr <- GenomicRanges::GRanges(
+  seqnames = algnmts$seqnames,
+  ranges = IRanges::IRanges(start = algnmts$start, end = algnmts$end),
+  strand = algnmts$strand,
+  seqinfo = GenomeInfoDb::seqinfo(ref_genome)
 )
 
-## Updating on-target data if needed
-on_targets <- on_targets[names(on_targets) %in% considered_target_seqs]
+if( umitag_option ){
+  
+  GenomicRanges::mcols(algnmts_gr) <- dplyr::select(
+    algnmts, specimen, sampleName, count, umitag, contrib
+  )
+  
+}else{
+  
+  GenomicRanges::mcols(algnmts_gr) <- dplyr::select(
+    algnmts, specimen, sampleName, count, contrib
+  )
+  
+}
+
+# Analyze alignments ----
+## Identify groups of alignments or pileups of aligned fragments
+## These pileups give strong experimental evidence of directed incorporation of
+## the dsODN into a region. Initially, pileups are identified and then checked 
+## for pairing, or if there is another pileup on the opposite strand in close 
+## proximity.
+algnmts_gr$clus.ori <- pileupCluster(
+  gr = algnmts_gr, 
+  grouping = "specimen", 
+  maxgap = 0L, 
+  return = "simple"
+)
+
+algnmts_gr$paired.algn <- identifyPairedAlgnmts(
+  gr = algnmts_gr, 
+  grouping = "specimen", 
+  maxgap = upstream_dist * 2
+)
+
+algnmts_grl <- split(algnmts_gr, unlist(nuclease)[algnmts_gr$specimen])
+
+annot_clust_info <- dplyr::bind_rows(lapply(
+  seq_along(algnmts_grl), 
+  function(i, grl){
+
+    gr <- grl[[i]]
+    nuc <- names(grl)[i]
+    
+    if( !nuc %in% names(nuc_profiles) ){
+      nuc_profile <- NULL
+    }else{
+      nuc_profile <- nuc_profiles[[nuc]]
+    }
+    
+    ## Create a GRange with only the unique cluster origins
+    split_clus_id <- stringr::str_split(
+      string = unique(paste0(gr$specimen, ":", gr$clus.ori)), 
+      pattern = ":", 
+      simplify = TRUE
+    )
+    
+    algn_clusters <- GenomicRanges::GRanges(
+      seqnames = split_clus_id[,2],
+      ranges = IRanges::IRanges(
+        start = as.numeric(split_clus_id[,4]), width = 1
+      ),
+      strand = split_clus_id[,3],
+      seqinfo = GenomeInfoDb::seqinfo(ref_genome)
+    )
+    
+    algn_clusters$specimen <- split_clus_id[,1]
+    algn_clusters$clus.ori <- vcollapse(split_clus_id[, 2:4], sep = ":")
+    
+    algn_clusters$clus.seq <- getSiteSeqs(
+      gr = algn_clusters, 
+      upstream.flank = upstream_dist, 
+      downstream.flank = downstream_dist, 
+      ref.genome = ref_genome
+    )
+    
+    ## Identify which target sequences binding near clusters
+    if( !is.null(nuc_profile) ){
+      
+      algn_clusters <- compareTargetSeqs(
+        gr.with.sequences = algn_clusters, 
+        seq.col = "clus.seq", 
+        target.seqs = uniq_target_seqs,
+        tolerance = max_target_mismatch,
+        nuc.profile = nuc_profile,
+        submat = submat, 
+        upstream.flank = upstream_dist, 
+        downstream.flank = downstream_dist
+      )
+      
+    }else{
+      
+      algn_clusters$target.match <- "No_valid_match"
+      algn_clusters$target.mismatch <- NA
+      algn_clusters$target.score <- NA
+      algn_clusters$aligned.sequence <- NA
+      algn_clusters$edit.site <- NA
+      
+    }
+    
+    as.data.frame(GenomicRanges::mcols(algn_clusters))
+    
+  },
+  grl = algnmts_grl
+))
 
 
-# Beginnin analysis ----
-if( !args$quiet ) cat("\nStarting analysis...\n")
+## Merge the target sequence alignment information from the clusters back to all
+## unique alignments
+algnmts <- as.data.frame(merge(
+  x = as.data.frame(algnmts_gr), 
+  y = dplyr::select(annot_clust_info, -clus.seq),
+  by = c("specimen", "clus.ori")
+))
+
+## Change guideRNA.match to No_Valid_Match if an inappropriate gRNA is annotated
+algnmts$target.match <- filterInappropriateComparisons(
+  guideRNA.match = algnmts$target.match, 
+  specimen = algnmts$specimen, 
+  treatment = treatment
+)
+
+## Fragment pileups, paired clustering, and guideRNA alignments have been used 
+## to characterize the incorporation sites analyzed here. Each metric will be 
+## used to create a list of incorporation sites that may be nuclease cut sites. 
+## The following identifies which alignments are associated with each of these 
+## criteria.
+tbl_clus_ori <- algnmts %>% 
+  dplyr::group_by(specimen, clus.ori) %>%
+  dplyr::filter(n() >= pile_up_min) %>%
+  dplyr::ungroup() %$%
+  table(clus.ori)
+
+idx_clus_ori <- which(algnmts$clus.ori %in% names(tbl_clus_ori))
+
+tbl_paired_algn <- algnmts %>%
+  dplyr::filter(!is.na(paired.algn)) %$%
+  table(paired.algn)
+
+idx_paired_algn <- which(algnmts$paired.algn %in% names(tbl_paired_algn))
+
+idx_matched <- which(algnmts$target.match != "No_valid_match")
+
+idx_combined <- sort(unique(c(idx_clus_ori, idx_paired_algn, idx_matched)))
+
+idx_df <- data.frame(
+  "Type" = c("PileUp", "Paired", "gRNA_Matched", "Combined"),
+  "Counts" = sapply(
+    list(idx_clus_ori, idx_paired_algn, idx_matched, idx_combined), 
+    length
+  )
+)
+
+cat("\nTable of uniquely aligned template counts:\n")
+print(idx_df, right = FALSE, row.names = FALSE) 
+cat(paste0("\nTotal number of alignments: ", nrow(algnmts), "\n"))
+
+probable_algns <- algnmts[idx_combined,]
+
+probable_algns$on.off.target <- ifelse(
+  probable_algns$edit.site %in% expandPosStr(on_targets), 
+  "On-target", 
+  "Off-target"
+)
+
+cat("\nOn / Off target alignment counts:\n")
+print(table(probable_algns$on.off.target))
+
+
+## Create summary and output formated object related to each of the criteria for
+## edited site detection.
+
+## Matched alignments
+matched_algns <- probable_algns[
+  probable_algns$target.match != "No_valid_match",
+  ]
+
+matched_summary <- matched_algns %>%
+  dplyr::mutate(
+    target.match = stringr::str_replace(
+      string = target.match, 
+      pattern = "\\:\\([\\w]+\\)$",
+      replacement = ""
+    )
+  ) %>%
+  dplyr::group_by(
+    specimen, edit.site, aligned.sequence, target.match, target.mismatch
+  )
+
+if( umitag_option ){
+  
+  matched_summary <- dplyr::summarise(
+    matched_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    count = sum(count), 
+    umitag = sum(umitag),
+    algns = sum(contrib),
+    orient = paste(sort(unique(as.character(strand))), collapse = ";")
+  )
+  
+}else{
+  
+  matched_summary <- dplyr::summarise(
+    matched_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    count = sum(count), 
+    algns = sum(contrib),
+    orient = paste(sort(unique(as.character(strand))), collapse = ";")
+  )
+  
+}
+
+matched_summary <- dplyr::ungroup(matched_summary) %>% 
+  dplyr::arrange(specimen, target.match, desc(algns)) %>%
+  as.data.frame()
+
+## Paired alignments
+paired_algns <- probable_algns[
+  probable_algns$paired.algn %in% names(tbl_paired_algn),
+  ]
+
+paired_regions <- paired_algns %>%
+  dplyr::group_by(specimen, paired.algn, strand) %>%
+  dplyr::mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
+  dplyr::group_by(specimen, paired.algn)
+
+if( umitag_option ){
+  
+  paired_regions <- dplyr::summarise(
+    paired_regions,
+    seqnames = unique(seqnames),
+    start = min(pos), 
+    end = max(pos), 
+    mid = start + (end-start)/2,
+    strand = "*", 
+    width = end - start, 
+    count = sum(count), 
+    umitag = sum(umitag), 
+    algns = sum(contrib)
+  ) %>%
+    dplyr::ungroup()
+  
+}else{
+  
+  paired_regions <- dplyr::summarise(
+    paired_regions,
+    seqnames = unique(seqnames),
+    start = min(pos), 
+    end = max(pos), 
+    mid = start + (end-start)/2,
+    strand = "*", 
+    width = end - start, 
+    count = sum(count), 
+    algns = sum(contrib)
+  ) %>%
+    dplyr::ungroup()
+  
+}
+
+if( nrow(paired_regions) > 0 ){
+  
+  paired_regions <- paired_regions %>%
+    dplyr::group_by(specimen, paired.algn) %>%
+    dplyr::mutate(
+      on.off.target = ifelse(
+        any(sapply(
+          expandPosStr(unlist(on_targets[
+            which(
+              stringr::str_extract(
+                names(on_targets), "[\\w\\-\\_\\.]+") %in% 
+                treatment[[specimen]]
+            )
+            ])),
+          function(x, seq, st, en){
+            
+            match_seq <- seq == stringr::str_extract(x, "[\\w]+")
+            
+            within_start <- st <= 
+              as.numeric(stringr::str_extract(x, "[\\w]+$")) + downstream_dist
+            
+            within_end <- en >= 
+              as.numeric(stringr::str_extract(x, "[\\w]+$")) - downstream_dist
+            
+            match_seq & within_start & within_end
+            
+          }, 
+          seq = seqnames, 
+          st = start, 
+          en = end
+        )), 
+        "On-target", 
+        "Off-target"
+      )
+    ) %>%
+    dplyr::ungroup() %>% 
+    as.data.frame()
+  
+}else{
+  
+  paired_regions <- dplyr::mutate(
+    paired_regions,
+    on.off.target = vector(mode = "character")
+  )
+  
+}
+
+## Pile up alignments
+pile_up_algns <- probable_algns[
+  probable_algns$clus.ori %in% names(tbl_clus_ori),
+]
+
+pile_up_summary <- pile_up_algns %>%
+  dplyr::mutate(
+    target.match = stringr::str_replace(
+      string = target.match, 
+      pattern = "\\:\\([\\w]+\\)$",
+      replacement = ""
+    )
+  ) %>%
+  dplyr::group_by(specimen, clus.ori)
+
+if( umitag_option ){
+  
+  pile_up_summary <- dplyr::summarise(
+    pile_up_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    count = sum(count), 
+    umitag = sum(umitag),
+    algns = sum(contrib)
+  )
+  
+}else{
+  
+  pile_up_summary <- dplyr::summarise(
+    pile_up_summary,
+    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
+    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
+    count = sum(count), 
+    algns = sum(contrib)
+  )
+  
+}
+
+pile_up_summary <- dplyr::ungroup(pile_up_summary) %>% 
+  dplyr::arrange(specimen, desc(algns)) %>%
+  as.data.frame()
+
+
+# Generate stats if requested ----
+## If requested, generate stats from the analysis for qc.
+
+if( args$stat != FALSE ){
+  
+  stat_summary <- function(x, y){
+    
+    x %>%
+      dplyr::mutate(metric = y) %>%
+      dplyr::group_by(sampleName, metric) %>%
+      dplyr::summarize(count = sum(contrib)) %>%
+      dplyr::ungroup()
+    
+  }
+  
+  total_stat <- stat_summary(algnmts, "total.algns")
+  combined_stat <- stat_summary(probable_algns, "combined.algns")
+  pileup_stat <- stat_summary(pile_up_algns, "pileup.algns")
+  paired_stat <- stat_summary(paired_algns, "paired.algns")
+  matched_stat <- stat_summary(matched_algns, "matched.algns")
+  
+  on_tar_stat <- dplyr::filter(
+    matched_algns, on.off.target == "On-target"
+  ) %>%
+    stat_summary("ontarget.algns")
+  
+  off_tar_stat <- dplyr::filter(
+    matched_algns, on.off.target == "Off-target"
+  ) %>%
+    stat_summary("offtarget.algns")
+  
+  stat <- dplyr::bind_rows(
+    total_stat, combined_stat, pileup_stat, paired_stat, 
+    matched_stat, on_tar_stat, off_tar_stat)
+  
+  write.table(
+    x = stat, file = args$stat, 
+    sep = ",", row.names = FALSE, 
+    col.names = FALSE, quote = FALSE
+  )
+  
+}
+
 
 ## Specimen summary ----
 # Summarize components and append to specimen table
-tbl_algn_counts <- input_data$algnmts %>% 
+tbl_algn_counts <- algnmts %>% 
   dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
   dplyr::group_by(specimen)
 
@@ -659,8 +1148,8 @@ spec_overview <- dplyr::left_join(
 
 
 ## Annotate incorporation data ----
-input_data$matched_summary <- suppressMessages(dplyr::mutate(
-  input_data$matched_summary,
+matched_summary <- suppressMessages(dplyr::mutate(
+  matched_summary,
   gene_id = assignGeneID( 
     seqnames = stringr::str_extract(edit.site, "[\\w]+"), 
     positions = as.numeric(stringr::str_extract(edit.site, "[\\w]+$")), 
@@ -671,8 +1160,8 @@ input_data$matched_summary <- suppressMessages(dplyr::mutate(
   )
 ))
 
-input_data$paired_regions <- suppressMessages(dplyr::mutate(
-  input_data$paired_regions,     
+paired_regions <- suppressMessages(dplyr::mutate(
+  paired_regions,     
   gene_id = assignGeneID(
     seqnames = seqnames, 
     positions = mid, 
@@ -683,8 +1172,8 @@ input_data$paired_regions <- suppressMessages(dplyr::mutate(
   )
 ))
 
-input_data$pile_up_summary <- suppressMessages(dplyr::mutate(
-  input_data$pile_up_summary,
+pile_up_summary <- suppressMessages(dplyr::mutate(
+  pile_up_summary,
   gene_id = assignGeneID( 
     seqnames = stringr::str_extract(clus.ori, "[\\w]+"), 
     positions = as.numeric(stringr::str_extract(clus.ori, "[\\w]+$")), 
@@ -698,7 +1187,7 @@ input_data$pile_up_summary <- suppressMessages(dplyr::mutate(
 
 ## On-target summary ----
 # Algnmts
-tbl_ot_algn <- input_data$algnmts %>%
+tbl_ot_algn <- algnmts %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -716,7 +1205,7 @@ tbl_ot_algn <- input_data$algnmts %>%
   as.data.frame()
 
 # Probable edited sites
-tbl_ot_prob <- input_data$probable_algns %>% 
+tbl_ot_prob <- probable_algns %>% 
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -734,7 +1223,7 @@ tbl_ot_prob <- input_data$probable_algns %>%
   as.data.frame()
 
 # Pile ups of read alignments
-tbl_ot_pile <- input_data$pile_up_algns %>% 
+tbl_ot_pile <- pile_up_algns %>% 
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -752,7 +1241,7 @@ tbl_ot_pile <- input_data$pile_up_algns %>%
   as.data.frame()
 
 # Paired or flanking algnments
-tbl_ot_pair <- input_data$paired_regions %>%
+tbl_ot_pair <- paired_regions %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen))),
     on.off.target = factor(
@@ -771,7 +1260,7 @@ tbl_ot_pair <- input_data$paired_regions %>%
   as.data.frame()
 
 # Guide RNA matched within 6 mismatches
-tbl_ot_match <- input_data$matched_summary %>%
+tbl_ot_match <- matched_summary %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -813,7 +1302,7 @@ ot_tbl_summary <- Reduce(
 
 
 ## On-target incorporation distribution ----
-on_tar_dists <- input_data$matched_algns %>%
+on_tar_dists <- matched_algns %>%
   dplyr::filter(on.off.target == "On-target") %>%
   dplyr::mutate(
     target = stringr::str_extract(string = target.match, pattern = "[\\w]+"),
@@ -825,7 +1314,7 @@ on_tar_dists <- input_data$matched_algns %>%
   ) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   dplyr::select(
-    run.set, specimen, target, condition, 
+    specimen, target, condition, 
     edit.site, edit.site.dist, strand, contrib)
 
 on_tar_dens <- lapply(
@@ -877,7 +1366,7 @@ sites_included <- on_tar_dists %>%
 
 ## Off-target summary ----
 # All alignments
-tbl_ft_algn <- input_data$algnmts %>%
+tbl_ft_algn <- algnmts %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -888,7 +1377,7 @@ tbl_ft_algn <- input_data$algnmts %>%
   as.data.frame()
 
 # Probable edit sites
-tbl_ft_prob <- input_data$probable_algns %>%
+tbl_ft_prob <- probable_algns %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -899,7 +1388,7 @@ tbl_ft_prob <- input_data$probable_algns %>%
   as.data.frame()
 
 # Pile ups
-tbl_ft_pile <- input_data$pile_up_algns %>%
+tbl_ft_pile <- pile_up_algns %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -910,7 +1399,7 @@ tbl_ft_pile <- input_data$pile_up_algns %>%
   as.data.frame()
 
 # Paired or flanked loci
-tbl_ft_pair <- input_data$paired_regions %>%
+tbl_ft_pair <- paired_regions %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -921,7 +1410,7 @@ tbl_ft_pair <- input_data$paired_regions %>%
   as.data.frame()
 
 # target sequence matched
-tbl_ft_match <- input_data$matched_summary %>%
+tbl_ft_match <- matched_summary %>%
   dplyr::mutate(
     specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
   ) %>%
@@ -954,7 +1443,7 @@ ft_tbl_summary <- Reduce(
 
 ## Onco-gene enrichment analysis ----
 rand_sites <- selectRandomSites(
-  num = nrow(input_data$paired_regions) + nrow(input_data$matched_summary), 
+  num = nrow(paired_regions) + nrow(matched_summary), 
   ref.genome = ref_genome, 
   drop.extra.seqs = TRUE, 
   rnd.seed = 1
@@ -977,9 +1466,9 @@ rand_df <- data.frame(
 )
 
 paired_list <- split(
-  x = input_data$paired_regions, 
+  x = paired_regions, 
   f = cond_overview$condition[
-    match(input_data$paired_regions$specimen, cond_overview$specimen)
+    match(paired_regions$specimen, cond_overview$specimen)
   ]
 )
 
@@ -1000,9 +1489,9 @@ paired_df <- dplyr::bind_rows(
 )
 
 matched_list <- split(
-  x = input_data$matched_summary, 
+  x = matched_summary, 
   f = cond_overview$condition[
-    match(input_data$matched_summary$specimen, cond_overview$specimen)
+    match(matched_summary$specimen, cond_overview$specimen)
 ])
 
 matched_df <- dplyr::bind_rows(
@@ -1096,7 +1585,7 @@ enrich_df <- enrich_df %>%
   ) 
 
 ## Off-target sequence analysis ----
-ft_MESL <- input_data$matched_algns %>%
+ft_MESL <- matched_algns %>%
   dplyr::mutate(
     edit.site.dist = abs(ifelse(
       strand == "+", 
@@ -1116,8 +1605,8 @@ if( nrow(ft_MESL) > 0 ){
       ESL = predictESProb(
         x = edit.site.dist, density = on_tar_dens[[condition]]
       ),
-      gene_id = input_data$matched_summary$gene_id[
-        match(edit.site, input_data$matched_summary$edit.site)
+      gene_id = matched_summary$gene_id[
+        match(edit.site, matched_summary$edit.site)
       ]
     ) %>%
     dplyr::group_by(condition, edit.site, gene_id) %>%
@@ -1133,7 +1622,7 @@ if( nrow(ft_MESL) > 0 ){
   
 }
 
-ft_seqs <- input_data$matched_summary %>%
+ft_seqs <- matched_summary %>%
   dplyr::select(
     specimen, aligned.sequence, target.match, edit.site,
     target.mismatch, on.off.target, algns, gene_id
@@ -1143,6 +1632,7 @@ ft_seqs <- input_data$matched_summary %>%
   ) %>%
   dplyr::left_join(cond_overview, by = "specimen") %>%
   dplyr::left_join(ft_MESL, by = c("condition", "edit.site", "gene_id"))
+
 
 if( is.null(args$support) ){
   
@@ -1163,6 +1653,7 @@ if( is.null(args$support) ){
     dplyr::summarise(algns = sum(algns), MESL = max(MESL, na.rm = TRUE))
   
 }
+
 
 ft_seqs <- dplyr::arrange(
     ft_seqs, desc(algns), desc(MESL), target.mismatch
@@ -1233,7 +1724,16 @@ saveRDS(
       "spec_overview" = spec_overview, 
       "cond_overview" = cond_overview
     ),
-    "incorp_data" = input_data, 
+    "incorp_data" = list(
+      "algnmts" = algnmts, 
+      "probable_algns" = probable_algns,
+      "matched_algns" = matched_algns,
+      "matched_summary" = matched_summary,
+      "paired_algns" = paired_algns,
+      "paired_regions" = paired_regions,
+      "pile_up_algns" = pile_up_algns,
+      "pile_up_summary" = pile_up_summary
+    ), 
     "summary_tbls" = list(
       "ot_tbl_summary" = ot_tbl_summary, 
       "ft_tbl_summary" = ft_tbl_summary
@@ -1254,11 +1754,16 @@ saveRDS(
 )
   
 if( !file.exists(args$output) ){
+  
   stop("\n  Cannot verify existence of output file:\n  ", args$output, "\n")
+  
 }else{
+  
   if( !args$quiet ){
     cat("Evaluation complete, output writen to:\n  ", args$output, "\n")
   }
+  
   q(status = 0)
+  
 }
 

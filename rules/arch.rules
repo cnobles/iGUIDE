@@ -20,7 +20,8 @@ rule generate_stat_matrix:
       sample=SAMPLES, read=READS),
     align=expand(
       RUN_DIR + "/process_data/{sample}.align.stat", sample=SAMPLES),
-    assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
+    assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat",
+    eval=RUN_DIR + "/process_data/" + RUN + ".eval.stat"
   output:
     RUN_DIR + "/output/stats." + RUN + ".csv"
   params:
@@ -37,7 +38,7 @@ rule gen_stat_report:
   input: RUN_DIR + "/output/stats." + RUN + ".csv"
   output: RUN_DIR + "/reports/runstats." + RUN + ".html"
   params: 
-    tool = ROOT_DIR + "/tools/rscripts/write_stat_report.R",
+    tool = ROOT_DIR + "/tools/rscripts/generate_stat_report.R",
     config = RUN_DIR + "/" + "config.yml"
   log: RUN_DIR + "/logs/" + RUN + ".runstats.log"
   resources:

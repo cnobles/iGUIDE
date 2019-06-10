@@ -100,7 +100,6 @@ if not "reportMB" in config:
 # Target Rules
 rule all:
     input: 
-      uniq_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
       incorp_sites=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
       report=RUN_DIR + "/reports/report." + RUN + ".html",
       summary=RUN_DIR + "/reports/summary." + RUN + ".txt",

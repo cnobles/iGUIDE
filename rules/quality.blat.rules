@@ -8,7 +8,7 @@ rule post_align:
     keyR1=RUN_DIR + "/process_data/{sample}.R1.key.csv",
     keyR2=RUN_DIR + "/process_data/{sample}.R2.key.csv"
   output:
-    uniq=temp(RUN_DIR + "/process_data/{sample}.uniq.csv"),
+    uniq=RUN_DIR + "/process_data/{sample}.uniq.csv",
     chimera=RUN_DIR + "/process_data/{sample}.chimera.rds",
     multihit=RUN_DIR + "/process_data/{sample}.multihits.rds",
     stat=temp(RUN_DIR + "/process_data/{sample}.align.stat")
