@@ -1,16 +1,11 @@
 # Simulation output check sums (md5)
 
 file1 :
-    name : "unique_sites.simulation.csv"
-    path : "analysis/simulation/output/unique_sites.simulation.csv.gz"
-    md5  : "c4cd8f98201fe8dd613f4eab9287cc78"
-    
-file2 :
     name : "incorp_sites.simulation.rds"
     path : "analysis/simulation/output/incorp_sites.simulation.rds"
-    md5  : "1c92defd2037daf5ad540157ff523663"
+    md5  : "dbfc152e8e3ee129c11ab953ed8aa9de"
 
-file3 :
+file2 :
     name : "stats.simulation.csv"
     path : "analysis/simulation/output/stats.simulation.csv"
-    md5  : "c3f087be1a092d1d7dfce053936fb238"
+    md5  : "98a6ba9dbae43828f485e6a9070f6a5e"
