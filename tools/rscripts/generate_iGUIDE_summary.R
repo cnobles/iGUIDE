@@ -206,6 +206,18 @@ null <- catOrWrite(
   args
 )
  
+# Analysis overview table ----
+eval_summary <- eval_data$summary_tbls$eval_summary
+eval_summary[is.na(eval_summary)] <- 0
+
+null <- catOrWrite(
+  "Table 1. Analysis overview with specific data highlights.", 
+  args
+)
+
+null <- catOrWrite(eval_summary, args, missing = 0, style = "multiline")
+
+null <- catOrWrite("", args)
 
 # Specimen summary table ----
 specimen_levels <- eval_data$params$specimen_levels
@@ -239,7 +251,7 @@ spec_overview <- eval_data$incorp_data$algnmts %>%
   dplyr::left_join(spec_overview, ., by = "specimen")
 
 null <- catOrWrite(
-  "Table 1. Specimen overview covering reads, umitags, and alignments:", 
+  "Table 2. Specimen overview covering reads, umitags, and alignments:", 
   args
 )
 
@@ -254,12 +266,12 @@ target_tbl <- eval_data$spec_info$target_tbl %>%
   dplyr::distinct() %>%
   dplyr::rename(
     "Nuclease" = nuclease,
-    "Target" = target,
+    "Target Name" = target,
     "Sequence" = sequence
   ) %>%
   dplyr::mutate(
     "Edit Loci" = sapply(
-      Target, 
+      `Target Name`, 
       function(x){
         paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
       }
@@ -267,7 +279,7 @@ target_tbl <- eval_data$spec_info$target_tbl %>%
   )
 
 null <- catOrWrite(
-  "Table 2. Target pattern table specifying sequences and edited loci:", 
+  "Table 3. Target pattern table specifying sequences and edited loci:", 
   args
 )
 
@@ -289,7 +301,7 @@ names(ot_tbl_summary) <- c(
 )
 
 null <- catOrWrite(
-  "Table 3. On-target editing percentages based on alignment criteria:",
+  "Table 4. On-target editing percentages based on alignment criteria:",
   args
 )
 
@@ -330,7 +342,7 @@ on_tar_dist_summary <- on_tar_dists %>%
   )
 
 null <- catOrWrite(
-  "Table 4. On-target incorporation profile, quantile counts given in % columns:",
+  "Table 5. On-target incorporation profile, quantile counts given in % columns:",
   args
 )
 
@@ -338,6 +350,18 @@ null <- catOrWrite(on_tar_dist_summary, args, style = "multiline", missing = 0)
 
 null <- catOrWrite("", args)
 
+# On-target editing efficiency ----
+ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary
+names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
+
+null <- catOrWrite(
+  "Table 6. Estimate of On-target editing efficiency (percent) for each target by specimen.",
+  args
+)
+
+null <- catOrWrite(ot_eff_summary, args, style = "multiline", missing = "-")
+
+null <- catOrWrite("", args)
 
 # Off-target summary ----
 ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary[
@@ -350,7 +374,7 @@ names(ft_tbl_summary) <- c(
 )
 
 null <- catOrWrite(
-  "Table 5. Off-target loci counts from criteria-based alignments:",
+  "Table 7. Off-target loci counts from criteria-based alignments:",
   args
 )
 
@@ -382,7 +406,7 @@ names(enrich_df) <- c(
 )
 
 null <- catOrWrite(
-  "Table 6. Off-target gene enrichment:",
+  "Table 8. Off-target gene enrichment:",
   args
 )
 
@@ -420,19 +444,42 @@ if( nrow(enrich_df) > 0 ){
 null <- catOrWrite("", args)
 
 # Off-target sequence analysis ----
+nuc_profiles <- eval_data$spec_info$nuclease_profiles
 ft_seqs_list <- eval_data$ft_data
+
+full_target_seqs <- structure(
+  sapply(seq_len(nrow(target_tbl)), function(i){
+    
+    nuc <- target_tbl$Nuclease[i]
+    sequence <- target_tbl$Sequence[i]
+    
+    ifelse(
+      nuc_profiles[[nuc]]$PAM_Loc == "3p",
+      paste0(sequence, nuc_profiles[[nuc]]$PAM),
+      ifelse(
+        nuc_profiles[[nuc]]$PAM_Loc == "5p",
+        paste0(nuc_profiles[[nuc]]$PAM, sequence),
+        sequence
+      )
+    )
+    
+  }),
+  names = target_tbl$`Target Name`
+)
 
 null <- lapply(seq_along(ft_seqs_list), function(i){
   
-  null <- catOrWrite(paste0("Table ", i+6, ". Off-Target Loci:"), args)
+  null <- catOrWrite(paste0("Table ", i+8, ". Off-Target Loci:"), args)
   null <- catOrWrite(paste0("  Condition : ", names(ft_seqs_list)[i]), args)
+  
+  target_ref_seq <- full_target_seqs[unique(ft_seqs_list[[i]]$target.seq)]
   
   null <- dplyr::select(
       ft_seqs_list[[i]], target, gene_id, edit.site, aligns, MESL, 
       aligned.sequence, mismatch
     ) %>%
     dplyr::mutate(
-      aligned.sequence = divSeq(aligned.sequence, aligned.sequence[1])
+      aligned.sequence = divSeq(aligned.sequence, target_ref_seq)
     ) %>%
     dplyr::rename(
       "Target" = target, "Gene ID" = gene_id, "Edit Site" = edit.site,
