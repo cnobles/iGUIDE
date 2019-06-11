@@ -76,7 +76,7 @@ zcat analysis/simulation/output/unique_sites.simulation.csv.gz
 # you can reevaluate the 'incorp_sites' object. Multiple objects can be evaluated
 # together, just include the run files.
 
-iguide eval analysis/simulation/output/incorp_sites.simulation.rds \
+iguide eval analysis/simulation/config.yml \
   -o analysis/simulation/output/iguide.eval.simulation.test.rds \
   -s sampleInfo/simulation.supp.csv
 
