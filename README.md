@@ -70,7 +70,7 @@ iguide setup configs/simulation.config.yml
 
 iguide run configs/simulation.config.yml -- -np
 iguide run configs/simulation.config.yml -- --latency-wait 30
-cat analysis/simulation/output/unique_sites.simulation.csv
+zcat analysis/simulation/output/unique_sites.simulation.csv.gz
 
 # Processing will complete with a report, but if additional analyses are required,
 # you can reevaluate the 'incorp_sites' object. Multiple objects can be evaluated
