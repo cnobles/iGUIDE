@@ -88,10 +88,23 @@ if( args$figures != FALSE ){
 report_format <- ifelse(args$format == "pdf", "latex", "html")
 
 # Helpful functions
-pNums <- function(x, ...){
+pNums <- function(x, na.replace = 0, ...){
   
-  x <- ifelse(is.na(x), 0, x)
-  format(x, big.mark = ",", ...)
+  if( is.numeric(na.replace) )x <- ifelse(is.na(x), na.replace, x)
+  
+  x <- format(x, big.mark = ",", ...)
+  
+  if( is.character(na.replace) ){
+    replace_idx <- which(stringr::str_trim(x) == "NA")
+    char_width <- unique(nchar(x))
+    x[replace_idx] <- stringr::str_pad(
+      string = rep(na.replace, length(replace_idx)), 
+      width = char_width - nchar(na.replace), 
+      side = "left"
+    )
+  }
+  
+  x
   
 }
 
@@ -129,21 +142,23 @@ latex_options <- c("hold_position", "repeat_header")
 
 # Captions
 tbl_caps <- c(
+  "Analysis summary.",
   "Specimen summary.",
   "Target sequences and associated information.",
   "Percent On-target.",
+  "Estimate of On-target editing efficiency (percent) for each target by specimen.",
   "Off-target Loci.",
   "Cancer-associated Gene editing enrichment."
 )
 
 fig_caps <- c(
-  "Distance distribution of observed incorporation sites from On-target loci.",
   "Genomic distribution of incorporation sites by bioinformatic characteristics.",
-  "Sequence similarity between off-target sites and targeting sequence(s)."
+  "Sequence similarity between off-target sites and targeting sequence(s).",
+  "Distance distribution of observed incorporation sites from On-target loci."
 )
 
 if( args$format == "html" ){
-  tbl_caps <- paste0("Table ", 1:5, ". ", tbl_caps)
+  tbl_caps <- paste0("Table ", 1:7, ". ", tbl_caps)
 }
 
 fig_caps <- paste0("**Figure ", 1:3, "**. ", fig_caps)
@@ -171,7 +186,34 @@ if( args$format == "pdf" ){
 
 # Summary
 
-The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(target_tbl)` targeting sequences. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` inferred cells sampled.
+The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(target_tbl)` targeting sequences. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` observed incorporated double-stranded oligo-dinucleotides (dsODNs, a unit of measure associated with iGUIDE / GUIDE-seq based analyses). 
+
+**Table 1** highlights some key information from the data analysis for each specimen, including the total number of alignments (representing the observed incorporated dsODNs), an estimated range of on-target editing efficiency, and the number of predicted off-target sites.
+
+```{r report_summary}
+eval_summary[is.na(eval_summary)] <- 0
+
+if( args$tables ){
+  
+  write.csv(
+    x = eval_summary, 
+    file = file.path(tables_path, "tbl1.report.summary.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+  
+}
+
+kable(
+    x = eval_summary, format = report_format, row.names = FALSE,
+    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[1],
+    format.args = list(big.mark = ","), align = c("l", "l", "r", "c", "r")
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
+  )
+
+```
 
 ```{r} 
 if( args$format == "pdf" ){
@@ -185,12 +227,13 @@ if( args$format == "pdf" ){
 
 ```{r spec_summary}
 spec_overview[is.na(spec_overview)] <- 0
+names(spec_overview)[1] <- "Specimen"
 
 if( args$tables ){
   
   write.csv(
     x = spec_overview, 
-    file = file.path(tables_path, "tbl1.specimen.overview.csv"),
+    file = file.path(tables_path, "tbl2.specimen.overview.csv"),
     quote = TRUE, row.names = FALSE
   )
   
@@ -198,7 +241,7 @@ if( args$tables ){
 
 kable(
     x = spec_overview, format = report_format, row.names = FALSE,
-    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[1],
+    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[2],
     format.args = list(big.mark = ",")
   ) %>%
   kableExtra::kable_styling(
@@ -210,7 +253,7 @@ kable(
 
 Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. Nested-PCR was used to amplify from incorporated dsODN sequences to the linker sequences with barcoded and linker-specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
 
-DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "Ref_Genome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 1**, along with the number of unique alignments they represent (the inferred cells sampled). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and clonal expansion.
+DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "Ref_Genome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 1**, along with the number of unique "alignments" they represent (or the number of observed incorporated dsODNs). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and/or clonal expansion.
 
 Alternatively, random nucleotide sequences are included in the ligated linker sequences. These Unique Molecular Indeces (UMItags) can provide another method of abundance by counting the number of UMItags and breakpoint position combinations for each incorporation sites. This method of quantification has an increased dynamic range, yet can suffer from PCR artifacts leading to inflated abundances.
 
@@ -224,11 +267,11 @@ if( args$format == "pdf" ){
 
 # On-target analysis
 
-Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of nuclease targeted locations. The target sequences provided for these analyses and their On-target locations (loci) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
+Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of nuclease targeted locations. The target sequences provided for these analyses and their On-target locations (`Edit Locus`) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
 ```{r target_tbl}
 target_tbl$`Edit Locus` <- sapply(
-  target_tbl$Target, 
+  target_tbl$`Target Name`, 
   function(x) paste(on_targets[which(names(on_targets) == x)], collapse = "\n")
 )
 
@@ -239,7 +282,7 @@ if( args$tables ){
       "Edit Locus" = gsub("\n", ";", `Edit Locus`)
     ) %>%
     write.csv(
-      file = file.path(tables_path, "tbl2.target.sequences.csv"),
+      file = file.path(tables_path, "tbl3.target.sequences.csv"),
       quote = TRUE, row.names = FALSE
     )
   
@@ -273,7 +316,7 @@ if( report_format == "html" ){
 
 kable(
     x = target_print, format = report_format, row.names = FALSE,
-    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[2],
+    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[3],
     align = "c"
   ) %>%
   kableExtra::kable_styling(
@@ -290,7 +333,7 @@ Analysis of On-target associated incorporation sites (**Table 3**) produces seve
 
 * Flanking **Paired** alignments: alignments can be found on either side of a DSB, and therefore identifying flanking alignments suggests a DSB could be found between the paired alignments. Flanking alignments were searched for in these data up to `r 2*unique(sapply(configs, "[[", "upstreamDist"))` bp from each other.
 
-* Target **Matched** alignments: searching for the target sequences upstream of the incorporation site can be an indicator of targeted nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching target sequences were searched for up to `r unique(sapply(configs, "[[", "upstreamDist"))` bp upstream of the incorporation sites and required to have no more than `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches.
+* Target **Matched** alignments: searching for the target sequences upstream of the incorporation site can be an indicator of targeted nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching target sequences were searched for up to `r upstream_dist` bp upstream of the incorporation sites and required to have no more than `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches in the target sequence and/or PAM sequence.
 
 Specimen specific tables with data relating to these criteria are found in **Table 3** for percent On-target editing and **Table 4** for identified Off-target loci.
 
@@ -304,7 +347,7 @@ if( args$format == "pdf" ){
 
 ## Specimen breakdown
 
-**Table 3** displays the percent of cells sampled that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
+**Table 3** displays the percent of observations that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
 
 ```{r on_target_summary}
 ot_tbl_summary[is.na(ot_tbl_summary)] <- 0
@@ -320,7 +363,7 @@ if( args$tables ){
   
   write.csv(
     x = ot_tbl_save, 
-    file = file.path(tables_path, "tbl3.ontarget.summary.csv"),
+    file = file.path(tables_path, "tbl4.ontarget.summary.csv"),
     quote = TRUE, row.names = FALSE
   )
   
@@ -341,7 +384,7 @@ names(ot_tbl_summary) <- c(
 kable(
     x = ot_tbl_summary, format = report_format, digits = 4, row.names = FALSE,
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE, 
-    escape = FALSE, caption = tbl_caps[3], align = c("l", "l", rep("r", 4))
+    escape = FALSE, caption = tbl_caps[4], align = c("l", "l", rep("r", 4))
   ) %>%
   kableExtra::add_header_above(
     c(" " = 2, "All", "Pileup", "Paired", "Matched")
@@ -361,115 +404,39 @@ if( args$format == "pdf" ){
 }
 ```
 
-## Editing near known genomic sites
+## On-target editing efficiency
 
-**Figure 1** displays the distribution of dsODN incorporations around on-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of incorporation sites to search for nuclease edited sequences. 
+**Table 5** below displays the estimated On-target editing efficiency based on the iGUIDE analysis. These values are calculated by the ratio of On-target editing to the sum of editing associated with the specific target method. This efficiency percentage is analogous to the specificity for each target. This is an estimate though, as On-target editing does have the potential to saturate the dynamic range of the abundance calculation. Therefore, these percentages should be considered lower bounds for editing efficiency and specificity.
 
-```{r}
-incorp_len <- ifelse(
-  nrow(eval_data$spec_info$supp_data) > 0,
-  length(unique(paste(on_tar_dists$condition, on_tar_dists$target))), 
-  length(unique(on_tar_dists$target))
-)
-```
+```{r on_target_efficiency, }
+names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
+ot_eff_data <- ot_eff_summary %>%
+  dplyr::select(-Specimen, -Condition) %>%
+  dplyr::mutate_all(pNums, na.replace = "\\-", digits = 3)
+ot_eff_print <- dplyr::bind_cols(ot_eff_summary[,c(1,2)], ot_eff_data)
 
-```{r incorp_dist}
-incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
-  geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
-  geom_col(aes(fill = factor(strand)), width = 1) +
-  geom_text(
-    data = sites_included, 
-    aes(x = x_pos, y = y_pos, label = prop), 
-    hjust = 1, fontface = "bold", size = 5) +
-  coord_cartesian(xlim = c(-upstream_dist, upstream_dist)) +
-  scale_y_continuous(breaks = pretty_breaks(), labels = pNums) +
-  scale_fill_brewer(type = "qual", palette = "Set1") + 
-  guides(fill = FALSE) +
-  labs(
-    x = "Distance to Edit Site (bp, res = 1)", 
-    y = "Log Alignment Count") +
-  custom_theme +
-  theme(
-    strip.text.y = element_text(angle = 0),
-    aspect.ratio = 7/12
-  )
-
-
-null <- lapply(
-  unique(ceiling(seq_len(incorp_len) / 2)),
-  function(i, ic_plot, fp, supp_present){
-    
-    if( supp_present ){
+if( args$tables ){
   
-      p <- ic_plot + 
-        facet_wrap_paginate(
-          condition ~ target, ncol = 2, nrow = 1, page = i, scales = "free"
-        )
-    
-    }else{
-    
-      p <- ic_plot + 
-        facet_wrap_paginate(
-          ~ target, ncol = 2, nrow = 1, page = i, scales = "free"
-        )
-      
-    }
-    
-    
-    file_pdf <- sprintf("incorp_dist-%s.pdf", i)
-    file_png <- sprintf("incorp_dist-%s.png", i)
-    
-    ggsave(
-      filename = file_pdf, 
-      plot = p, 
-      device = "pdf", 
-      path = fp, 
-      width = figure_width, 
-      height = 3, 
-      units = "in"
-    )
-    
-    ggsave(
-      filename = file_png, 
-      plot = p, 
-      device = "png", 
-      path = fp, 
-      width = figure_width,
-      height = 3, 
-      units = "in",
-      dpi = knitr::opts_chunk$get("dpi")
-    )
-
-  },
-  ic_plot = incorp_plot, 
-  fp = figure_path,
-  supp_present = nrow(eval_data$spec_info$supp_data) > 0
-)
-
-if( args$format == "pdf"){
+  ot_eff_save <- ot_eff_summary
   
-  knitr::include_graphics(
-    path = sprintf(
-      file.path(figure_path, "incorp_dist-%s.pdf"), 
-      unique(ceiling(seq_len(incorp_len) / 2))
-    )
-  )
-  
-}else{
-  
-  knitr::include_graphics(
-    path = sprintf(
-      file.path(figure_path, "incorp_dist-%s.png"), 
-      unique(ceiling(seq_len(incorp_len) / 2))
-    )
+  write.csv(
+    x = ot_eff_save, 
+    file = file.path(tables_path, "tbl5.ontarget.efficiency.csv"),
+    quote = TRUE, row.names = FALSE
   )
   
 }
-  
-```
 
-```{r} 
-cat(fig_caps[1]) 
+kable(
+    x = ot_eff_print, format = report_format, row.names = FALSE,
+    booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caps[5], 
+    align = c("l", "l", rep("r", ncol(ot_eff_summary)-2))
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
+  )
+
 ```
 
 ```{r} 
@@ -483,7 +450,7 @@ if( args$format == "pdf" ){
 # Off-target analysis
 ## Specimen breakdown
 
-Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table 4** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup cluster), without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands). Target **Matched** loci require a match in the upstream sequence to a treated target (within `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches out of the `r unique(nchar(target_tbl$Sequence))` nts`r if(any(sapply(nuc_profiles, "[[", "PAM") != FALSE)){paste0(" and ", max(sapply(nuc_profiles, function(x){if(x$PAM != FALSE){x$PAM_Tol}else{0}})), " PAM mismatch")}`).
+Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table 4** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup clustering) without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands) within `r pNums(2*upstream_dist, digits = 0)` bp upstream of each other. Target **Matched** loci require a match in the upstream sequence to a treated target (within `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches out of the `r unique(nchar(target_tbl$Sequence))` nts`r if(any(sapply(nuc_profiles, "[[", "PAM") != FALSE)){paste0(" and ", max(sapply(nuc_profiles, function(x){if(x$PAM != FALSE){x$PAM_Tol}else{0}})), " PAM mismatch")}`).
 
 ```{r off_target_summary}
 ft_tbl_summary[is.na(ft_tbl_summary)] <- 0
@@ -503,7 +470,7 @@ if( args$tables ){
   
   write.csv(
     x = ft_tbl_save, 
-    file = file.path(tables_path, "tbl4.offtarget.summary.csv"),
+    file = file.path(tables_path, "tbl6.offtarget.summary.csv"),
     quote = TRUE, row.names = FALSE
   )
 }
@@ -511,7 +478,7 @@ if( args$tables ){
 kable(
     x = ft_tbl_summary, format = report_format, digits = 1, row.names = FALSE,
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
-    escape = FALSE, caption = tbl_caps[4]
+    escape = FALSE, caption = tbl_caps[6]
   ) %>%
   kableExtra::add_header_above(
     c(" " = 2, "All", "Pileup", "Paired", "Matched")
@@ -533,7 +500,7 @@ if( args$format == "pdf" ){
 
 ## Off-target enrichment in cancer-associated genes
 
-Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists (adjusted in the config file) included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0).
+Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0) or did not have enough data to support a powerful analysis (Estimated Power <= 0.75).
 
 ```{r onco_enrichment}
 enrich_df <- enrich_df %>%
@@ -553,44 +520,56 @@ if( args$tables ){
   
   write.csv(
     x = enrich_save, 
-    file = file.path(tables_path, "tbl5.gene.enrichment.csv"),
+    file = file.path(tables_path, "tbl7.gene.enrichment.csv"),
     quote = TRUE, row.names = FALSE
   )
   
 }
 
 enrich_df <- enrich_df %>%
+  dplyr::filter(onco.power >= 0.75 | special.power >= 0.75) %>%
   dplyr::mutate(
+    onco.power = round(onco.power * 100, digits = 0),
     onco.is.sig = onco.p.value <= 0.05,
-    onco.p.value = sprintf("%.3f", onco.p.value),
+    onco.p.value = sprintf("%1$.3f (%2$i%%)", onco.p.value, onco.power),
     onco.p.value = kableExtra::cell_spec(
       onco.p.value, format = report_format, bold = onco.is.sig
     ),
+    special.power = round(special.power * 100, digits = 0),
     special.is.sig = special.p.value <= 0.05,
-    special.p.value = sprintf("%.3f", special.p.value),
+    special.p.value = sprintf(
+      "%1$.3f (%2$i%%)", special.p.value, special.power
+    ),
     special.p.value = kableExtra::cell_spec(
       special.p.value, format = report_format, bold = special.is.sig
     )
   ) %>%
-  select(-onco.is.sig, -special.is.sig)
+  select(-onco.is.sig, -special.is.sig, -onco.power, -special.power)
 
 names(enrich_df) <- c(
-  "Origin", "Condition", "genes", "genes", "p-value", "genes", "p-value"
+  "Origin", "Condition", "genes", "genes", "p-value (pwr)", 
+  "genes", "p-value (pwr)"
 )
 
-kable(
-    x = enrich_df, format = report_format, digits = 4, row.names = FALSE,
-    format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
-    escape = FALSE, caption = tbl_caps[5], 
-    align = c("l", "l", rep("r", 5))
-  ) %>%
-  kableExtra::add_header_above(
-    c(" " = 2, "Total", "Onco Enrich." = 2, "Special Enrich." = 2)
-  ) %>%
-  kableExtra::kable_styling(
-    bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
+if( nrow(enrich_df) > 0 ){
+  
+  kable(
+      x = enrich_df, format = report_format, digits = 4, row.names = FALSE,
+      format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
+      escape = FALSE, caption = tbl_caps[7], 
+      align = c("l", "l", rep("r", 5))
+    ) %>%
+    kableExtra::add_header_above(
+      c(" " = 2, "Total", "Onco Enrich." = 2, "Special Enrich." = 2)
+    ) %>%
+    kableExtra::kable_styling(
+      bootstrap_options = bootstrap_options,
+      latex_options = latex_options
+    )
+  
+}else{
+  cat("**All comparisons were omitted due to lack of sufficient data.**")
+}
 
 ```
 
@@ -684,7 +663,7 @@ if( args$format == "pdf"){
 ```
 
 ```{r} 
-cat(fig_caps[2]) 
+cat(fig_caps[1]) 
 ```
 
 ```{r} 
@@ -697,7 +676,7 @@ if( args$format == "pdf" ){
 
 ## Off-target sequence comparison
 
-Off-target sites can be identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the target matched sites are displayed below in Figure 3 along with the number of mismatches to the targeting sequence (`Mismatch`), an indication if the site is associated with an on- or off-target location (`Target`), the total number of unique alignments associated with the site (`Abund.`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`Gene_ID`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `Gene_ID` is the nearest gene to the genomic location. Further, symbols after the gene name indicate: `*` that the site is within the transcription unit of the gene, `~` the gene appears on the cancer-association list, `!` and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`.
+Off-target sites can be identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the top target matched sites are displayed below in Figure 3 for each condition and target along with the number of mismatches to the targeting sequence (`Mismatch`), an indication if the site is associated with an On- or Off-target location (`Target`), the total number of unique alignments associated with the site (`Abund.`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`Gene_ID`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `Gene_ID` is the nearest gene to the genomic location. Further, symbols after the gene name indicate: `*` that the site is within the transcription unit of the gene, `~` the gene appears on the cancer-association list, `!` and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. For a complete list of predicted Off-target sites identified by the analysis, please see the Supporting material section, Off-target site tables.
 
 ```{r off_target_seqs}
 ft_seq_plots <- lapply(
@@ -817,6 +796,127 @@ if( args$format == "pdf"){
 ```
 
 ```{r} 
+cat(fig_caps[2]) 
+```
+
+```{r} 
+if( args$format == "pdf" ){
+  cat("\\newpage")
+}else{
+  cat('<P style="page-break-before: always">')
+}
+```
+
+# Supporting material
+
+## Editing distributions at On-target loci
+
+**Figure 3** displays the distribution of dsODN incorporations around on-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of incorporation sites to search for nuclease edited sequences. 
+
+```{r}
+incorp_len <- ifelse(
+  nrow(eval_data$spec_info$supp_data) > 0,
+  length(unique(paste(on_tar_dists$condition, on_tar_dists$target))), 
+  length(unique(on_tar_dists$target))
+)
+```
+
+```{r incorp_dist}
+incorp_plot <- ggplot(on_tar_dists, aes(x = edit.site.dist, y = strand.cnt)) +
+  geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
+  geom_col(aes(fill = factor(strand)), width = 1) +
+  geom_text(
+    data = sites_included, 
+    aes(x = x_pos, y = y_pos, label = prop), 
+    hjust = 1, fontface = "bold", size = 5) +
+  coord_cartesian(xlim = c(-upstream_dist, upstream_dist)) +
+  scale_y_continuous(breaks = pretty_breaks(), labels = pNums) +
+  scale_fill_brewer(type = "qual", palette = "Set1") + 
+  guides(fill = FALSE) +
+  labs(
+    x = "Distance to Edit Site (bp, res = 1)", 
+    y = "Log Alignment Count") +
+  custom_theme +
+  theme(
+    strip.text.y = element_text(angle = 0),
+    aspect.ratio = 7/12
+  )
+
+
+null <- lapply(
+  unique(ceiling(seq_len(incorp_len) / 2)),
+  function(i, ic_plot, fp, supp_present){
+    
+    if( supp_present ){
+  
+      p <- ic_plot + 
+        facet_wrap_paginate(
+          condition ~ target, ncol = 2, nrow = 1, page = i, scales = "free"
+        )
+    
+    }else{
+    
+      p <- ic_plot + 
+        facet_wrap_paginate(
+          ~ target, ncol = 2, nrow = 1, page = i, scales = "free"
+        )
+      
+    }
+    
+    
+    file_pdf <- sprintf("incorp_dist-%s.pdf", i)
+    file_png <- sprintf("incorp_dist-%s.png", i)
+    
+    ggsave(
+      filename = file_pdf, 
+      plot = p, 
+      device = "pdf", 
+      path = fp, 
+      width = figure_width, 
+      height = 3, 
+      units = "in"
+    )
+    
+    ggsave(
+      filename = file_png, 
+      plot = p, 
+      device = "png", 
+      path = fp, 
+      width = figure_width,
+      height = 3, 
+      units = "in",
+      dpi = knitr::opts_chunk$get("dpi")
+    )
+
+  },
+  ic_plot = incorp_plot, 
+  fp = figure_path,
+  supp_present = nrow(eval_data$spec_info$supp_data) > 0
+)
+
+if( args$format == "pdf"){
+  
+  knitr::include_graphics(
+    path = sprintf(
+      file.path(figure_path, "incorp_dist-%s.pdf"), 
+      unique(ceiling(seq_len(incorp_len) / 2))
+    )
+  )
+  
+}else{
+  
+  knitr::include_graphics(
+    path = sprintf(
+      file.path(figure_path, "incorp_dist-%s.png"), 
+      unique(ceiling(seq_len(incorp_len) / 2))
+    )
+  )
+  
+}
+  
+```
+
+```{r} 
 cat(fig_caps[3]) 
 ```
 
@@ -830,20 +930,45 @@ if( args$format == "pdf" ){
 
 ## Off-target site tables
 
+Below is a complete list of predicted Off-target sites identified for each condition and target. The additional column `Edit Site` (compared to Figure 3) indicates the predicted genomic editing location, and is broken into three parts delimited by ":". The first part indicates the chromosome, the second the orientation with respect to genomic numbering (sense "+" or anti-sense "-"), and the third is the location of the targeted base pair. 
+
 ```{r off_target_tbls}
+
+full_target_seqs <- structure(
+  sapply(seq_len(nrow(target_tbl)), function(i){
+
+    target_tbl[i,] %$%
+    ifelse(
+      nuc_profiles[[nuclease]]$PAM_Loc == "3p",
+      paste0(sequence, nuc_profiles[[nuclease]]$PAM),
+      ifelse(
+        nuc_profiles[[nuclease]]$PAM_Loc == "5p",
+        paste0(nuc_profiles[[nuclease]]$PAM, sequence),
+        sequence
+      )
+    )
+  
+  }),
+  names = target_tbl$target
+)
 
 for( i in seq_along(ft_seqs_list) ){
   
   cap <- paste0("Off-Target Loci: ", names(ft_seqs_list)[i])
   
-  if( report_format == "html" ) cap <- paste0("Table ", i+5, ". ", cap)
-
+  if( report_format == "html" ) cap <- paste0("Table ", i+7, ". ", cap)
+  
+  target_ref_seq <- full_target_seqs[unique(ft_seqs_list[[i]]$target.seq)]
+  
   df <- dplyr::select(
       ft_seqs_list[[i]], target, gene_id, edit.site, aligns, MESL, 
       aligned.sequence, mismatch
     ) %>%
     dplyr::mutate(
-      aligned.sequence = divSeq(aligned.sequence, aligned.sequence[1]),
+      aligned.sequence = divSeq(
+        seqs = aligned.sequence, 
+        ref = unique(aligned.sequence[target == "On"])
+      ),
       MESL = round(MESL, digits = 1)
     )
   

@@ -269,16 +269,43 @@ signature <- paste(
   unique(sort(unlist(lapply(configs, "[[", "signature")))), 
   collapse = ", ")
 
+## Determine processing parameters
+## Some parameters will need to be an "all or nothing" approach, including:
+##   - UMItags
+##   - recoverMultihits
+## Depending on these parameters others (upstream/downstream_dist, ...) may need
+## to be consistent between runs otherwise, the primary config file (first one),
+## will be used for parameterization.
+
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
+multihit_option <- all(unlist(lapply(configs, "[[", "recoverMultihits")))
 
-upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
-downstream_dist <- unique(sapply(configs, function(x) x$downstreamDist))
-
-if( length(upstream_dist) > 1 | length(downstream_dist) > 1 ){
-  stop(
-    "Inconsistant upstream or downstream distances between config files.\n",
-    "Comparisons between groups with different run specific criteria\n", 
-    "is not recommended.")
+if( multihit_option ){
+  
+  upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
+  downstream_dist <- unique(sapply(configs, function(x) x$downstreamDist))
+  pile_up_min <- unique(sapply(configs, function(x) x$pileUpMin))
+  
+  if( 
+    length(upstream_dist) > 1 | 
+    length(downstream_dist) > 1 | 
+    length(pile_up_min) > 1 
+  ){
+    
+    stop(
+      "\n  Inconsistant upstream or downstream distances between config files.\n",
+      "  Comparisons between groups with different run specific criteria\n", 
+      "  is not recommended when considering the recover multihit option.\n"
+    )
+    
+  }
+  
+}else{
+  
+  upstream_dist <- configs[[1]]$upstreamDist
+  downstream_dist <- configs[[1]]$downstreamDist
+  pile_up_min <- configs[[1]]$pileUpMin
+  
 }
 
 ## Combine sampleInfo files
@@ -295,7 +322,7 @@ target_tbl <- eval_data$spec_info$target_tbl %>%
   dplyr::distinct() %>%
   dplyr::rename(
     "Nuclease" = nuclease,
-    "Target" = target,
+    "Target Name" = target,
     "Sequence" = sequence
   )
 
@@ -363,6 +390,9 @@ ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary[
       "ot_pile_pct", "ot_pair_pct", "ot_match_pct")
 ]
 
+ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary
+
+eval_summary <- eval_data$summary_tbls$eval_summary
 
 # On-target distribution of incorporations ----
 on_tar_dists <- eval_data$edit_models$on_tar_dists
@@ -379,10 +409,7 @@ ft_seqs_list <- eval_data$ft_data
 
 
 # Onco-gene enrichment analysis ----
-enrich_df <- eval_data$enrich_data$enrich_df %>%
-  dplyr::select(
-    origin, condition, total, onco, onco.p.value, special, special.p.value
-  )
+enrich_df <- eval_data$enrich_data$enrich_df
 
 
 # Data passed to Rmd for report generation ----

@@ -1276,6 +1276,28 @@ tbl_ot_match <- matched_summary %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
+tbl_ot_eff <- matched_summary %>%
+  dplyr::mutate(
+    specimen = factor(specimen, levels = sort(unique(sample_info$specimen)))
+  ) %>%
+  dplyr::group_by(specimen, on.off.target, target.match) %>%
+  dplyr::summarise(cnt = sum(algns)) %>%
+  dplyr::ungroup() %>% 
+  dplyr::group_by(specimen, target.match) %>%
+  dplyr::summarise(
+    ot_eff_pct = 100 * sum(ifelse(on.off.target == "On-target", cnt, 0)) /
+      sum(cnt)
+  ) %>%
+  dplyr::ungroup() %>%
+  tidyr::spread(key = target.match, value = ot_eff_pct) %>%
+  tidyr::complete(specimen) %>%
+  as.data.frame() %>%
+  dplyr::left_join(
+    cond_overview, by = "specimen"
+  ) %>%
+  dplyr::select(specimen, condition, dplyr::everything())
+
+
 # Summary table
 ot_tbl_summary <- dplyr::left_join(
     treatment_df, cond_overview, by = "specimen"
@@ -1420,7 +1442,7 @@ tbl_ft_match <- matched_summary %>%
   dplyr::ungroup() %>% 
   as.data.frame()
 
-# Summary table
+# Off-target summary table
 ft_tbl_summary <- dplyr::left_join(
     treatment_df, cond_overview, by = "specimen"
   ) %>%
@@ -1440,6 +1462,35 @@ ft_tbl_summary <- Reduce(
   dplyr::arrange(specimen) %>%
   dplyr::select(-treatment)
 
+# Evaluation summary ----
+ot_eff_range <- tbl_ot_eff %>%
+  tidyr::gather(key = "target", value = "eff", -specimen, -condition) %>%
+  dplyr::group_by(specimen, condition) %>%
+  dplyr::summarise(
+    min = round(min(eff, na.rm = TRUE), digits = 1),
+    max = round(max(eff, na.rm = TRUE), digits = 1),
+    eff_rg = ifelse(
+      min == max,
+      sprintf("%.1f%%", max),
+      sprintf("%1$.1f - %2$.1f%%", min, max)
+    )
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(eff_rg = ifelse(grepl("Inf", eff_rg), NA, eff_rg)) %>%
+  dplyr::select(-min, -max)
+
+eval_summary <- ot_eff_range %>%
+  dplyr::left_join(
+    ft_tbl_summary, by = c("specimen", "condition")
+  ) %>%
+  dplyr::left_join(
+    tbl_algn_counts, by = "specimen"
+  ) %>%
+  dplyr::select(specimen, condition, Alignments, eff_rg, ft_match) %>%
+  dplyr::rename(
+    Specimen = specimen, Condition = condition, 
+    "On-target\nEfficiency" = eff_rg, "Predicted\nOff-targets" = ft_match
+  )
 
 ## Onco-gene enrichment analysis ----
 rand_sites <- selectRandomSites(
@@ -1735,8 +1786,10 @@ saveRDS(
       "pile_up_summary" = pile_up_summary
     ), 
     "summary_tbls" = list(
-      "ot_tbl_summary" = ot_tbl_summary, 
-      "ft_tbl_summary" = ft_tbl_summary
+      "ot_tbl_summary" = ot_tbl_summary,
+      "ot_eff_summary" = tbl_ot_eff,
+      "ft_tbl_summary" = ft_tbl_summary,
+      "eval_summary" = eval_summary
     ), 
     "edit_models" = list(
       "on_tar_dists" = on_tar_dists, 
