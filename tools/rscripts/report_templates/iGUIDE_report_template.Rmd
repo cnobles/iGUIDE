@@ -186,9 +186,9 @@ if( args$format == "pdf" ){
 
 # Summary
 
-The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(target_tbl)` targeting sequences. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` observed incorporated double-stranded oligo-dinucleotides (dsODNs, a unit of measure associated with iGUIDE / GUIDE-seq based analyses). 
+The following document summarizes the results of processing `r gsub("_", "-", set_names)` sequencing set(s) through the iGUIDE pipeline. Included in this document are explanations of the data analytics as well as tables and graphics of the data obtained from the sequence analysis. This report includes `r length(unique(sample_info$specimen))` specimens treated with `r nrow(target_tbl)` targeting sequences. A total of `r pNums(round(sum(incorp_data$algnmts$count)))` reads are considered in this analysis, which represent `r pNums(round(sum(incorp_data$algnmts$contrib)))` observed incorporated double-stranded oligo-dinucleotides (dsODNs, a unit of measure associated with iGUIDE or GUIDE-seq based analyses). 
 
-**Table 1** highlights some key information from the data analysis for each specimen, including the total number of alignments (representing the observed incorporated dsODNs), an estimated range of on-target editing efficiency, and the number of predicted off-target sites.
+**Table 1** highlights some key information from the data analysis for each specimen, including the total number of alignments (representing the observed incorporated dsODNs), an estimated range of On-target editing efficiency, and the number of predicted off-target sites.
 
 ```{r report_summary}
 eval_summary[is.na(eval_summary)] <- 0
@@ -205,7 +205,7 @@ if( args$tables ){
 
 kable(
     x = eval_summary, format = report_format, row.names = FALSE,
-    booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[1],
+    booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caps[1],
     format.args = list(big.mark = ","), align = c("l", "l", "r", "c", "r")
   ) %>%
   kableExtra::kable_styling(
@@ -408,11 +408,17 @@ if( args$format == "pdf" ){
 
 **Table 5** below displays the estimated On-target editing efficiency based on the iGUIDE analysis. These values are calculated by the ratio of On-target editing to the sum of editing associated with the specific target method. This efficiency percentage is analogous to the specificity for each target. This is an estimate though, as On-target editing does have the potential to saturate the dynamic range of the abundance calculation. Therefore, these percentages should be considered lower bounds for editing efficiency and specificity.
 
-```{r on_target_efficiency, }
+```{r on_target_efficiency}
 names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
+
 ot_eff_data <- ot_eff_summary %>%
   dplyr::select(-Specimen, -Condition) %>%
-  dplyr::mutate_all(pNums, na.replace = "\\-", digits = 3)
+  dplyr::mutate_all(
+    pNums, 
+    na.replace = ifelse(report_format == "latex", "-", "\\-"), 
+    digits = 3
+  )
+
 ot_eff_print <- dplyr::bind_cols(ot_eff_summary[,c(1,2)], ot_eff_data)
 
 if( args$tables ){
@@ -430,7 +436,7 @@ if( args$tables ){
 kable(
     x = ot_eff_print, format = report_format, row.names = FALSE,
     booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caps[5], 
-    align = c("l", "l", rep("r", ncol(ot_eff_summary)-2))
+    align = c("l", "l", rep("r", ncol(ot_eff_print)-2))
   ) %>%
   kableExtra::kable_styling(
     bootstrap_options = bootstrap_options,
@@ -500,7 +506,7 @@ if( args$format == "pdf" ){
 
 ## Off-target enrichment in cancer-associated genes
 
-Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0) or did not have enough data to support a powerful analysis (Estimated Power <= 0.75).
+Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0) or did not have enough data to support a powerful analysis (Estimated Power greater than 80%).
 
 ```{r onco_enrichment}
 enrich_df <- enrich_df %>%
@@ -526,8 +532,7 @@ if( args$tables ){
   
 }
 
-enrich_df <- enrich_df %>%
-  dplyr::filter(onco.power >= 0.75 | special.power >= 0.75) %>%
+enrich_print <- enrich_df %>%
   dplyr::mutate(
     onco.power = round(onco.power * 100, digits = 0),
     onco.is.sig = onco.p.value <= 0.05,
@@ -544,19 +549,20 @@ enrich_df <- enrich_df %>%
       special.p.value, format = report_format, bold = special.is.sig
     )
   ) %>%
-  select(-onco.is.sig, -special.is.sig, -onco.power, -special.power)
+  dplyr::filter(onco.power >= 80 | special.power >= 80) %>%
+  dplyr::select(-onco.is.sig, -special.is.sig, -onco.power, -special.power)
 
-names(enrich_df) <- c(
+names(enrich_print) <- c(
   "Origin", "Condition", "genes", "genes", "p-value (pwr)", 
   "genes", "p-value (pwr)"
 )
 
-if( nrow(enrich_df) > 0 ){
+if( nrow(enrich_print) > 0 ){
   
   kable(
-      x = enrich_df, format = report_format, digits = 4, row.names = FALSE,
+      x = enrich_print, format = report_format, row.names = FALSE,
       format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
-      escape = FALSE, caption = tbl_caps[7], 
+      escape = TRUE, caption = tbl_caps[7], 
       align = c("l", "l", rep("r", 5))
     ) %>%
     kableExtra::add_header_above(
@@ -811,7 +817,7 @@ if( args$format == "pdf" ){
 
 ## Editing distributions at On-target loci
 
-**Figure 3** displays the distribution of dsODN incorporations around on-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of incorporation sites to search for nuclease edited sequences. 
+**Figure 3** displays the distribution of dsODN incorporations around On-target site(s). Incorporations in different orientations are shown on the positive (red) and negative (blue) y-axis. The percentage in the bottom right corner of each plot is an estimate of the number of incorporations associated with the on-target site (based on pileups) captured within the allowed window of `r unique(sapply(configs, "[[", "upstreamDist"))` bps. These data can be used to fine tune the processing analyses, specifically the `upstreamDist` parameter which modifies the distance upstream of incorporation sites to search for nuclease edited sequences. 
 
 ```{r}
 incorp_len <- ifelse(
@@ -936,20 +942,22 @@ Below is a complete list of predicted Off-target sites identified for each condi
 
 full_target_seqs <- structure(
   sapply(seq_len(nrow(target_tbl)), function(i){
+    
+    nuc <- target_tbl$Nuclease[i]
+    sequence <- target_tbl$Sequence[i]
 
-    target_tbl[i,] %$%
     ifelse(
-      nuc_profiles[[nuclease]]$PAM_Loc == "3p",
-      paste0(sequence, nuc_profiles[[nuclease]]$PAM),
+      nuc_profiles[[nuc]]$PAM_Loc == "3p",
+      paste0(sequence, nuc_profiles[[nuc]]$PAM),
       ifelse(
-        nuc_profiles[[nuclease]]$PAM_Loc == "5p",
-        paste0(nuc_profiles[[nuclease]]$PAM, sequence),
+        nuc_profiles[[nuc]]$PAM_Loc == "5p",
+        paste0(nuc_profiles[[nuc]]$PAM, sequence),
         sequence
       )
     )
   
   }),
-  names = target_tbl$target
+  names = target_tbl$`Target Name`
 )
 
 for( i in seq_along(ft_seqs_list) ){
@@ -967,7 +975,7 @@ for( i in seq_along(ft_seqs_list) ){
     dplyr::mutate(
       aligned.sequence = divSeq(
         seqs = aligned.sequence, 
-        ref = unique(aligned.sequence[target == "On"])
+        ref = target_ref_seq
       ),
       MESL = round(MESL, digits = 1)
     )

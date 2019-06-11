@@ -19,8 +19,7 @@ rule demultiplex:
       RUN_DIR + "/process_data/degenerate.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
       RUN_DIR + "/process_data/unassigned.{type}.fastq.gz", type=TYPES)),
-    stat=temp(
-      RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
+    stat=RUN_DIR + "/process_data/" + RUN + ".demulti.stat"
   params:
     tool=ROOT_DIR + "/tools/rscripts/demulti.R",
     bc1Len=config["barcode1Length"],

@@ -40,7 +40,7 @@ rule assimilate_sites:
     multi=all_multi_inputs
   output:
     incorp=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
-    stat=temp(RUN_DIR + "/process_data/" + RUN + ".assim.stat")
+    stat=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
   params:
     config=RUN_DIR + "/" + "config.yml",
     tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R"
@@ -59,10 +59,10 @@ rule assimilate_sites:
 
 
 rule iguide_evaluation:
-  input: ancient(RUN_DIR + "/output/incorp_sites." + RUN + ".rds")
+  input: RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
   output: 
     eval=temp(RUN_DIR + "/output/iguide.eval." + RUN + ".rds"),
-    stat=temp(RUN_DIR + "/process_data/" + RUN + ".eval.stat")
+    stat=RUN_DIR + "/process_data/" + RUN + ".eval.stat"
   params: 
     tool = ROOT_DIR + "/tools/rscripts/evaluate_incorp_data.R",
     config = RUN_DIR + "/" + "config.yml"

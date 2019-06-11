@@ -11,7 +11,7 @@ rule post_align:
     uniq=RUN_DIR + "/process_data/{sample}.uniq.csv",
     chimera=RUN_DIR + "/process_data/{sample}.chimera.rds",
     multihit=RUN_DIR + "/process_data/{sample}.multihits.rds",
-    stat=temp(RUN_DIR + "/process_data/{sample}.align.stat")
+    stat=RUN_DIR + "/process_data/{sample}.align.stat"
   params:
     tool=ROOT_DIR + "/tools/rscripts/couple.R",
     ref=config["Ref_Genome"],

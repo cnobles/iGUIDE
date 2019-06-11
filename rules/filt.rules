@@ -8,7 +8,7 @@ rule seq_filter:
   output:
     R1=temp(RUN_DIR + "/process_data/{sample}.R1.filt.fastq.gz"),
     R2=temp(RUN_DIR + "/process_data/{sample}.R2.filt.fastq.gz"),
-    stat=temp(RUN_DIR + "/process_data/{sample}.filt.stat")
+    stat=RUN_DIR + "/process_data/{sample}.filt.stat"
   params:
     tool=ROOT_DIR + "/tools/rscripts/filt.R"
   log:
