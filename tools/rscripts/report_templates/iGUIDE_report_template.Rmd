@@ -146,7 +146,6 @@ tbl_caps <- c(
   "Specimen summary.",
   "Target sequences and associated information.",
   "Percent On-target.",
-  "Estimate of On-target editing efficiency (percent) for each target by specimen.",
   "Off-target Loci.",
   "Cancer-associated Gene editing enrichment."
 )
@@ -158,7 +157,14 @@ fig_caps <- c(
 )
 
 if( args$format == "html" ){
-  tbl_caps <- paste0("Table ", 1:7, ". ", tbl_caps)
+  
+  tbl_nums <- if( nrow(target_tbl) == 1 ){
+    tbl_nums <- 1:6
+  }else{
+    tbl_nums <- c(1:4,6,7)
+  }
+  
+  tbl_caps <- paste0("Table ", tbl_nums, ". ", tbl_caps)
 }
 
 fig_caps <- paste0("**Figure ", 1:3, "**. ", fig_caps)
@@ -253,7 +259,7 @@ kable(
 
 Each specimen started in the iGUIDE pipeline as genomic DNA. The gDNA was randomly sheared through ultrasonication and ligated with barcoded DNA linkers. Nested-PCR was used to amplify from incorporated dsODN sequences to the linker sequences with barcoded and linker-specific primers. This dual barcoding reduces sample to sample crossover. Amplicons were sequenced on an Illumina platform and the sequencing data processed with the iGUIDE software, available on [**GitHub@cnobles/iGUIDE**](https://github.com/cnobles/iGUIDE). 
 
-DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "Ref_Genome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 1**, along with the number of unique "alignments" they represent (or the number of observed incorporated dsODNs). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and/or clonal expansion.
+DNA sequence reads were aligned to the `r unique(sapply(configs, "[[", "Ref_Genome"))` reference genome. The number of reads aligning for each specimen is displayed in **Table 2**, along with the number of unique "alignments" they represent (or the number of observed incorporated dsODNs). Multiple reads may represent a singular alignment of genomic DNA, inherent to sequence analysis of amplified DNA. These alignments indicate individual events of dsODN incorporation and/or clonal expansion.
 
 Alternatively, random nucleotide sequences are included in the ligated linker sequences. These Unique Molecular Indeces (UMItags) can provide another method of abundance by counting the number of UMItags and breakpoint position combinations for each incorporation sites. This method of quantification has an increased dynamic range, yet can suffer from PCR artifacts leading to inflated abundances.
 
@@ -267,7 +273,7 @@ if( args$format == "pdf" ){
 
 # On-target analysis
 
-Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of nuclease targeted locations. The target sequences provided for these analyses and their On-target locations (`Edit Locus`) are shown in **Table 2**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
+Incorporation sites, or locations in the genome where the dsODN was detected, are expected to be in the proximity of nuclease targeted locations. The target sequences provided for these analyses and their On-target locations (`Edit Locus`) are shown in **Table 3**. The genomic locations are in a format where chromosome, orientation, and nucleotide position are delimited by a colon (":").  
 
 ```{r target_tbl}
 target_tbl$`Edit Locus` <- sapply(
@@ -327,7 +333,7 @@ kable(
 
 ```
 
-Analysis of On-target associated incorporation sites (**Table 3**) produces several features that are helpful in On- and Off-target site characterization. These include the following:
+Analysis of On-target associated incorporation sites (**Table 4**) produces several features that are helpful in On- and Off-target site characterization. These include the following:
 
 * Alignment **Pileups**: unique alignments that overlap with each other or "pileup", suggesting a nearby location may be targeted for a double strand break (DSB). For this analyses, any group of `r unique(sapply(configs, "[[", "pileUpMin"))` or more unique alignments were considered as a pileup cluster.
 
@@ -335,7 +341,7 @@ Analysis of On-target associated incorporation sites (**Table 3**) produces seve
 
 * Target **Matched** alignments: searching for the target sequences upstream of the incorporation site can be an indicator of targeted nuclease activity. While this indicator may seem to be crucial, guide RNAs have been demonstrated to have a variety of behaviors when annealing to target DNA, not all of which can be easily searched for with a simple sequence alignment. Nucleotide sequence matching target sequences were searched for up to `r upstream_dist` bp upstream of the incorporation sites and required to have no more than `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches in the target sequence and/or PAM sequence.
 
-Specimen specific tables with data relating to these criteria are found in **Table 3** for percent On-target editing and **Table 4** for identified Off-target loci.
+Specimen specific tables with data relating to these criteria are found in **Table 4** for percent On-target editing and **Table `r ifelse(nrow(target_tbl) > 1, 6, 5)`** for identified Off-target loci.
 
 ```{r} 
 if( args$format == "pdf" ){
@@ -345,9 +351,9 @@ if( args$format == "pdf" ){
 }
 ```
 
-## Specimen breakdown
+## On-target editing efficiency
 
-**Table 3** displays the percent of observations that were associated with On-target loci for **All** alignments. Further the percentages for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. 
+**Table 4** displays the percent of observations (efficiency or specificity) that were associated with all On-target loci for **All** alignments. Further the efficiencies for **Pileups**, **Paired**, and **Matched** criteria are displayed in the following columns. These different criteria are used as the denominator to dictcate the amount of observed nuclease-specific editing. This is an estimate though, as On-target editing does have the potential to saturate the dynamic range of the abundance calculation. Therefore, these percentages should be considered lower bounds for editing efficiency and specificity.
 
 ```{r on_target_summary}
 ot_tbl_summary[is.na(ot_tbl_summary)] <- 0
@@ -396,53 +402,7 @@ kable(
 
 ```
 
-```{r} 
-if( args$format == "pdf" ){
-  cat("\\newpage")
-}else{
-  cat('<P style="page-break-before: always">')
-}
-```
-
-## On-target editing efficiency
-
-**Table 5** below displays the estimated On-target editing efficiency based on the iGUIDE analysis. These values are calculated by the ratio of On-target editing to the sum of editing associated with the specific target method. This efficiency percentage is analogous to the specificity for each target. This is an estimate though, as On-target editing does have the potential to saturate the dynamic range of the abundance calculation. Therefore, these percentages should be considered lower bounds for editing efficiency and specificity.
-
-```{r on_target_efficiency}
-names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
-
-ot_eff_data <- ot_eff_summary %>%
-  dplyr::select(-Specimen, -Condition) %>%
-  dplyr::mutate_all(
-    pNums, 
-    na.replace = ifelse(report_format == "latex", "-", "\\-"), 
-    digits = 3
-  )
-
-ot_eff_print <- dplyr::bind_cols(ot_eff_summary[,c(1,2)], ot_eff_data)
-
-if( args$tables ){
-  
-  ot_eff_save <- ot_eff_summary
-  
-  write.csv(
-    x = ot_eff_save, 
-    file = file.path(tables_path, "tbl5.ontarget.efficiency.csv"),
-    quote = TRUE, row.names = FALSE
-  )
-  
-}
-
-kable(
-    x = ot_eff_print, format = report_format, row.names = FALSE,
-    booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caps[5], 
-    align = c("l", "l", rep("r", ncol(ot_eff_print)-2))
-  ) %>%
-  kableExtra::kable_styling(
-    bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
-
+```{r target_spec_eff, eval=nrow(target_tbl) > 1, child=file.path(root_dir, "tools/rscripts/report_templates/target_specific_eff_template.Rmd")}
 ```
 
 ```{r} 
@@ -454,9 +414,9 @@ if( args$format == "pdf" ){
 ```
 
 # Off-target analysis
-## Specimen breakdown
+## Specimen information
 
-Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table 4** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup clustering) without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands) within `r pNums(2*upstream_dist, digits = 0)` bp upstream of each other. Target **Matched** loci require a match in the upstream sequence to a treated target (within `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches out of the `r unique(nchar(target_tbl$Sequence))` nts`r if(any(sapply(nuc_profiles, "[[", "PAM") != FALSE)){paste0(" and ", max(sapply(nuc_profiles, function(x){if(x$PAM != FALSE){x$PAM_Tol}else{0}})), " PAM mismatch")}`).
+Using the criteria discussed previously based on characterizing features of nuclease targeted sites, off-target sites can be selected from the data in an unbiased manner. **Table `r ifelse(nrow(target_tbl) > 1, 6, 5)`** shows a summary of the unique off-target locations (loci) observed in the data. For **All** alignments, the loci are based on overlapping alignments (pileup clustering) without a minimum number of fragments required to be classified as a pileup cluster. **Pileup** loci are similarly based on overlapping alignments, but require at least `r unique(sapply(configs, "[[", "pileUpMin"))` alignments to form a cluster. Flanking **Paired** loci require at least two unique alignments with opposite orientation (strands) within `r pNums(2*upstream_dist, digits = 0)` bp upstream of each other. Target **Matched** loci require a match in the upstream sequence to a treated target (within `r unique(sapply(configs, "[[", "maxTargetMismatch"))` mismatches out of the `r unique(nchar(target_tbl$Sequence))` nts`r if(any(sapply(nuc_profiles, "[[", "PAM") != FALSE)){paste0(" and ", max(sapply(nuc_profiles, function(x){if(x$PAM != FALSE){x$PAM_Tol}else{0}})), " PAM mismatch")}`).
 
 ```{r off_target_summary}
 ft_tbl_summary[is.na(ft_tbl_summary)] <- 0
@@ -467,6 +427,8 @@ names(ft_tbl_summary) <- c(
 
 if( args$tables ){
 
+  tbl_num <- ifelse(nrow(target_tbl) > 1, 6, 5)
+  
   ft_tbl_save <- ft_tbl_summary
   
   names(ft_tbl_save) <- c(
@@ -476,7 +438,9 @@ if( args$tables ){
   
   write.csv(
     x = ft_tbl_save, 
-    file = file.path(tables_path, "tbl6.offtarget.summary.csv"),
+    file = file.path(
+      tables_path, paste0("tbl", tbl_num, ".offtarget.summary.csv")
+    ),
     quote = TRUE, row.names = FALSE
   )
 }
@@ -484,7 +448,7 @@ if( args$tables ){
 kable(
     x = ft_tbl_summary, format = report_format, digits = 1, row.names = FALSE,
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
-    escape = FALSE, caption = tbl_caps[6]
+    escape = FALSE, caption = tbl_caps[5]
   ) %>%
   kableExtra::add_header_above(
     c(" " = 2, "All", "Pileup", "Paired", "Matched")
@@ -506,7 +470,7 @@ if( args$format == "pdf" ){
 
 ## Off-target enrichment in cancer-associated genes
 
-Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table 5**. The cancer-associated and special gene lists included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0) or did not have enough data to support a powerful analysis (Estimated Power greater than 80%).
+Flanking **Paired** loci and Target **Matched** loci are tested for enrichment against specific gene lists in **Table `r ifelse(nrow(target_tbl) > 1, 7, 6)`**. The cancer-associated and special gene lists included in this analysis were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. Enrichment was tested by Fisher's Exact and p-values were adjusted for multiple comparisons using a Benjamani-Hochberg correction. Omitted specimens or conditions had insufficient data for this analysis (Total Gene Count = 0) or did not have enough data to support a powerful analysis (Estimated Power greater than 80%).
 
 ```{r onco_enrichment}
 enrich_df <- enrich_df %>%
@@ -517,6 +481,8 @@ enrich_df <- enrich_df %>%
 
 if( args$tables ){
   
+  tbl_num <- ifelse(nrow(target_tbl) > 1, 7, 6)
+  
   enrich_save <- enrich_df
   
   names(enrich_save) <- c(
@@ -526,7 +492,9 @@ if( args$tables ){
   
   write.csv(
     x = enrich_save, 
-    file = file.path(tables_path, "tbl7.gene.enrichment.csv"),
+    file = file.path(
+      tables_path, paste0("tbl", tbl_num, ".gene.enrichment.csv")
+    ),
     quote = TRUE, row.names = FALSE
   )
   
@@ -549,7 +517,9 @@ enrich_print <- enrich_df %>%
       special.p.value, format = report_format, bold = special.is.sig
     )
   ) %>%
-  dplyr::filter(onco.power >= 80 | special.power >= 80) %>%
+  dplyr::filter(
+    origin == "Reference" | onco.power >= 80 | special.power >= 80
+  ) %>%
   dplyr::select(-onco.is.sig, -special.is.sig, -onco.power, -special.power)
 
 names(enrich_print) <- c(
@@ -557,12 +527,14 @@ names(enrich_print) <- c(
   "genes", "p-value (pwr)"
 )
 
-if( nrow(enrich_print) > 0 ){
+enrich_print[1,c(5,7)] <- ""
+
+if( nrow(enrich_print) > 1 ){
   
   kable(
       x = enrich_print, format = report_format, row.names = FALSE,
       format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
-      escape = TRUE, caption = tbl_caps[7], 
+      escape = FALSE, caption = tbl_caps[6], 
       align = c("l", "l", rep("r", 5))
     ) %>%
     kableExtra::add_header_above(
@@ -960,11 +932,15 @@ full_target_seqs <- structure(
   names = target_tbl$`Target Name`
 )
 
+last_tbl_num <- ifelse(nrow(target_tbl) > 1, 7, 6)
+
 for( i in seq_along(ft_seqs_list) ){
   
   cap <- paste0("Off-Target Loci: ", names(ft_seqs_list)[i])
   
-  if( report_format == "html" ) cap <- paste0("Table ", i+7, ". ", cap)
+  if( report_format == "html" ){
+    cap <- paste0("Table ", i + last_tbl_num, ". ", cap)
+  }
   
   target_ref_seq <- full_target_seqs[unique(ft_seqs_list[[i]]$target.seq)]
   
@@ -989,7 +965,9 @@ for( i in seq_along(ft_seqs_list) ){
         "Mismatch" = mismatch
       )%>%
       write.csv(
-        file = file.path(tables_path, paste0("tbl", i+5, ".offtargets.csv")),
+        file = file.path(
+          tables_path, paste0("tbl", i + last_tbl_num, ".offtargets.csv")
+        ),
         quote = TRUE, row.names = FALSE
       )
     
