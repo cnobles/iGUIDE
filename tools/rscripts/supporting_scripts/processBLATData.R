@@ -17,12 +17,12 @@ processBLATData <- function(algns, from, ref.genome){
   algns$qtStart <- ifelse(
     algns$strand == "+",
     ( algns$tStart - (algns$qStart) ),
-    ( algns$tStart - (algns$qSize - algns$qEnd - 1) )
+    ( algns$tStart - (algns$qSize - algns$qEnd) )
   )
   
   algns$qtEnd <- ifelse(
     algns$strand == "+",
-    ( algns$tEnd + (algns$qSize - algns$qEnd - 1) ),
+    ( algns$tEnd + (algns$qSize - algns$qEnd) ),
     ( algns$tEnd + (algns$qStart) )
   )    
   

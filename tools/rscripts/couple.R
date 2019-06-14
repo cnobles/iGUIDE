@@ -7,7 +7,7 @@
 #' Names with ".": arguments / options for functions
 
 #!/usr/bin/env Rscript
-options(stringsAsFactors = FALSE, scipen = 99, width = 999)
+options(stringsAsFactors = FALSE, scipen = 99, width = 120)
 
 code_dir <- dirname(sub(
   pattern = "--file=", 
@@ -543,8 +543,8 @@ pairs <- GenomicRanges::findOverlaps(
   ignore.strand = TRUE
 )
 
-anchor_loci <- red_anchor_hits[S4Vectors::queryHits(pairs)]
-adrift_loci <- red_adrift_hits[S4Vectors::subjectHits(pairs)]
+#anchor_loci <- red_anchor_hits[S4Vectors::queryHits(pairs)]
+#adrift_loci <- red_adrift_hits[S4Vectors::subjectHits(pairs)]
 
 #Stop if no alignments coupled based on criteria.
 if( length(pairs) == 0 ){
@@ -556,11 +556,21 @@ if( length(pairs) == 0 ){
 }
 
 # Check isDownstream and isOppositeStrand
-adrift_loci_starts <- GenomicRanges::start(adrift_loci)
-anchor_loci_starts <- GenomicRanges::start(anchor_loci)
+adrift_loci_starts <- GenomicRanges::start(red_adrift_hits)[
+  S4Vectors::subjectHits(pairs)
+]
 
-adrift_loci_strand <- GenomicRanges::strand(adrift_loci)
-anchor_loci_strand <- GenomicRanges::strand(anchor_loci)
+anchor_loci_starts <- GenomicRanges::start(red_anchor_hits)[
+  S4Vectors::queryHits(pairs)
+]
+
+adrift_loci_strand <- GenomicRanges::strand(red_adrift_hits)[
+  S4Vectors::subjectHits(pairs)
+]
+
+anchor_loci_strand <- GenomicRanges::strand(red_anchor_hits)[
+  S4Vectors::queryHits(pairs)
+]
 
 keep_loci <- ifelse(
   anchor_loci_strand == "+", 
@@ -578,11 +588,12 @@ keep_loci <- as.vector(
   (keep_loci & anchor_loci_strand != "*") & (adrift_loci_strand != "*")
 )
 
-anchor_loci <- anchor_loci[keep_loci]
-adrift_loci <- adrift_loci[keep_loci]
+#anchor_loci <- anchor_loci[keep_loci]
+#adrift_loci <- adrift_loci[keep_loci]
+pairs <- pairs[keep_loci]
 
 # Stop if no loci were properly paired
-if( length(anchor_loci) == 0 | length(adrift_loci) == 0 ){
+if( length(pairs) == 0 ){
   
   cat("\nNo genomic loci from alignments were properly paired.\n")  
   writeNullOutput(args)
@@ -599,172 +610,162 @@ if( length(anchor_loci) == 0 | length(adrift_loci) == 0 ){
 #' work as anticipated with IRanges, and therefore objects were moved to GRanges
 #' and GRangesLists.
 loci_key <- data.frame(
-  "anchorLoci" = S4Vectors::queryHits(pairs)[keep_loci],
-  "adriftLoci" = S4Vectors::subjectHits(pairs)[keep_loci]
+  "anchorLoci" = S4Vectors::queryHits(pairs),
+  "adriftLoci" = S4Vectors::subjectHits(pairs)
 )
 
 loci_key$lociPairKey <- paste0(loci_key$anchorLoci, ":", loci_key$adriftLoci)
 
-loci_key$anchorKey <- IRanges::IntegerList(
-  split(
-    anchor_hits$anchorKey[unlist(anchor_loci$revmap)],
-    S4Vectors::Rle(
-      values = seq_along(anchor_loci), 
-      lengths = width(anchor_loci$revmap@partitioning)
-    )
-  )
+# Append *Loci ids to the anchor and adrift alignments
+idx_passing_anchors <- unlist(red_anchor_hits$revmap[
+  unique(loci_key$anchorLoci)
+])
+
+anchor_hits$anchorLoci[idx_passing_anchors] <- as.numeric(S4Vectors::Rle(
+  values = unique(loci_key$anchorLoci), 
+  lengths = lengths(red_anchor_hits$revmap[
+    unique(loci_key$anchorLoci)
+  ])
+))
+
+idx_passing_adrifts <- unlist(red_adrift_hits$revmap[
+  unique(loci_key$adriftLoci)
+])
+
+adrift_hits$adriftLoci[idx_passing_adrifts] <- as.numeric(S4Vectors::Rle(
+  values = unique(loci_key$adriftLoci), 
+  lengths = lengths(red_adrift_hits$revmap[
+    unique(loci_key$adriftLoci)
+    ])
+))
+
+# Join the loci idx information up to the keys file
+# Identify aligning keys
+aligned_anchor_keys <- unique(
+  anchor_hits$anchorKey[!is.na(anchor_hits$anchorLoci)]
 )
 
-loci_key$adriftKey <- IRanges::IntegerList(
-  split(
-    adrift_hits$adriftKey[unlist(adrift_loci$revmap)],
-    S4Vectors::Rle(
-      values = seq_along(adrift_loci), 
-      lengths = width(adrift_loci$revmap@partitioning)
-    )
-  )
+aligned_adrift_keys <- unique(
+  adrift_hits$adriftKey[!is.na(adrift_hits$adriftLoci)]
 )
 
-anchor_readPair_hits <- GenomicRanges::findOverlaps(
-  query = split(
-    x = GenomicRanges::GRanges(
-      seqnames = "int", 
-      ranges = IRanges::IRanges(start = unlist(loci_key$anchorKey), width = 1), 
-      strand = "*"
-    ), 
-    f = S4Vectors::Rle(
-      values = seq_len(nrow(loci_key)), 
-      lengths = S4Vectors::width(loci_key$anchorKey@partitioning)
-    )
-  ),
-  subject = GenomicRanges::GRanges(
-    seqnames = "int",
-    ranges = IRanges::IRanges(start = unique_key_pairs$anchorKey, width = 1),
-    strand = "*")
+# Construct an anchor/adrift key to loci IntegerList with indices
+anchor_key_to_loci <- with(
+  as.data.frame(anchor_hits)[
+    anchor_hits$anchorKey %in% aligned_anchor_keys &
+      !is.na(anchor_hits$anchorLoci), 
+    c("anchorKey", "anchorLoci")
+  ],
+  IRanges::IntegerList(split(anchorLoci, anchorKey))
 )
 
-loci_key$anchorReadPairs <- IRanges::IntegerList(
-  split(
-    x = S4Vectors::subjectHits(anchor_readPair_hits), 
-    f = S4Vectors::queryHits(anchor_readPair_hits)
-  )
-)
-
-adrift_readPair_hits <- GenomicRanges::findOverlaps(
-  query = split(
-    x = GenomicRanges::GRanges(
-      seqnames = "int", 
-      ranges = IRanges::IRanges(start = unlist(loci_key$adriftKey), width = 1), 
-      strand = "*"
-    ), 
-    f = S4Vectors::Rle(
-      values = seq_len(nrow(loci_key)), 
-      lengths = width(loci_key$adriftKey@partitioning)
-    )
-  ),
-  subject = GenomicRanges::GRanges(
-    seqnames = "int",
-    ranges = IRanges::IRanges(start = unique_key_pairs$adriftKey, width = 1),
-    strand = "*")
-)
-
-loci_key$adriftReadPairs <- IRanges::IntegerList(
-  split(
-    x = S4Vectors::subjectHits(adrift_readPair_hits), 
-    f = S4Vectors::queryHits(adrift_readPair_hits)
-  )
-)
-
-#' Determine intersecting readPairs between the anchor and adrift loci.
-anchor_readPair_indices <- GenomicRanges::GRanges(
-  seqnames = S4Vectors::queryHits(anchor_readPair_hits), 
-  ranges = IRanges::IRanges(
-    start = S4Vectors::subjectHits(anchor_readPair_hits), width = 1
-  ),
-  strand = "*"
-)
-
-adrift_readPair_indices <- GenomicRanges::GRanges(
-  seqnames = S4Vectors::queryHits(adrift_readPair_hits), 
-  ranges = IRanges::IRanges(
-    start = S4Vectors::subjectHits(adrift_readPair_hits), width = 1
-  ),
-  strand = "*"
-)
-
-intersecting_readPairs <- GenomicRanges::findOverlaps(
-  query = anchor_readPair_indices, 
-  subject = adrift_readPair_indices
-)
-
-#' Using the range information from the filtered paired alignments, the code
-#' constructs a GRanges object from the anchor_loci and adrift_loci. anchor_loci
-#' are the integration site positions while the adrift_loci are the various 
-#' breakpoints. The strand of the range is set to the same strand as the 
-#' anchor_loci since the direction of sequencing from the viral or vector genome
-#' is from the U5-host junction found at the 3' end of the integrated element.
-paired_loci_key <- loci_key[
-  as.integer(unique(GenomicRanges::seqnames(
-    anchor_readPair_indices[S4Vectors::queryHits(intersecting_readPairs)]
-  ))),
-]
-
-
-paired_loci_key$readPairKeys <- IRanges::CharacterList(
-  split(
-    x = unique_key_pairs$readPairKey[
-      GenomicRanges::start(anchor_readPair_indices[
-        S4Vectors::queryHits(intersecting_readPairs)
-      ])
+adrift_key_to_loci <- with(
+  as.data.frame(adrift_hits)[
+    adrift_hits$adriftKey %in% aligned_adrift_keys &
+      !is.na(adrift_hits$adriftLoci), 
+    c("adriftKey", "adriftLoci")
     ],
-    f = as.integer(GenomicRanges::seqnames(
-      anchor_readPair_indices[S4Vectors::queryHits(intersecting_readPairs)]
-    ))
-  )
+  IRanges::IntegerList(split(adriftLoci, adriftKey))
 )
 
-select_anchor_loci <- anchor_loci[
-  as.integer(unique(GenomicRanges::seqnames(
-    anchor_readPair_indices[S4Vectors::queryHits(intersecting_readPairs)]
-  )))
+# Construct readPairKey to lociKey object
+unique_read_pair_keys <- unique(keys$readPairKey)
+
+unique_read_pair_keys <- unique_read_pair_keys[
+  stringr::str_extract(unique_read_pair_keys, "[\\d]+") %in% names(anchor_key_to_loci) &
+    stringr::str_extract(unique_read_pair_keys, "[\\d]+$") %in% names(adrift_key_to_loci)
 ]
 
-select_adrift_loci <- adrift_loci[
-  as.integer(unique(GenomicRanges::seqnames(
-    adrift_readPair_indices[S4Vectors::subjectHits(intersecting_readPairs)]
-  )))
+
+loci_key_anchor_idx <- IRanges::IntegerList(split(
+  seq_along(loci_key$anchorLoci), loci_key$anchorLoci
+))
+
+loci_key_adrift_idx <- IRanges::IntegerList(split(
+  seq_along(loci_key$adriftLoci), loci_key$adriftLoci
+))
+
+# Time sink -- warning
+rpk_anchor_loci_idx <- IRanges::IntegerList(lapply(
+  anchor_key_to_loci[stringr::str_extract(unique_read_pair_keys, "[\\d]+")],
+  function(x) unlist(loci_key_anchor_idx[as.character(x)], use.names = FALSE)
+))
+
+# Time sink -- warning
+rpk_adrift_loci_idx <- IRanges::IntegerList(lapply(
+  adrift_key_to_loci[stringr::str_extract(unique_read_pair_keys, "[\\d]+$")],
+  function(x) unlist(loci_key_adrift_idx[as.character(x)], use.names = FALSE)
+))
+
+rpk_loci_idx <- IRanges::intersect(rpk_anchor_loci_idx, rpk_adrift_loci_idx)
+names(rpk_loci_idx) <- unique_read_pair_keys
+
+rpk_loci_key <- IRanges::CharacterList(split(
+  loci_key$lociPairKey[unlist(rpk_loci_idx)], S4Vectors::Rle(
+    values = names(rpk_loci_idx), lengths = lengths(rpk_loci_idx)
+  )
+))
+
+gc()
+
+# Group readPairKeys into unique, mulithit, or artifactual chimeras
+unique_rpks <- names(rpk_loci_key)[lengths(rpk_loci_key) == 1]
+multihit_rpks <- names(rpk_loci_key)[lengths(rpk_loci_key) > 1]
+chimera_rpks <- keys$readPairKey[
+  !keys$readPairKey %in% c(unique_rpks, multihit_rpks)
 ]
 
-paired_loci <- GenomicRanges::GRanges(
-  seqnames = GenomicRanges::seqnames(select_anchor_loci), 
+cat(
+  "\nUnique sequences associated with types of alignments:\n",
+  "  unique alignments  : ", format(length(unique_rpks), big.mark = ","), "\n",
+  "  multihit alignments: ", format(length(multihit_rpks), big.mark = ","), "\n",
+  "  chimera artifacts  : ", format(length(chimera_rpks), big.mark = ","), "\n"
+)
+
+# Couple together the anchor and adrift loci for expanding rpks-loci
+# Using the range information from the filtered paired alignments, the code
+# constructs a GRanges object from the anchor_loci and adrift_loci. Anchor_loci
+# are the integration site positions while the adrift_loci are the various 
+# breakpoints. The strand of the range is set to the same strand as the 
+# anchor_loci since the direction of sequencing is considered to be from the 
+# host-junction found at the 3' end of the integrated element.
+
+coupled_loci <- GenomicRanges::GRanges(
+  seqnames = GenomicRanges::seqnames(red_anchor_hits)[loci_key$anchorLoci],
   ranges = IRanges::IRanges(
     start = ifelse(
-      GenomicRanges::strand(select_anchor_loci) == "+", 
-      GenomicRanges::start(select_anchor_loci), 
-      GenomicRanges::start(select_adrift_loci)),
+      GenomicRanges::strand(red_anchor_hits[loci_key$anchorLoci]) == "+", 
+      GenomicRanges::start(red_anchor_hits)[loci_key$anchorLoci],
+      GenomicRanges::start(red_adrift_hits)[loci_key$adriftLoci]
+    ),
     end = ifelse(
-      GenomicRanges::strand(select_anchor_loci) == "+", 
-      GenomicRanges::end(select_adrift_loci), 
-      GenomicRanges::end(select_anchor_loci))),
-  strand = GenomicRanges::strand(select_anchor_loci),
-  lociPairKey = paired_loci_key$lociPairKey
+      GenomicRanges::strand(red_anchor_hits[loci_key$anchorLoci]) == "+", 
+      GenomicRanges::start(red_adrift_hits)[loci_key$adriftLoci],
+      GenomicRanges::start(red_anchor_hits)[loci_key$anchorLoci]
+    )
+  ),
+  strand = GenomicRanges::strand(red_anchor_hits[loci_key$anchorLoci]),
+  seqinfo = GenomeInfoDb::seqinfo(ref_genome),
+  lociPairKey = loci_key$lociPairKey
 )
 
-#' Information on valid paired alignments from all sequences present.
+#' Information on valid coupled alignments from all sequences present.
+
 printHead(
-  paired_loci,
-  title = "Head of valid paired loci present in the data.",
-  caption = sprintf("Genomic loci: %s", length(paired_loci))
+  sort(coupled_loci[sample.int(
+    length(coupled_loci), 
+    size = min(6, length(coupled_loci)), 
+    replace = FALSE
+  )]),
+  title = "Randomly sampled coupled loci present in the data.",
+  caption = sprintf("Genomic loci: %s", length(coupled_loci))
 )
 
-#' Add readPairKeys to the paired loci for expansion
-paired_loci$readPairKeys <- paired_loci_key$readPairKeys
-
-#' Stop if there are no paired_loci
-if( length(paired_loci) == 0 ){
+#' Stop if there are no coupled_loci
+if( length(coupled_loci) == 0 ){
   
   cat(
-    "\nNo valid paired genomic loci were found within", 
+    "\nNo valid coupled genomic loci were found within", 
     "the data given input criteria.\n"
   )
   writeNullOutput(args)
@@ -772,33 +773,16 @@ if( length(paired_loci) == 0 ){
   
 }
 
-#' Expand readPairKeys and lociPairKeys to make a single object that maps loci
-#' to unique sequences. This is analogous to a sparse matrix, but in a 
-#' data.frame object. The keys object is still needed to jump from readPairKey
-#' to readName.
-read_loci_mat <- data.frame(
-  "lociPairKey" = S4Vectors::Rle(
-    values = paired_loci$lociPairKey,
-    lengths = S4Vectors::width(paired_loci$readPairKeys@partitioning)),
-  "readPairKey" = unlist(paired_loci$readPairKeys)
-)
-
-#' Templates aligning to single loci are termed unique, while templates
-#' aligning to multiple loci are termed multihits.
-read_pair_counts <- table(read_loci_mat$readPairKey)
-uniq_read_pairs <- names(read_pair_counts[read_pair_counts == 1])
-multihit_read_pairs <- names(read_pair_counts[read_pair_counts > 1])
-
 #' Bin reads that would map to different loci on the same read (chimeras)
-#' All unique and multihit templates were mapped successfully to 
-#' genomic loci, yet some templates were sequenced but did not make it through
-#' the selection criteria. These template either do not have alignments to the
+#' All unique and multihit templates are mapped successfully to 
+#' genomic loci, yet some templates are sequenced but do not make it through
+#' the selection criteria. These templates either do not have alignments to the
 #' reference genome (anchor or adrift did not align) or map to two distant 
 #' genomic loci. The latter are termed chimeras and are considered to be 
 #' artifacts of PCR amplification.
 if( !is.null(args$chimeras) ){
   
-  failed_reads <- keys[!keys$readPairKey %in% read_loci_mat$readPairKey,]
+  failed_reads <- keys[keys$readPairKey %in% chimera_rpks,]
   
   chimera_reads <- failed_reads[
     failed_reads$anchorKey %in% anchor_hits$anchorKey & 
@@ -854,32 +838,28 @@ if( !is.null(args$chimeras) ){
   
   chimeraData <- list(
     "read_info" = chimera_reads, 
-    "alignments" = chimera_alignments
+    "alignments" = chimera_alignments,
+    "failed_reads" = failed_reads
   )
   
   writeOutputFile(chimeraData, file = args$chimeras, format = "rds")
   
 }
 
-#' Expand out reads uniquely mapped reads or unique sites
+#' Expand out uniquely mapped reads or unique sites
 #' Below, the paired_loci object is expanded to create the genomic alignments
 #' for each read that mapped to a single genomic loci. This data is then 
 #' recorded in two formats. "allSites" is a GRanges object where each row is a
 #' single read, while "sites.final" is a condensed form of the data where each
 #' row is a unique integration site with the width of the range refering to 
 #' the longest template aligned to the reference genome. 
-uniq_read_loci_mat <- read_loci_mat[
-  read_loci_mat$readPairKey %in% uniq_read_pairs,
+uniq_templates <- coupled_loci[
+  match(unlist(rpk_loci_key[unique_rpks]), coupled_loci$lociPairKey)
 ]
 
-uniq_templates <- paired_loci[
-  match(uniq_read_loci_mat$lociPairKey, paired_loci$lociPairKey)
-]
+uniq_templates$readPairKey <- unique_rpks
 
-uniq_templates$readPairKeys <- NULL
-uniq_templates$readPairKey <- uniq_read_loci_mat$readPairKey
-
-uniq_keys <- keys[keys$readPairKey %in% uniq_read_pairs,]
+uniq_keys <- keys[keys$readPairKey %in% unique_rpks,]
 
 uniq_reads <- uniq_templates[
   match(uniq_keys$readPairKey, uniq_templates$readPairKey)
@@ -903,7 +883,7 @@ writeOutputFile(uniq_sites, file = args$uniqOutput)
 # Print out head of uniq_sites for reference.
 printHead(
   uniq_sites,
-  title = "Head of uniquely mapped genomic loci.",
+  title = "Head of uniquely mapped genomic loci",
   caption = sprintf(
     paste(
       "Alignments yeilded %1$s unique anchor sites from %2$s", 
@@ -944,7 +924,7 @@ if( !is.null(args$condSites) ){
   
   printHead(
     cond_sites,
-    title = "Head of unique anchor sites.",
+    title = "Head of unique anchor sites",
     caption = sprintf(
       paste(
         "There were %1$s unique anchor sites identified with a total", 
@@ -980,35 +960,25 @@ if( !is.null(args$multihits) ){
   clustered_multihit_positions <- GenomicRanges::GRangesList()
   clustered_multihit_lengths <- list()
   
-  if( length(multihit_read_pairs) > 0 ){
+  if( length(multihit_rpks) > 0 ){
     
     #' Only consider readPairKeys that aligned to multiple genomic loci
-    multi_read_loci_mat <- read_loci_mat[
-      read_loci_mat$readPairKey %in% multihit_read_pairs,
+    multihit_templates <- coupled_loci[
+      coupled_loci$lociPairKey %in% unlist(rpk_loci_key[multihit_rpks])
     ]
     
-    multihit_templates <- paired_loci[
-      paired_loci$lociPairKey %in% multi_read_loci_mat$lociPairKey
+    multihit_templates <- multihit_templates[
+      match(unlist(rpk_loci_key[multihit_rpks]), multihit_templates$lociPairKey)
     ]
     
-    multihit_expansion_map <- multihit_templates$readPairKeys
-    multihit_templates$readPairKeys <- NULL
+    multihit_templates$readPairKey <- as.character(S4Vectors::Rle(
+      values = multihit_rpks, lengths = lengths(rpk_loci_key[multihit_rpks])
+    ))
     
-    multihit_templates <- multihit_templates[S4Vectors::Rle(
-      values = seq_along(multihit_templates),
-      lengths = S4Vectors::lengths(multihit_expansion_map)
-    )]
-    
-    multihit_templates$readPairKey <- unlist(multihit_expansion_map)
-    
-    #' As the loci are expanded from the paired_loci object, unique templates 
+    #' As the loci are expanded from the coupled_loci object, unique templates 
     #' and readPairKeys are present in the readPairKeys unlisted from the 
     #' paired_loci object.
-    multihit_templates <- multihit_templates[
-      multihit_templates$readPairKey %in% multi_read_loci_mat$readPairKey
-    ]
-    
-    multihit_keys <- keys[keys$readPairKey %in% multihit_read_pairs,]
+    multihit_keys <- keys[keys$readPairKey %in% multihit_rpks,]
     
     multihit_keys$sampleName <- stringr::str_extract(
       string = as.character(multihit_keys$anchorSeqID), pattern = "^[\\w-]+"
@@ -1153,13 +1123,15 @@ if( !is.null(args$multihits) ){
   
   writeOutputFile(multihitData, file = args$multihits, format = "rds")
   
-  print(
+  printHead(
     data.frame(
       "multihit_reads" = length(unique(names(unclustered_multihits))),
       "multihit_alignments" = length(unique(unclustered_multihits)),
       "multihit_clusters" = length(clustered_multihit_positions),
       "multihit_lengths" = sum(lengths(clustered_multihit_lengths))
-    )
+    ),
+    title = "Multihit metrics", 
+    caption = "Metrics highlighting the observation of multiple aligning reads."
   )
   
   if( args$stat != FALSE ){
