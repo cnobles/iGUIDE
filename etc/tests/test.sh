@@ -15,7 +15,7 @@ conda activate ${__IGUIDE_ENV}
 # Create test analysis directory
 iguide setup configs/simulation.config.yml
 
-# Generate test DAG graph
+# Generate test DAG graph and run
 iguide run configs/simulation.config.yml -- -np
 
 iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
@@ -23,6 +23,7 @@ iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
 
 iguide run configs/simulation.config.yml -- -p -w 30 --nolock --cores ${__CORES}
 
+# Evaluate and report out using a different metadata set
 iguide eval configs/simulation.config.yml \
     -o analysis/simulation/reports/iguide.eval.simulation.test.rds \
     -s sampleInfo/simulation.supp.csv 
