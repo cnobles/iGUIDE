@@ -112,6 +112,8 @@ conda deactivate
   + This increases the modularity and consistancy of the workflow
 * Revised the iGUIDE Report format to be more informational and clearer
 * Revised a bit of the workflow to make reprocessing smoother
+* Updated BLAT coupling script to be more memory efficient
+* Fixed TravisCI testing!
 
 **v0.9.8 (April 19th, 2019)**
 
