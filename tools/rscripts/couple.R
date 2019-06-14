@@ -298,7 +298,7 @@ if( length(args$keys) > 1 ){
   # Print beginning of keys
   printHead(
     keys, 
-    title = "Beginning of Key for relating reads to sequences.",
+    title = "Beginning of Key for relating reads to sequences",
     caption = paste0(
       "\tReads: ", length(unique(keys$readNames)), 
       "\n\tUnique Pairings: ", length(unique(keys$readPairKey))
@@ -338,8 +338,8 @@ if( length(args$keys) > 1 ){
     keys, 
     title = "Beginning of Key for relating reads to sequences.",
     caption = paste0(
-      "\tReads: ", length(unique(keys$readNames)), 
-      "\n\tUnique Pairings: ", length(unique(keys$readPairKey))
+      "\n  Reads          : ", format(length(unique(keys$readNames)), big.mark = ","), 
+      "\n  Unique Pairings: ", format(length(unique(keys$readPairKey)), big.mark = ",")
     )
   )
   
@@ -395,10 +395,10 @@ if( is.null(args$keys) ){
   # Print beginning of keys
   printHead(
     keys, 
-    title = "Beginning of Key for relating reads to sequences.",
+    title = "Beginning of Key for relating reads to sequences",
     caption = paste0(
-      "\tReads: ", length(unique(keys$readNames)), 
-      "\n\tUnique Pairings: ", length(unique(keys$readPairKey))
+      "\n  Reads          :", format(length(unique(keys$readNames)), big.mark = ","), 
+      "\n  Unique Pairings:", format(length(unique(keys$readPairKey)), big.mark = ",")
     )
   )
   
@@ -475,7 +475,7 @@ adrift_hits$adriftKey <- match(adrift_hits$qName, levels(keys$adriftSeqID))
 # Info after quality filtering individual alignments.
 printHead(
   anchor_hits,
-  title = "Head of filtered anchor alignments.",
+  title = "Head of filtered anchor alignments",
   caption = sprintf(
     "Alignments: %1$s from %2$s reads", 
     length(anchor_hits), 
@@ -485,7 +485,7 @@ printHead(
 
 printHead(
   adrift_hits,
-  title = "Head of filtered adrift alignments.",
+  title = "Head of filtered adrift alignments",
   caption = sprintf(
     "Alignments: %1$s from %2$s reads", 
     length(adrift_hits), 
@@ -543,9 +543,6 @@ pairs <- GenomicRanges::findOverlaps(
   ignore.strand = TRUE
 )
 
-#anchor_loci <- red_anchor_hits[S4Vectors::queryHits(pairs)]
-#adrift_loci <- red_adrift_hits[S4Vectors::subjectHits(pairs)]
-
 #Stop if no alignments coupled based on criteria.
 if( length(pairs) == 0 ){
 
@@ -588,8 +585,6 @@ keep_loci <- as.vector(
   (keep_loci & anchor_loci_strand != "*") & (adrift_loci_strand != "*")
 )
 
-#anchor_loci <- anchor_loci[keep_loci]
-#adrift_loci <- adrift_loci[keep_loci]
 pairs <- pairs[keep_loci]
 
 # Stop if no loci were properly paired
@@ -621,22 +616,20 @@ idx_passing_anchors <- unlist(red_anchor_hits$revmap[
   unique(loci_key$anchorLoci)
 ])
 
+anchor_hits$anchorLoci <- NA
 anchor_hits$anchorLoci[idx_passing_anchors] <- as.numeric(S4Vectors::Rle(
   values = unique(loci_key$anchorLoci), 
-  lengths = lengths(red_anchor_hits$revmap[
-    unique(loci_key$anchorLoci)
-  ])
+  lengths = lengths(red_anchor_hits$revmap[unique(loci_key$anchorLoci)])
 ))
 
 idx_passing_adrifts <- unlist(red_adrift_hits$revmap[
   unique(loci_key$adriftLoci)
 ])
 
+adrift_hits$adriftLoci <- NA
 adrift_hits$adriftLoci[idx_passing_adrifts] <- as.numeric(S4Vectors::Rle(
   values = unique(loci_key$adriftLoci), 
-  lengths = lengths(red_adrift_hits$revmap[
-    unique(loci_key$adriftLoci)
-    ])
+  lengths = lengths(red_adrift_hits$revmap[unique(loci_key$adriftLoci)])
 ))
 
 # Join the loci idx information up to the keys file
