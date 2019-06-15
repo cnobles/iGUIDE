@@ -931,22 +931,19 @@ if( !is.null(args$condSites) ){
   
 }
 
-#' Clean up environment for expansion and clustering of multihits
-#rm(uniq_read_loci_mat, uniq_templates, uniq_keys, 
-#   uniq_reads, uniq_sites, )
-#gc()
+# Clean up environment for expansion and clustering of multihits
 
-#' Group and characterize multihits 
-#' Multihits are reads that align to multiple locations in the reference 
-#' genome. There are bound to always be a certain proportion of reads aligning
-#' to repeated sequence due to the high level degree of repeated DNA elements
-#' within genomes. The final object generated, "multihitData", is a list of 
-#' three objects. "unclustered_multihits" is a GRanges object where every 
-#' alignment for every multihit read is present in rows. 
-#' "clustered_multihit_positions" returns all the possible integration site 
-#' positions for the multihit. Lastly, "clustered_multihit_lengths" contains the
-#' length of the templates mapping to the multihit clusters, used for
-#' abundance calculations.
+# Group and characterize multihits 
+# Multihits are reads that align to multiple locations in the reference 
+# genome. There are bound to always be a certain proportion of reads aligning
+# to repeated sequence due to the high level degree of repeated DNA elements
+# within genomes. The final object generated, "multihitData", is a list of 
+# three objects. "unclustered_multihits" is a GRanges object where every 
+# alignment for every multihit read is present in rows. 
+# "clustered_multihit_positions" returns all the possible integration site 
+# positions for the multihit. Lastly, "clustered_multihit_lengths" contains the
+# length of the templates mapping to the multihit clusters, used for
+# abundance calculations.
 if( !is.null(args$multihits) ){
   
   unclustered_multihits <- GenomicRanges::GRanges()
@@ -1001,10 +998,8 @@ if( !is.null(args$multihits) ){
     revmap <- multihits_red$revmap
     
     axil_nodes <- as.character(S4Vectors::Rle(
-      values = multihit_templates$readPairKey[
-        S4Vectors::start(revmap@partitioning)
-      ], 
-      lengths = S4Vectors::width(revmap@partitioning)
+      values = multihit_templates$readPairKey[min(revmap)], 
+      lengths = lengths(revmap)
     ))
     
     nodes <- multihit_templates$readPairKey[unlist(revmap)]
