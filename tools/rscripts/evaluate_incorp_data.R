@@ -372,21 +372,17 @@ if( length(args$support) > 0 ){
 
 
 ## Identify on-target edit sites from config files
-on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites"))
-names(on_targets) <- stringr::str_replace(
-  string = names(on_targets), pattern = stringr::fixed("."), replacement = ":"
-)
-
-names(on_targets) <- stringr::str_extract(
-    string = names(on_targets), 
-    pattern = "[\\w\\_\\-\\'\\.]+$"
+on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites")) %>%
+  data.frame(id = names(.), target = ., row.names = NULL) %>%
+  dplyr::mutate(
+    id = stringr::str_replace(
+      string = id, pattern = stringr::fixed("."), replacement = ":"
+    ),
+    id = stringr::str_extract(string = id, pattern = "[\\w\\_\\-\\'\\.]+$"),
+    id = stringr::str_extract(string = id, pattern = "[\\w\\_\\-\\.]+")
   ) %>%
-  stringr::str_extract(pattern = "[\\w\\_\\-\\.]+")
-
-on_targets <- structure(
-  unique(on_targets), 
-  names = names(on_targets)[match(unique(on_targets), on_targets)]
-)
+  dplyr::distinct() %$%
+  structure(target, names = id)
 
 
 ## Treatment across runs
@@ -531,20 +527,20 @@ target_combn <- structure(
 )
 
 combn_tbl <- data.frame(
-  run_set = nuclease_treaments$run_set[
-    as.vector(match(
-      S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
-      nuclease_treaments$specimen
-    ))
-  ],
-  nuclease = nuclease_treaments$nuclease[
-    as.vector(match(
-      S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
-      nuclease_treaments$specimen
-    ))
-  ],
-  target = unlist(target_combn),
-  row.names = NULL
+    run_set = nuclease_treaments$run_set[
+      as.vector(S4Vectors::match(
+        S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
+        nuclease_treaments$specimen
+      ))
+    ],
+    nuclease = nuclease_treaments$nuclease[
+      as.vector(S4Vectors::match(
+        S4Vectors::Rle(names(target_combn), lengths(target_combn)), 
+        nuclease_treaments$specimen
+      ))
+    ],
+    target = unlist(target_combn),
+    row.names = NULL
   ) %>%
   dplyr::filter(target != "Mock") %>%
   dplyr::distinct()
@@ -603,7 +599,7 @@ target_tbl <- combn_tbl %>%
   dplyr::left_join(pam_seqs_df, by = c("run_set", "nuclease")) %>%
   dplyr::filter(
     target %in% considered_target_seqs & nuclease %in% considered_nucleases
-    )
+  )
 
 uniq_target_df <- target_tbl %>%
   dplyr::distinct(target, sequence, PAM)

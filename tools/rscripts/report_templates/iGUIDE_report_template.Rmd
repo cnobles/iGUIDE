@@ -402,7 +402,7 @@ kable(
 
 ```
 
-```{r target_spec_eff, eval=nrow(target_tbl) > 1, child=file.path(root_dir, "tools/rscripts/report_templates/target_specific_eff_template.Rmd")}
+```{r target_spec_eff, eval=any(sapply(treatment, length) > 1), child=file.path(root_dir, "tools/rscripts/report_templates/target_specific_eff_template.Rmd")}
 ```
 
 ```{r} 
