@@ -6,7 +6,7 @@ rule seq_trim_R1:
     RUN_DIR + "/process_data/{sample}.R1.fastq.gz"
   output:
     trim=temp(RUN_DIR + "/process_data/{sample}.R1.trim.fastq.gz"),
-    stat=RUN_DIR + "/process_data/{sample}.R1.trim.stat"
+    stat=temp(RUN_DIR + "/process_data/{sample}.R1.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R1_LEAD[wildcards.sample],
@@ -32,7 +32,7 @@ rule seq_trim_R2_primer:
     RUN_DIR + "/process_data/{sample}.R2.fastq.gz"
   output:
     trim=temp(RUN_DIR + "/process_data/{sample}.R2.primer.trim.fastq.gz"),
-    stat=RUN_DIR + "/process_data/{sample}.R2.primer.trim.stat"
+    stat=temp(RUN_DIR + "/process_data/{sample}.R2.primer.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD[wildcards.sample],
@@ -58,7 +58,7 @@ rule seq_trim_R2_odn:
     RUN_DIR + "/process_data/{sample}.R2.primer.trim.fastq.gz"
   output:
     trim=temp(RUN_DIR + "/process_data/{sample}.R2.trim.fastq.gz"),
-    stat=RUN_DIR + "/process_data/{sample}.R2.trim.stat"
+    stat=temp(RUN_DIR + "/process_data/{sample}.R2.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD_ODN[wildcards.sample],

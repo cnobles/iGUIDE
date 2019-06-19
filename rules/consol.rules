@@ -7,7 +7,7 @@ rule consolidate:
   output:
     consol=temp(RUN_DIR + "/process_data/{sample}.{read}.consol.fasta"),
     key=temp(RUN_DIR + "/process_data/{sample}.{read}.key.csv"),
-    stat=RUN_DIR + "/process_data/{sample}.{read}.consol.stat"
+    stat=temp(RUN_DIR + "/process_data/{sample}.{read}.consol.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/consol.R"
   log:
@@ -17,6 +17,6 @@ rule consolidate:
   shell:
     """
     Rscript {params.tool} {input} -o {output.consol} -k {output.key} \
-    --stat {output.stat} > {log} 2>&1
+      --stat {output.stat} > {log} 2>&1
     """
 

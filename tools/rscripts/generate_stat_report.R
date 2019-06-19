@@ -11,7 +11,7 @@
 #   iguide installation directory, will look for sys argument 'IGUIDE_DIR'
 # 
 
-options(stringsAsFactors = FALSE, scipen = 99, width = 180)
+options(stringsAsFactors = FALSE, scipen = 99, width = 120)
 
 args <- commandArgs(trailingOnly = TRUE)
 
@@ -22,10 +22,11 @@ code_dir <- dirname(sub(
 ))
 
 # Check input file ----
-input_file <- args[1]
+core_file <- args[1]
+eval_file <- args[2]
 
-if( !file.exists(input_file) ){
-  stop("\n  Cannot find input stat file. Check inputs.")
+if( !file.exists(core_file) | !file.exists(eval_file) ){
+  stop("\n  Cannot find input stat files. Check inputs.")
 }
 
 # Check output file ----
@@ -134,7 +135,10 @@ build_version <- list.files(file.path(iguide_dir, "etc")) %>%
 signature <- config[["signature"]]
 
 # Load input data ----
-stat_df <- read.csv(input_file) %>%
+core_stat_df <- read.csv(core_file)
+eval_stat_df <- read.csv(eval_file)
+
+stat_df <- dplyr::full_join(core_stat_df, eval_stat_df, by = "sampleName") %>%
   dplyr::mutate_all(function(x) ifelse(is.na(x), rep(0, length(x)), x))
 
 sampleName_levels <- unique(stat_df$sampleName)
@@ -165,9 +169,9 @@ names(read_tbl) <- stringr::str_replace(names(read_tbl), ".reads$", "")
 
 # Alignment outcome table ----
 algn_tbl <- dplyr::select(
-    stat_df, sampleName, align.unique.reads, align.unique.algns, align.unique.loci, 
-    align.multihit.reads, align.multihit.lengths, align.multihit.clusters, 
-    align.chimera.reads
+    stat_df, sampleName, align.unique.reads, align.unique.algns, 
+    align.unique.loci, align.multihit.reads, align.multihit.lengths, 
+    align.multihit.clusters, align.chimera.reads
   ) %>%
   dplyr::filter(sampleName %in% sampleNames) %>%
   dplyr::mutate(sampleName = factor(sampleName, levels = sampleNames)) %>%
@@ -186,7 +190,7 @@ incorp_tbl <- dplyr::select(
   dplyr::mutate(sampleName = factor(sampleName, levels = sampleNames)) %>%
   dplyr::arrange(sampleName)
 
-names(incorp_tbl) <- stringr::str_replace(names(incorp_tbl), "assim.", "")
+names(incorp_tbl) <- stringr::str_replace(names(incorp_tbl), "eval.", "")
 names(incorp_tbl) <- stringr::str_replace(names(incorp_tbl), ".algns$", "")
 
 

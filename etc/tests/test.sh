@@ -21,7 +21,7 @@ iguide run configs/simulation.config.yml -- -np
 iguide run configs/simulation.config.yml -- --dag --nolock | dot -Tsvg > \
     analysis/simulation/reports/simulation.dag.svg
 
-iguide run configs/simulation.config.yml -- -p -w 30 --nolock --cores ${__CORES}
+iguide run configs/simulation.config.yml -- -p -w 30 --notemp --nolock --cores ${__CORES}
 
 # Evaluate and report out using a different metadata set
 iguide eval configs/simulation.config.yml \

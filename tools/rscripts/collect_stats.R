@@ -9,7 +9,8 @@ parser <- argparse::ArgumentParser(
 )
 
 parser$add_argument(
-  "dir", nargs = 1, type = "character", help = "Directory with *.stat files."
+  "files", nargs = "+", type = "character", 
+  help = "Paths to stat containing files (long, csv format). "
 )
 
 parser$add_argument(
@@ -20,19 +21,27 @@ parser$add_argument(
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
 # Manipulate file paths to determine stat types
-all_files <- list.files(path = args$dir, pattern = "*.stat")
-file_names <- stringr::str_extract(all_files, "[\\w\\.\\-\\_]+$")
+files_present <- sapply(args$files, file.exists)
+
+if( !all(files_present) ){
+  stop(
+    "\n  Cannot find the following files: ", 
+    paste(args$files[!files_present], collapse = "\n    ")
+  )
+}
+
+file_names <- stringr::str_extract(args$files, "[\\w\\.\\-\\_]+$")
 file_types <- sub("[\\w\\-\\_]+.", "", file_names, perl = TRUE)
 file_types <- sub(".stat", "", file_types)
 
 # Read in data in a long format
 long_data <- dplyr::bind_rows(
   lapply(
-    structure(all_files, names = file_types), 
-    function(file, dir){
+    structure(args$files, names = file_types), 
+    function(file){
       
       x <- try(
-        expr = read.csv(file = file.path(dir, file), header = FALSE), 
+        expr = read.csv(file = file, header = FALSE), 
         silent = TRUE
       )
       
@@ -55,10 +64,10 @@ long_data <- dplyr::bind_rows(
         
       }
       
-    },
-    dir = args$dir
+    }
   ),
-  .id = "type")
+  .id = "type"
+)
 
 # Transform data into a wide format
 wide_data <- dplyr::mutate(

@@ -55,7 +55,10 @@ if not os.path.isdir(ROOT_DIR):
 # Check for sequence file paths
 if not os.path.isdir(config["Seq_Path"]):
     raise SystemExit("Path to sequencing files is not found (Seq_Path). Check your config file.")
-    
+
+# Check for config symlink to check proper run directory setup
+if not os.path.isfile(RUN_DIR + "/config.yml"):
+    raise SystemExit("Path to symbolic config is not present. Check to make sure you've run 'iguide setup' first.")
 
 # Default params if not included in config
 if not "maxNcount" in config:
