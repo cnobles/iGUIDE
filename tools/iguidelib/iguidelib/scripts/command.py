@@ -20,7 +20,7 @@ def main():
         "  primary:\n"
         "    setup        \tCreate a new config file for a project using local data.\n"
         "    run          \tExecute the iGUIDE pipeline.\n\n"
-        "  accessory:\n"
+        "  auxiliary:\n"
         "    eval         \tEvaluate a set or sets of assimilated iGUIDE outputs.\n"
         "    report       \tGenerate a custom report from iGUIDE output files.\n"
         "    summary      \tGenerate a consise summary from iGUIDE output files.\n"

@@ -4,7 +4,7 @@
 rule demultiplex:
   input:
     configFile=ancient("configs/" + RUN + ".config.yml"),
-    sampleInfo=config["Sample_Info"],
+    sampleInfo=ancient(config["Sample_Info"]),
     R1=str(Path(config["Seq_Path"]) / config["R1"]),
     R2=str(Path(config["Seq_Path"]) / config["R2"]),
     I1=str(Path(config["Seq_Path"]) / config["I1"]),
@@ -19,8 +19,7 @@ rule demultiplex:
       RUN_DIR + "/process_data/degenerate.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
       RUN_DIR + "/process_data/unassigned.{type}.fastq.gz", type=TYPES)),
-    stat=temp(
-      RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
+    stat=temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/demulti.R",
     bc1Len=config["barcode1Length"],

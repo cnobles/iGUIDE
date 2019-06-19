@@ -6,6 +6,20 @@
 ChangeLog 
 =========
 
+**v0.9.9 (June 10th, 2019)**
+
+* Modified the assimilate + evaluate workflow
+
+  - Assimilate now only includes reference genome data, meaning a cleaner intermediate file
+  - Evaluate will now handle ref. gene sets and further analysis
+  - This increases the modularity and consistancy of the workflow
+
+* Revised the iGUIDE Report format to be more informational and clearer
+* Revised a bit of the workflow to make reprocessing smoother
+* Updated BLAT coupling script to be more memory efficient
+* Fixed TravisCI testing!
+* Changed stat workflow, now restarting analysis won't initiate a total reprocessing.
+
 **v0.9.8 (April 19th, 2019)**
 
 * iGUIDE can now support non-Cas9 nucleases as well!

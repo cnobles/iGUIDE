@@ -162,8 +162,8 @@ sample_info <- readFile(run_config$Sample_Info, args$iguide_dir)
 
 # Files to check ----
 check_files <- paste0(
-  "analysis/", run_config$Run_Name, "/output/unique_sites.", 
-  run_config$Run_Name, ".csv.gz"
+  "analysis/", run_config$Run_Name, "/output/incorp_sites.", 
+  run_config$Run_Name, ".rds"
 )
 
 check_data <- lapply(check_files, readFile, root = args$iguide_dir)

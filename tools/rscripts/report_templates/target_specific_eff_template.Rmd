@@ -1,0 +1,46 @@
+## Target-specific On-target editing efficiency
+
+The table below displays the estimated On-target editing efficiency for each target across the specimens tested using all target **Matched** observations.
+
+```{r on_target_efficiency}
+names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
+
+ot_eff_data <- ot_eff_summary %>%
+  dplyr::select(-Specimen, -Condition) %>%
+  dplyr::mutate_all(
+    pNums, 
+    na.replace = ifelse(report_format == "latex", "-", "\\-"), 
+    digits = 3
+  )
+
+ot_eff_print <- dplyr::bind_cols(ot_eff_summary[,c(1,2)], ot_eff_data)
+
+if( args$tables ){
+  
+  ot_eff_save <- ot_eff_summary
+  
+  write.csv(
+    x = ot_eff_save, 
+    file = file.path(tables_path, "tbl5.ontarget.efficiency.csv"),
+    quote = TRUE, row.names = FALSE
+  )
+  
+}
+
+tbl_caption <- "Estimate of On-target editing efficiency (percent) for each target by specimen."
+
+if( args$format == "html" ){
+  tbl_caption <- paste0("Table 5. ", tbl_caption)
+}
+
+kable(
+  x = ot_eff_print, format = report_format, row.names = FALSE,
+  booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caption, 
+  align = c("l", "l", rep("r", ncol(ot_eff_print)-2))
+) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = bootstrap_options,
+    latex_options = latex_options
+  )
+
+```

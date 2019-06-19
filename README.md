@@ -63,7 +63,6 @@ conda activate iguide
 iguide list_samples configs/simulation.config.yml
 
 # Create test analysis directory
-# (The simulation configuration file is used by default and does not need to be specified)
 
 iguide setup configs/simulation.config.yml
 
@@ -71,19 +70,18 @@ iguide setup configs/simulation.config.yml
 
 iguide run configs/simulation.config.yml -- -np
 iguide run configs/simulation.config.yml -- --latency-wait 30
-cat analysis/simulation/output/unique_sites.simulation.csv
 
-# Processing will complete with a report, but if additional analyses are required,
-# you can reevaluate the 'incorp_sites' object. Multiple objects can be evaluated
-# together, just include the run files.
+# Processing will complete with several reports, but if additional analyses are required,
+# you can re-evaluate a run by its config file. Multiple runs can be evaluated together, 
+# just include multiple config files.
 
-iguide eval analysis/simulation/output/incorp_sites.simulation.rds \
+iguide eval configs/simulation.config.yml \
   -o analysis/simulation/output/iguide.eval.simulation.test.rds \
   -s sampleInfo/simulation.supp.csv
 
 # After evaluation, generate a report in a different format than standard.
 # Additionally the evaluation and report generation step can be combined using 
-# config file(s) as inputs for the 'report' subcommand.
+# config file(s) as inputs for the 'report' subcommand (using the -c flag instead of -e).
 
 iguide report -e analysis/simulation/output/iguide.eval.simulation.test.rds \
   -o analysis/simulation/reports/report.simulation.pdf \
@@ -91,7 +89,7 @@ iguide report -e analysis/simulation/output/iguide.eval.simulation.test.rds \
   -t pdf
 
 # When you are all finished and ready to archive / remove excess files, a minimal configuration
-# can be achived with the 'clean' subcommand.
+# can be achieved with the 'clean' subcommand.
 
 iguide clean configs/simulation.config.yml
 
@@ -105,6 +103,18 @@ conda deactivate
 ```
 
 ### Changelog:
+
+**v0.9.9 (June 10th, 2019)**
+
+* Modified the assimilate + evaluate workflow
+  + Assimilate now only includes reference genome data, meaning a cleaner intermediate file
+  + Evaluate will now handle ref. gene sets and further analysis
+  + This increases the modularity and consistancy of the workflow
+* Revised the iGUIDE Report format to be more informational and clearer
+* Revised a bit of the workflow to make reprocessing smoother
+* Updated BLAT coupling script to be more memory efficient
+* Fixed TravisCI testing!
+* Changed stat workflow, now restarting analysis won't init a total reproc.
 
 **v0.9.8 (April 19th, 2019)**
 

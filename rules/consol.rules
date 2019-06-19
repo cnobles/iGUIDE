@@ -17,6 +17,6 @@ rule consolidate:
   shell:
     """
     Rscript {params.tool} {input} -o {output.consol} -k {output.key} \
-    --stat {output.stat} > {log} 2>&1
+      --stat {output.stat} > {log} 2>&1
     """
 

@@ -55,7 +55,10 @@ if not os.path.isdir(ROOT_DIR):
 # Check for sequence file paths
 if not os.path.isdir(config["Seq_Path"]):
     raise SystemExit("Path to sequencing files is not found (Seq_Path). Check your config file.")
-    
+
+# Check for config symlink to check proper run directory setup
+if not os.path.isfile(RUN_DIR + "/config.yml"):
+    raise SystemExit("Path to symbolic config is not present. Check to make sure you've run 'iguide setup' first.")
 
 # Default params if not included in config
 if not "maxNcount" in config:
@@ -100,7 +103,6 @@ if not "reportMB" in config:
 # Target Rules
 rule all:
     input: 
-      uniq_sites=RUN_DIR + "/output/unique_sites." + RUN + ".csv.gz",
       incorp_sites=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
       report=RUN_DIR + "/reports/report." + RUN + ".html",
       summary=RUN_DIR + "/reports/summary." + RUN + ".txt",

@@ -9,8 +9,8 @@ rule post_align:
     keyR2=RUN_DIR + "/process_data/{sample}.R2.key.csv"
   output:
     uniq=temp(RUN_DIR + "/process_data/{sample}.uniq.csv"),
-    chimera=RUN_DIR + "/process_data/{sample}.chimera.rds",
-    multihit=RUN_DIR + "/process_data/{sample}.multihits.rds",
+    chimera=temp(RUN_DIR + "/process_data/{sample}.chimera.rds"),
+    multihit=temp(RUN_DIR + "/process_data/{sample}.multihits.rds"),
     stat=temp(RUN_DIR + "/process_data/{sample}.align.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/couple.R",

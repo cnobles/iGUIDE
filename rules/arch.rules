@@ -2,7 +2,7 @@
 # Architecture Rules
 # Related to setting up analysis directories and consolidating data
 
-rule generate_stat_matrix:
+rule core_stat_matrix:
   input:
     demulti=RUN_DIR + "/process_data/" + RUN + ".demulti.stat",
     trimR1=expand(
@@ -22,22 +22,29 @@ rule generate_stat_matrix:
       RUN_DIR + "/process_data/{sample}.align.stat", sample=SAMPLES),
     assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
   output:
-    RUN_DIR + "/output/stats." + RUN + ".csv"
+    RUN_DIR + "/output/stats.core." + RUN + ".csv"
   params:
-    dir=RUN_DIR + "/process_data",
     tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell:
-    """
-    Rscript {params.tool} {params.dir} -o {output}
-    """
+  shell: "Rscript {params.tool} {input} -o {output}"
+
+rule eval_stat_matrix:
+  input: RUN_DIR + "/process_data/" + RUN + ".eval.stat"
+  output: RUN_DIR + "/output/stats.eval." + RUN + ".csv"
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: "Rscript {params.tool} {input} -o {output}"
 
 rule gen_stat_report:
-  input: RUN_DIR + "/output/stats." + RUN + ".csv"
+  input: 
+    core = RUN_DIR + "/output/stats.core." + RUN + ".csv",
+    eval = RUN_DIR + "/output/stats.eval." + RUN + ".csv"
   output: RUN_DIR + "/reports/runstats." + RUN + ".html"
   params: 
-    tool = ROOT_DIR + "/tools/rscripts/write_stat_report.R",
+    tool = ROOT_DIR + "/tools/rscripts/generate_stat_report.R",
     config = RUN_DIR + "/" + "config.yml"
   log: RUN_DIR + "/logs/" + RUN + ".runstats.log"
   resources:
