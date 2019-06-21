@@ -91,8 +91,8 @@ def main( argv = sys.argv ):
             sampleInfo = open(
               os.getenv("IGUIDE_DIR", os.getcwd()) + "/" + config['Sample_Info']
             )
-        sampleList = get_sample_list(sampleInfo)
-        demultiDir = check_existing(Path(config['Demulti_Dir']))
+        sampleList = get_sample_list(sampleInfo, config)
+        demultiDir = Path(config['Demulti_Dir'])
         for sample in sampleList:
             for type in read_types:
                 os.symlink( 
@@ -143,7 +143,7 @@ def check_existing_fastq(path, force=False):
         print("Warning: specified sample file '{}' does not exist. "
               "Make sure it exists before running iguide run.".format(path))
 
-def get_sample_list(sampleInfo):
+def get_sample_list(sampleInfo, config):
     sampleList = []
     for line in sampleInfo:
         items=line.split(',')
