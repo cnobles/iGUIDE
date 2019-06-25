@@ -117,6 +117,8 @@ include: "rules/trim.rules"
 if (config["UMItags"]):
     include: "rules/umitag.rules"
     UMIseqs = sampleInfo["barcode2"]
+else:
+    include: "rules/umitag_stub.rules"
 include: "rules/filt.rules"
 include: "rules/consol.rules"
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
