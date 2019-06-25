@@ -45,7 +45,7 @@ rule demultiplex:
   shell:
     """
     Rscript {params.tool} -m {ROOT_DIR}/{input.sampleInfo} \
-      {readNamePatternArg} \
+      {params.readNamePatternArg} \
       --read1 {input.R1} --read2 {input.R2} \
       --idx1 {input.I1} --idx2 {input.I2} \
       --bc1 {params.bc1} --bc1Len {params.bc1Len} \
