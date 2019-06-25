@@ -1,6 +1,11 @@
 # -*- mode: Snakemake -*-
 # Demultiplexing Rules
 
+def read_name_pattern_arg(wildcards):
+    """Optional read name pattern argument from config for demulti.R"""
+    p = config.get("readNamePattern")
+    return '--readNamePattern "%s"' % p if p else ""
+
 rule demultiplex:
   input:
     configFile=ancient("configs/" + RUN + ".config.yml"),
@@ -22,6 +27,7 @@ rule demultiplex:
     stat=temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/demulti.R",
+    readNamePatternArg=read_name_pattern_arg,
     bc1Len=config["barcode1Length"],
     bc2Len=config["barcode2Length"],
     bc1=config["barcode1"],
@@ -39,6 +45,7 @@ rule demultiplex:
   shell:
     """
     Rscript {params.tool} -m {ROOT_DIR}/{input.sampleInfo} \
+      {readNamePatternArg} \
       --read1 {input.R1} --read2 {input.R2} \
       --idx1 {input.I1} --idx2 {input.I2} \
       --bc1 {params.bc1} --bc1Len {params.bc1Len} \
