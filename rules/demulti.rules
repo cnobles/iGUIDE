@@ -1,11 +1,6 @@
 # -*- mode: Snakemake -*-
 # Demultiplexing Rules
 
-def read_name_pattern_arg(wildcards):
-    """Optional read name pattern argument from config for demulti.R"""
-    p = config.get("readNamePattern")
-    return '--readNamePattern "%s"' % p if p else ""
-
 rule demultiplex:
   input:
     configFile=ancient("configs/" + RUN + ".config.yml"),

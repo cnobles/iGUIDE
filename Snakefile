@@ -108,6 +108,11 @@ rule all:
       summary=RUN_DIR + "/reports/summary." + RUN + ".txt",
       stats=RUN_DIR + "/reports/runstats." + RUN + ".html"
 
+def read_name_pattern_arg(wildcards):
+    """Optional read name pattern argument from config for R scripts."""
+    p = config.get("readNamePattern")
+    return '--readNamePattern "%s"' % p if p else ""
+
 # Architecture Rules
 include: "rules/arch.rules"
 

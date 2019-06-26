@@ -10,7 +10,8 @@ rule seq_filter:
     R2=temp(RUN_DIR + "/process_data/{sample}.R2.filt.fastq.gz"),
     stat=temp(RUN_DIR + "/process_data/{sample}.filt.stat")
   params:
-    tool=ROOT_DIR + "/tools/rscripts/filt.R"
+    tool=ROOT_DIR + "/tools/rscripts/filt.R",
+    readNamePatternArg=read_name_pattern_arg
   log:
     RUN_DIR + "/logs/{sample}.filt.log"
   resources:
@@ -18,5 +19,6 @@ rule seq_filter:
   shell:
     """
     Rscript {params.tool} {input.R1} {input.R2} -o {output.R1} {output.R2} \
+      {params.readNamePatternArg} \
       --stat {output.stat} --compress > {log} 2>&1
     """
