@@ -157,10 +157,10 @@ sampleName_levels <- c(
 
 # Read attrition table ----
 read_tbl <- dplyr::select(
-    stat_df, sampleName, demulti.reads, R1.trim.reads, R2.primer.trim.reads, 
-    R2.trim.reads, umitags.reads, filt.reads, R1.consol.reads, R2.consol.reads, 
+    stat_df, c(sampleName, demulti.reads, R1.trim.reads, R2.primer.trim.reads,
+    R2.trim.reads, if (config$UMItags) umitags.reads, filt.reads, R1.consol.reads, R2.consol.reads,
     align.unique.reads, align.chimera.reads, align.multihit.reads
-  ) %>%
+  )) %>%
   dplyr::mutate(sampleName = factor(sampleName, levels = sampleName_levels)) %>%
   dplyr::arrange(sampleName)
 
