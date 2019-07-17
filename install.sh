@@ -196,7 +196,7 @@ function install_environment () {
         local install_options="--quiet --file etc/requirements.yml"
         debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --yes --file etc/build.b0.9.5.txt"
+        local install_options="--quiet --yes --file etc/build.b0.9.6.txt"
         debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
 
@@ -279,7 +279,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.b0.9.5.txt"
+        __build_source="etc/build.b0.9.6.txt"
     fi
 
     info "Creating iGUIDE environment..."
