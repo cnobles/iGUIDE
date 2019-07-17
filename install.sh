@@ -99,7 +99,7 @@ function __detect_conda_install() {
 
     if [[ $discovered = true ]]; then
       	local conda_path="$(which conda)"
-        local conda_path=${conda_path%'/condabin/conda'}
+        conda_path=${conda_path%'/condabin/conda'}
         echo ${conda_path%'/bin/conda'}
     fi
 }
