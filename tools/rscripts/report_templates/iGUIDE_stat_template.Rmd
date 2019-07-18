@@ -131,7 +131,8 @@ if( output_format == "pdf_document" ){
 
 ```{r read_attrition}
 names(read_tbl) <- c(
-  "sampleName", "demulti", "linker", "primer", "dsODN", "UMItags", "filter", 
+  "sampleName", "demulti", "linker", "primer", "dsODN", 
+  if( config$UMItags ) "UMItags", "filter", 
   "R1", "R2", "unique", "multihit", "chimera"
 )
 
@@ -140,7 +141,10 @@ read_print <- kable(
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE
   ) %>%
   kableExtra::add_header_above(
-    c(" ", " ", "Trimming" = 3, " ", " ", "Consol" = 2, "Alignment" = 3)
+    c(
+      " ", " ", "Trimming" = 3, if( config$UMItags ) " ", 
+      " ", "Consol" = 2, "Alignment" = 3
+    )
   ) %>%
   kableExtra::kable_styling(full_width = TRUE)
 
