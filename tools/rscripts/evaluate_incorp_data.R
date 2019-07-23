@@ -670,33 +670,23 @@ if( !multihit_option ){
 
 
 ## Format input alignments ----
-algnmts <- input_data
-
 ## Determine abundance metrics, with or without UMItags
-if( umitag_option ){
-  
-  algnmts <- dplyr::arrange(algnmts, desc(contrib)) %>%
-    dplyr::group_by(seqnames, start, end, strand, specimen, sampleName) %>%
-    dplyr::summarise(
-      count = sum(contrib),
-      umitag = sum(as.integer(!duplicated(umitag[!is.na(umitag)])) * contrib),
-      contrib = max(contrib)
-    ) %>%
-    dplyr::ungroup() %>%
-    as.data.frame()
-  
-}else{
-  
-  algnmts <- dplyr::arrange(algnmts, desc(contrib)) %>%
-    dplyr::group_by(seqnames, start, end, strand, specimen, sampleName) %>%
-    dplyr::summarize(
-      count = sum(contrib), 
-      contrib = max(contrib)
-    ) %>%
-    dplyr::ungroup() %>%
-    as.data.frame()
-  
-}
+algnmts_summaries <- list(
+  count = dplyr::quo(sum(contrib)),
+  umitag = if( umitag_option ){
+    dplyr::quo(sum(as.integer(!duplicated(umitag[!is.na(umitag)])) * contrib))
+  },
+  contrib = dplyr::quo(max(contrib))
+)
+
+algnmts_summaries <- algnmts_summaries[!sapply(algnmts_summaries, is.null)]
+
+algnmts <- input_data %>%
+  dplyr::arrange(desc(contrib)) %>%
+  dplyr::group_by(seqnames, start, end, strand, specimen, sampleName) %>%
+  dplyr::summarise(!!! algnmts_summaries) %>%
+  dplyr::ungroup() %>%
+  as.data.frame()
 
 ## Generate a sample table of the data for log purposes
 sample_index <- ifelse(nrow(algnmts) > 10, 10, nrow(algnmts))
@@ -722,19 +712,9 @@ algnmts_gr <- GenomicRanges::GRanges(
   seqinfo = GenomeInfoDb::seqinfo(ref_genome)
 )
 
-if( umitag_option ){
-  
-  GenomicRanges::mcols(algnmts_gr) <- dplyr::select(
-    algnmts, specimen, sampleName, count, umitag, contrib
-  )
-  
-}else{
-  
-  GenomicRanges::mcols(algnmts_gr) <- dplyr::select(
-    algnmts, specimen, sampleName, count, contrib
-  )
-  
-}
+GenomicRanges::mcols(algnmts_gr) <- dplyr::select(
+  algnmts, c(specimen, sampleName, count, if( umitag_option ) umitag, contrib)
+)
 
 # Analyze alignments ----
 ## Identify groups of alignments or pileups of aligned fragments
@@ -897,6 +877,19 @@ matched_algns <- probable_algns[
   probable_algns$target.match != "No_valid_match",
   ]
 
+matched_summaries <- list(
+  on.off.target = dplyr::quo(
+    paste(sort(unique(on.off.target)), collapse = ";")
+  ),
+  paired.algn = dplyr::quo(paste(sort(unique(paired.algn)), collapse = ";")),
+  count = dplyr::quo(sum(count)), 
+  umitag = if( umitag_option ) dplyr::quo(sum(umitag)),
+  algns = dplyr::quo(sum(contrib)),
+  orient = dplyr::quo(paste(sort(unique(as.character(strand))), collapse = ";"))
+)
+
+matched_summaries <- matched_summaries[!sapply(matched_summaries, is.null)]
+
 matched_summary <- matched_algns %>%
   dplyr::mutate(
     target.match = stringr::str_replace(
@@ -907,79 +900,38 @@ matched_summary <- matched_algns %>%
   ) %>%
   dplyr::group_by(
     specimen, edit.site, aligned.sequence, target.match, target.mismatch
-  )
-
-if( umitag_option ){
-  
-  matched_summary <- dplyr::summarise(
-    matched_summary,
-    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
-    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
-    count = sum(count), 
-    umitag = sum(umitag),
-    algns = sum(contrib),
-    orient = paste(sort(unique(as.character(strand))), collapse = ";")
-  )
-  
-}else{
-  
-  matched_summary <- dplyr::summarise(
-    matched_summary,
-    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
-    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
-    count = sum(count), 
-    algns = sum(contrib),
-    orient = paste(sort(unique(as.character(strand))), collapse = ";")
-  )
-  
-}
-
-matched_summary <- dplyr::ungroup(matched_summary) %>% 
+  ) %>%
+  dplyr::summarise(!!! matched_summaries) %>%
+  dplyr::ungroup() %>% 
   dplyr::arrange(specimen, target.match, desc(algns)) %>%
   as.data.frame()
 
 ## Paired alignments
 paired_algns <- probable_algns[
   probable_algns$paired.algn %in% names(tbl_paired_algn),
-  ]
+]
+
+paired_summaries <- list(
+  seqnames = dplyr::quo(unique(seqnames)),
+  start = dplyr::quo(min(pos)), 
+  end = dplyr::quo(max(pos)), 
+  mid = dplyr::quo(start + (end-start)/2),
+  strand = dplyr::quo("*"), 
+  width = dplyr::quo(end - start), 
+  count = dplyr::quo(sum(count)), 
+  umitag = if( umitag_option ) dplyr::quo(sum(umitag)), 
+  algns = dplyr::quo(sum(contrib))
+)
+
+paired_summaries <- paired_summaries[!sapply(paired_summaries, is.null)]
 
 paired_regions <- paired_algns %>%
   dplyr::group_by(specimen, paired.algn, strand) %>%
   dplyr::mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
-  dplyr::group_by(specimen, paired.algn)
-
-if( umitag_option ){
+  dplyr::group_by(specimen, paired.algn) %>%
+  dplyr::summarise(!!! paired_summaries) %>%
+  dplyr::ungroup()
   
-  paired_regions <- dplyr::summarise(
-    paired_regions,
-    seqnames = unique(seqnames),
-    start = min(pos), 
-    end = max(pos), 
-    mid = start + (end-start)/2,
-    strand = "*", 
-    width = end - start, 
-    count = sum(count), 
-    umitag = sum(umitag), 
-    algns = sum(contrib)
-  ) %>%
-    dplyr::ungroup()
-  
-}else{
-  
-  paired_regions <- dplyr::summarise(
-    paired_regions,
-    seqnames = unique(seqnames),
-    start = min(pos), 
-    end = max(pos), 
-    mid = start + (end-start)/2,
-    strand = "*", 
-    width = end - start, 
-    count = sum(count), 
-    algns = sum(contrib)
-  ) %>%
-    dplyr::ungroup()
-  
-}
 
 if( nrow(paired_regions) > 0 ){
   
@@ -1033,6 +985,18 @@ pile_up_algns <- probable_algns[
   probable_algns$clus.ori %in% names(tbl_clus_ori),
 ]
 
+pile_up_summaries <- list(
+  on.off.target = dplyr::quo(
+    paste(sort(unique(on.off.target)), collapse = ";")
+  ),
+  paired.algn = dplyr::quo(paste(sort(unique(paired.algn)), collapse = ";")),
+  count = dplyr::quo(sum(count)), 
+  umitag = if( umitag_option ) dplyr::quo(sum(umitag)),
+  algns = dplyr::quo(sum(contrib))
+)
+
+pile_up_summaries <- pile_up_summaries[!sapply(pile_up_summaries, is.null)]
+
 pile_up_summary <- pile_up_algns %>%
   dplyr::mutate(
     target.match = stringr::str_replace(
@@ -1041,32 +1005,9 @@ pile_up_summary <- pile_up_algns %>%
       replacement = ""
     )
   ) %>%
-  dplyr::group_by(specimen, clus.ori)
-
-if( umitag_option ){
-  
-  pile_up_summary <- dplyr::summarise(
-    pile_up_summary,
-    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
-    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
-    count = sum(count), 
-    umitag = sum(umitag),
-    algns = sum(contrib)
-  )
-  
-}else{
-  
-  pile_up_summary <- dplyr::summarise(
-    pile_up_summary,
-    on.off.target = paste(sort(unique(on.off.target)), collapse = ";"),
-    paired.algn = paste(sort(unique(paired.algn)), collapse = ";"),
-    count = sum(count), 
-    algns = sum(contrib)
-  )
-  
-}
-
-pile_up_summary <- dplyr::ungroup(pile_up_summary) %>% 
+  dplyr::group_by(specimen, clus.ori) %>%
+  dplyr::summarise(!!! pile_up_summaries) %>%
+  dplyr::ungroup() %>% 
   dplyr::arrange(specimen, desc(algns)) %>%
   as.data.frame()
 
@@ -1117,26 +1058,18 @@ if( args$stat != FALSE ){
 
 ## Specimen summary ----
 # Summarize components and append to specimen table
+tbl_algn_summaries <- list(
+  Reads = dplyr::quo(sum(count)), 
+  UMItags = if( umitag_option ) dplyr::quo(sum(umitag)), 
+  Alignments = dplyr::quo(sum(contrib))
+)
+
+tbl_algn_summaries <- tbl_algn_summaries[!sapply(tbl_algn_summaries, is.null)]
+
 tbl_algn_counts <- algnmts %>% 
   dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-  dplyr::group_by(specimen)
-
-
-if( umitag_option ){
-  
-  tbl_algn_counts <- dplyr::summarise(
-    tbl_algn_counts, 
-    Reads = sum(count), UMItags = sum(umitag), Alignments = sum(contrib)
-  )
-  
-}else{
-  
-  tbl_algn_counts <- dplyr::summarise(
-    tbl_algn_counts, Reads = sum(count), Alignments = sum(contrib)
-  )
-  
-}
-
+  dplyr::group_by(specimen) %>%
+  dplyr::summarise(!!! tbl_algn_summaries)
 
 spec_overview <- dplyr::left_join(
   spec_overview, tbl_algn_counts, by = "specimen"
