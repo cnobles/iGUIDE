@@ -18,7 +18,8 @@ rule post_align:
     start=config["maxAlignStart"],
     pct=config["minPercentIdentity"],
     minLen=config["minTempLength"],
-    maxLen=config["maxTempLength"]
+    maxLen=config["maxTempLength"],
+    readNamePatternArg=config["readNamePattern"]
   log:
     RUN_DIR + "/logs/{sample}.couple.log"
   resources:
@@ -30,6 +31,7 @@ rule post_align:
       --chimera {output.chimera} --multihit {output.multihit} -g {params.ref} \
       --maxAlignStart {params.start} --minPercentIdentity {params.pct} \
       --minTempLength {params.minLen} --maxTempLength {params.maxLen} \
+      --readNamePattern {params.readNamePatternArg} \
       --stat {output.stat} > {log} 2>&1
     """
 
