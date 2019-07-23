@@ -1,0 +1,7 @@
+# -*- mode: Snakemake -*-
+# Sequence Collecting Rules
+
+rule collect_umitags_stub:
+  output:
+    stat=temp(RUN_DIR + "/process_data/{sample}.umitags.stat")
+  shell: "touch {output.stat}"
