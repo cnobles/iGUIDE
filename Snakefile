@@ -71,7 +71,7 @@ else:
         config["demultiCores"], snakemake.utils.available_cpu_count()
     )
 
-## Memory params
+## Memory and default params
 if not "demultiMB" in config:
     config["demultiMB"] = 16000
     
@@ -99,6 +99,8 @@ if not "evaluateMB" in config:
 if not "reportMB" in config:
     config["reportMB"] = 4000
   
+if not "readNamePattern" in config:
+    config["readNamePattern"] = str("'[\\w\\:\\-\\+]+'")
 
 # Target Rules
 rule all:

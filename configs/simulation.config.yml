@@ -87,6 +87,7 @@ Nuclease_Profiles :
 # iGUIDE configuration
 Read_Types : ["R1", "R2", "I1", "I2"]
 Genomic_Reads : ["R1", "R2"]
+readNamePattern : "'[\\w\\:\\-\\+]+'"
 
 # Memory Management (in MB units)
 defaultMB : 2000
