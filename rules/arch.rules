@@ -2,7 +2,7 @@
 # Architecture Rules
 # Related to setting up analysis directories and consolidating data
 
-rule core_stat_matrix:
+rule concat_core_stat_files:
   input:
     demulti=RUN_DIR + "/process_data/" + RUN + ".demulti.stat",
     trimR1=expand(
@@ -21,6 +21,17 @@ rule core_stat_matrix:
     align=expand(
       RUN_DIR + "/process_data/{sample}.align.stat", sample=SAMPLES),
     assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
+  output:
+    temp(RUN_DIR + "/process_data/" + RUN + ".core.stat")
+  params:
+    data_dir=RUN_DIR + "/process_data"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: "cat {params.data_dir}/*.stat > {output}"
+
+rule core_stat_matrix:
+  input:
+    RUN_DIR + "/process_data/" + RUN + ".core.stat"
   output:
     RUN_DIR + "/output/stats.core." + RUN + ".csv"
   params:

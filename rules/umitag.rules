@@ -3,7 +3,7 @@
 
 rule collect_umitags:
   input:
-    RUN_DIR + "/process_data/{sample}.I2.fastq.gz"
+    RUN_DIR + "/input_data/{sample}.I2.fastq.gz"
   output:
     seq=temp(RUN_DIR + "/process_data/{sample}.I2.trim.fastq.gz"),
     umi=temp(RUN_DIR + "/process_data/{sample}.umitags.fasta.gz"),

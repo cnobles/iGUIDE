@@ -11,14 +11,14 @@ rule demultiplex:
     I2=str(Path(config["Seq_Path"]) / config["I2"])
   output:
     data=temp(expand(
-      RUN_DIR + "/process_data/{sample}.{type}.fastq.gz", \
+      RUN_DIR + "/input_data/{sample}.{type}.fastq.gz", \
       sample=SAMPLES, type=TYPES)),
     ambi=temp(expand(
-      RUN_DIR + "/process_data/ambiguous.{type}.fastq.gz", type=TYPES)),
+      RUN_DIR + "/input_data/ambiguous.{type}.fastq.gz", type=TYPES)),
     dgen=temp(expand(
-      RUN_DIR + "/process_data/degenerate.{type}.fastq.gz", type=TYPES)),
+      RUN_DIR + "/input_data/degenerate.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
-      RUN_DIR + "/process_data/unassigned.{type}.fastq.gz", type=TYPES)),
+      RUN_DIR + "/input_data/unassigned.{type}.fastq.gz", type=TYPES)),
     stat=temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/demulti.R",
