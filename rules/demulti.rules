@@ -19,7 +19,7 @@ rule demultiplex:
       RUN_DIR + "/input_data/degenerate.{type}.fastq.gz", type=TYPES)),
     unas=temp(expand(
       RUN_DIR + "/input_data/unassigned.{type}.fastq.gz", type=TYPES)),
-    stat=temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
+    stat=temp(RUN_DIR + "/input_data/" + RUN + ".demulti.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/demulti.R",
     readNamePatternArg=config["readNamePattern"],
@@ -45,6 +45,11 @@ rule demultiplex:
       --bc1 {params.bc1} --bc1Len {params.bc1Len} \
       --bc2 {params.bc2} --bc2Len {params.bc2Len} \
       --bc1Mis {params.bc1Mis} --bc2Mis {params.bc2Mis} --maxN {params.maxN} \
-      -o {RUN_DIR}/process_data --stat {params.statName} -c {threads} \
+      -o {RUN_DIR}/input_data --stat {params.statName} -c {threads} \
       --readNamePattern {params.readNamePatternArg} --compress > {log} 2>&1
     """
+
+rule move_demulti_stat:
+  input: RUN_DIR + "/input_data/" + RUN + ".demulti.stat"
+  output: temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
+  shell: "mv {input} {output}"

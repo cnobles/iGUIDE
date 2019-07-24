@@ -2,7 +2,7 @@
 # Architecture Rules
 # Related to setting up analysis directories and consolidating data
 
-rule concat_core_stat_files:
+rule core_stat_matrix:
   input:
     demulti=RUN_DIR + "/process_data/" + RUN + ".demulti.stat",
     trimR1=expand(
@@ -22,32 +22,22 @@ rule concat_core_stat_files:
       RUN_DIR + "/process_data/{sample}.align.stat", sample=SAMPLES),
     assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
   output:
-    temp(RUN_DIR + "/process_data/" + RUN + ".core.stat")
+    RUN_DIR + "/output/stats.core." + RUN + ".csv"
   params:
+    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R",
     data_dir=RUN_DIR + "/process_data"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "cat {params.data_dir}/*.stat > {output}"
-
-rule core_stat_matrix:
-  input:
-    RUN_DIR + "/process_data/" + RUN + ".core.stat"
-  output:
-    RUN_DIR + "/output/stats.core." + RUN + ".csv"
-  params:
-    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
-  resources:
-    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "Rscript {params.tool} {input} -o {output}"
+  shell: "Rscript {params.tool} -d {params.data_dir} -o {output}"
 
 rule eval_stat_matrix:
-  input: RUN_DIR + "/process_data/" + RUN + ".eval.stat"
+  input: RUN_DIR + "/output/" + RUN + ".eval.stat"
   output: RUN_DIR + "/output/stats.eval." + RUN + ".csv"
   params:
     tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "Rscript {params.tool} {input} -o {output}"
+  shell: "Rscript {params.tool} -f {input} -o {output}"
 
 rule gen_stat_report:
   input: 
