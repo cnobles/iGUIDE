@@ -11,7 +11,7 @@ rule demultiplex:
     I2=str(Path(config["Seq_Path"]) / config["I2"])
   output:
     data=temp(expand(
-      RUN_DIR + "/input_data/{sample}.{type}.fastq.gz", \
+      RUN_DIR + "/input_data/{sample}.{type}.ready.fastq.gz", \
       sample=SAMPLES, type=TYPES)),
     ambi=temp(expand(
       RUN_DIR + "/input_data/ambiguous.{type}.fastq.gz", type=TYPES)),

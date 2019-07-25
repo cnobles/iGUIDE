@@ -3,7 +3,7 @@
 
 rule seq_trim_R1:
   input:
-    RUN_DIR + "/input_data/{sample}.R1.fastq.gz"
+    RUN_DIR + "/input_data/{sample}.R1.ready.fastq.gz"
   output:
     trim=temp(RUN_DIR + "/process_data/{sample}.R1.trim.fastq.gz"),
     stat=temp(RUN_DIR + "/process_data/{sample}.R1.trim.stat")
@@ -29,7 +29,7 @@ rule seq_trim_R1:
 
 rule seq_trim_R2_primer:
   input:
-    RUN_DIR + "/input_data/{sample}.R2.fastq.gz"
+    RUN_DIR + "/input_data/{sample}.R2.ready.fastq.gz"
   output:
     trim=temp(RUN_DIR + "/process_data/{sample}.R2.primer.trim.fastq.gz"),
     stat=temp(RUN_DIR + "/process_data/{sample}.R2.primer.trim.stat")
