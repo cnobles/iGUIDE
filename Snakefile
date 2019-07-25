@@ -31,6 +31,11 @@ sampleInfo = import_sample_info(
 SAMPLES=sampleInfo[config["Sample_Name_Column"]]
 TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
+
+REQ_READS=READS
+if config["UMItags"]: 
+    REQ_READS.append("I2")
+
 R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
 R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
 R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
@@ -70,6 +75,9 @@ else:
     demulti_cores = min(
         config["demultiCores"], snakemake.utils.available_cpu_count()
     )
+
+if not "skipDemultiplexing" in config:
+    config["skipDemultiplexing"] = False
 
 ## Memory and default params
 if not "demultiMB" in config:
@@ -114,15 +122,23 @@ rule all:
 include: "rules/arch.rules"
 
 # Processing Rules
-include: "rules/demulti.rules"
+if (config["skipDemultiplexing"]):
+    include: "rules/skip_demulti.rules"
+else:
+    include: "rules/demulti.rules"
+    
 include: "rules/trim.rules"
+
 if (config["UMItags"]):
     include: "rules/umitag.rules"
     UMIseqs = sampleInfo["barcode2"]
 else:
     include: "rules/umitag_stub.rules"
+
 include: "rules/filt.rules"
+
 include: "rules/consol.rules"
+
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
     include: "rules/align.blat.rules"
     include: "rules/quality.blat.rules"
@@ -131,5 +147,6 @@ elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
 else:
     "Aligner: " + config["Aligner"] + " not supported."
     "Please choose a supported option: BLAT or BWA."
+
 include: "rules/process.rules"
 

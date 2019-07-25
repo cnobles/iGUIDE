@@ -1,0 +1,55 @@
+# -*- mode: Snakemake -*-
+# Skip Demultiplexing Rules
+
+rule demultiplex:
+  input:
+    configFile=ancient("configs/" + RUN + ".config.yml"),
+    sampleInfo=ancient(config["Sample_Info"]),
+    R1=str(Path(config["Seq_Path"]) / config["R1"]),
+    R2=str(Path(config["Seq_Path"]) / config["R2"]),
+    I1=str(Path(config["Seq_Path"]) / config["I1"]),
+    I2=str(Path(config["Seq_Path"]) / config["I2"])
+  output:
+    data=temp(expand(
+      RUN_DIR + "/input_data/{sample}.{type}.fastq.gz", \
+      sample=SAMPLES, type=TYPES)),
+    ambi=temp(expand(
+      RUN_DIR + "/input_data/ambiguous.{type}.fastq.gz", type=TYPES)),
+    dgen=temp(expand(
+      RUN_DIR + "/input_data/degenerate.{type}.fastq.gz", type=TYPES)),
+    unas=temp(expand(
+      RUN_DIR + "/input_data/unassigned.{type}.fastq.gz", type=TYPES)),
+    stat=temp(RUN_DIR + "/input_data/" + RUN + ".demulti.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/demulti.R",
+    readNamePatternArg=config["readNamePattern"],
+    bc1Len=config["barcode1Length"],
+    bc2Len=config["barcode2Length"],
+    bc1=config["barcode1"],
+    bc2=config["barcode2"],
+    bc1Mis=config["bc1Mismatch"],
+    bc2Mis=config["bc2Mismatch"],
+    maxN=config["maxNcount"],
+    statName=RUN + ".demulti.stat"
+  log: 
+    RUN_DIR + "/logs/demultiplex." + RUN + ".log"
+  threads: 
+    demulti_cores
+  resources: 
+    mem_mb=lambda wildcards, attempt: attempt * config["demultiMB"]
+  shell:
+    """
+    Rscript {params.tool} -m {ROOT_DIR}/{input.sampleInfo} \
+      --read1 {input.R1} --read2 {input.R2} \
+      --idx1 {input.I1} --idx2 {input.I2} \
+      --bc1 {params.bc1} --bc1Len {params.bc1Len} \
+      --bc2 {params.bc2} --bc2Len {params.bc2Len} \
+      --bc1Mis {params.bc1Mis} --bc2Mis {params.bc2Mis} --maxN {params.maxN} \
+      -o {RUN_DIR}/input_data --stat {params.statName} -c {threads} \
+      --readNamePattern {params.readNamePatternArg} --compress > {log} 2>&1
+    """
+
+rule move_demulti_stat:
+  input: RUN_DIR + "/input_data/" + RUN + ".demulti.stat"
+  output: temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
+  shell: "mv {input} {output}"

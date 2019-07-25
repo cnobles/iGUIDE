@@ -14,9 +14,6 @@ R2: "Undetermined_S0_L001_R2_001.fastq.gz"
 I1: "Undetermined_S0_L001_I1_001.fastq.gz"
 I2: "Undetermined_S0_L001_I2_001.fastq.gz"
 
-# Sequence file directory (if already demultiplexed)
-Demulti_Dir: "/tests/Data/Demult/"
-
 # SampleInfo formating
 Sample_Name_Column : "sampleName"
 
@@ -102,6 +99,7 @@ evaluateMB : 8000
 reportMB : 4000
 
 # Demultiplexing parameters
+skipDemultiplexing : FALSE
 barcode1Length : 8
 barcode2Length : 8
 barcode1 : "I1"

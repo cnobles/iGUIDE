@@ -39,11 +39,11 @@ def main( argv = sys.argv ):
         default = os.getenv("IGUIDE_DIR", os.getcwd()),
         help = "Path to iGUIDE installation")
 
-    parser.add_argument(
-        "--skip_demultiplexing", 
-        action = "count", 
-        help = "Use this option if your data is already demultiplexed."
-               " (Make sure Demulti_Dir is set in config file.)")
+    # parser.add_argument(
+    #     "--skip_demultiplexing", 
+    #     action = "count", 
+    #     help = "Use this option if your data is already demultiplexed."
+    #            " (Make sure Demulti_Dir is set in config file.)")
 
     # The remaining args will not be used
     args, remaining = parser.parse_known_args(argv)
