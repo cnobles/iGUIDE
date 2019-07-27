@@ -34,13 +34,16 @@ if( args$format == "html" ){
 }
 
 kable(
-  x = ot_eff_print, format = report_format, row.names = FALSE,
-  booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caption, 
-  align = c("l", "l", rep("r", ncol(ot_eff_print)-2))
-) %>%
+    x = ot_eff_print, format = report_format, row.names = FALSE,
+    booktabs = TRUE, longtable = TRUE, escape = TRUE, caption = tbl_caption, 
+    align = c("l", "l", rep("r", ncol(ot_eff_print)-2))
+  ) %>%
   kableExtra::kable_styling(
     bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
+    latex_options = latex_options,
+    full_width = TRUE
+  ) %>%
+  kableExtra::column_spec(1, width = "0.65in") %>%
+  kableExtra::column_spec(2, width = "3in")
 
 ```
