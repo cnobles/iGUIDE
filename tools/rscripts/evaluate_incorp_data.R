@@ -1445,6 +1445,13 @@ rand_df <- data.frame(
   "special" = sum(stringr::str_detect(rand_sites$gene_id, "!"))
 )
 
+ref_df <- data.frame(
+  condition = "Reference",
+  "total" = length(unique(ref_genes$annot_sym)),
+  "onco" = sum(unique(onco_genes) %in% ref_genes$annot_sym),
+  "special" = sum(unique(special_genes) %in% ref_genes$annot_sym)
+)
+
 paired_list <- split(
   x = paired_regions, 
   f = cond_overview$condition[
@@ -1492,7 +1499,7 @@ matched_df <- dplyr::bind_rows(
 
 enrich_df <- dplyr::bind_rows(
     list(
-      "Reference" = rand_df, 
+      "Reference" = ref_df, 
       "Flanking Pairs" = paired_df, 
       "Target Matched" = matched_df), 
     .id = "origin"
@@ -1504,14 +1511,20 @@ enrich_df$onco.p.value <- p.adjust(
     seq_len(nrow(enrich_df)), 
     function(i){
       
-      ref <- enrich_df[1, c("total", "onco")]
-      query <- enrich_df[i, c("total", "onco")]
+      ref <- enrich_df[1, c("total", "onco"), drop = TRUE]
+      query <- enrich_df[i, c("total", "onco"), drop = TRUE]
       ref$diff <- abs(diff(as.numeric(ref)))
       query$diff <- abs(diff(as.numeric(query)))
       
-      fisher.test(as.matrix(rbind(
-        ref[,c("diff", "onco")], query[,c("diff", "onco")]
-      )))$p.value
+      mat <- matrix(
+        c(
+          ref$total - ref$onco - query$total + query$onco,
+          query$diff, ref$onco - query$onco, query$onco
+        ),
+        nrow = 2
+      )
+      
+      fisher.test(mat)$p.value
       
     }
   ), 
@@ -1523,14 +1536,20 @@ enrich_df$special.p.value <- p.adjust(
     seq_len(nrow(enrich_df)), 
     function(i){
       
-      ref <- enrich_df[1, c("total", "special")]
-      query <- enrich_df[i, c("total", "special")]
+      ref <- enrich_df[1, c("total", "special"), drop = TRUE]
+      query <- enrich_df[i, c("total", "special"), drop = TRUE]
       ref$diff <- abs(diff(as.numeric(ref)))
       query$diff <- abs(diff(as.numeric(query)))
       
-      fisher.test(as.matrix(rbind(
-        ref[,c("diff", "special")], query[,c("diff", "special")]
-      )))$p.value
+      mat <- matrix(
+        c(
+          ref$total - ref$special - query$total + query$special,
+          query$diff, ref$special - query$special, query$special
+        ),
+        nrow = 2
+      )
+      
+      fisher.test(mat)$p.value
       
     }
   ), 
@@ -1540,22 +1559,22 @@ enrich_df$special.p.value <- p.adjust(
 enrich_df <- enrich_df %>%
   dplyr::mutate(
     onco.power = sapply(seq_len(n()), function(i){
-      
+
       statmod::power.fisher.test(
         p1 = onco[1] / total[1],
         p2 = onco[i] / total[i],
         n1 = total[1], n2 = total[i]
       )
-      
+
     }),
     special.power = sapply(seq_len(n()), function(i){
-      
+
       statmod::power.fisher.test(
         p1 = special[1] / total[1],
         p2 = special[i] / total[i],
         n1 = total[1], n2 = total[i]
       )
-      
+
     })
   ) %>%
   dplyr::select(

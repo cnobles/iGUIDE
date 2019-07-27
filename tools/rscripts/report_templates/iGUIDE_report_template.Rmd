@@ -24,11 +24,7 @@ output:
     number_sections: false
     fig_caption: true
 header-includes: 
-  - \usepackage{float}
-  - \usepackage{indentfirst}
-  - \usepackage{booktabs}
-  - \usepackage{longtable}
-  - \usepackage{caption}
+  - \usepackage{float,indentfirst,booktabs,longtable,caption}
   - \setlength{\defaultaddspace}{0em}
   - \setlength{\parindent}{2em}
   - \captionsetup{singlelinecheck=false,justification=raggedright}
@@ -216,8 +212,10 @@ kable(
   ) %>%
   kableExtra::kable_styling(
     bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
+    latex_options = latex_options,
+    full_width = TRUE
+  ) %>%
+  kableExtra::column_spec(2, width = "3in")
 
 ```
 
@@ -245,6 +243,10 @@ if( args$tables ){
   
 }
 
+spec_data_cols <- c(
+  (ncol(spec_overview)-ifelse(umitag_option, 2, 1)):ncol(spec_overview)
+)
+
 kable(
     x = spec_overview, format = report_format, row.names = FALSE,
     booktabs = TRUE, longtable = TRUE, escape = FALSE, caption = tbl_caps[2],
@@ -252,8 +254,10 @@ kable(
   ) %>%
   kableExtra::kable_styling(
     bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
+    latex_options = latex_options,
+    full_width = TRUE
+  ) %>%
+  kableExtra::column_spec(column = spec_data_cols, width = "0.65in")
 
 ```
 
@@ -363,7 +367,7 @@ if( args$tables ){
   ot_tbl_save <- ot_tbl_summary
   
   names(ot_tbl_save) <- c(
-    "Specimen", "Condition", "All percent", "Pileup percent", 
+    "Specimen", "Condition", "Total percent", "Pileup percent", 
     "Paired percent", "Matched percent"
   )
   
@@ -383,22 +387,25 @@ ot_tbl_summary <- ot_tbl_summary %>%
     ot_match_pct = sprintf("%.2f", round(ot_match_pct, digits = 2))
   )
 
-names(ot_tbl_summary) <- c(
-  "Specimen", "Condition", "percent", "percent", "percent", "percent"
+ot_tbl_colnames <- c(
+  "Specimen", "Condition", "Total (percent)", "Pileup (percent)", 
+  "Paired (percent)", "Matched (percent)"
 )
+
+ot_tbl_alignment <- c("l", "l", rep("r", 4))
 
 kable(
     x = ot_tbl_summary, format = report_format, digits = 4, row.names = FALSE,
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE, 
-    escape = FALSE, caption = tbl_caps[4], align = c("l", "l", rep("r", 4))
-  ) %>%
-  kableExtra::add_header_above(
-    c(" " = 2, "All", "Pileup", "Paired", "Matched")
+    escape = FALSE, caption = tbl_caps[4], align = ot_tbl_alignment,
+    col.names = ot_tbl_colnames
   ) %>%
   kableExtra::kable_styling(
     bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
+    latex_options = latex_options,
+    full_width = TRUE
+  ) %>%
+  kableExtra::column_spec(c(1,3:6), width = "0.65in")
 
 ```
 
@@ -421,10 +428,6 @@ Using the criteria discussed previously based on characterizing features of nucl
 ```{r off_target_summary}
 ft_tbl_summary[is.na(ft_tbl_summary)] <- 0
 
-names(ft_tbl_summary) <- c(
-  "Specimen", "Condition", "loci", "loci", "loci", "loci"
-)
-
 if( args$tables ){
 
   tbl_num <- ifelse(nrow(target_tbl) > 1, 6, 5)
@@ -432,7 +435,7 @@ if( args$tables ){
   ft_tbl_save <- ft_tbl_summary
   
   names(ft_tbl_save) <- c(
-    "Specimen", "Condition", "All loci", "Pileup loci", "Paired loci", 
+    "Specimen", "Condition", "Total loci", "Pileup loci", "Paired loci", 
     "Matched loci"
   )
   
@@ -443,20 +446,29 @@ if( args$tables ){
     ),
     quote = TRUE, row.names = FALSE
   )
+  
 }
+
+
+ft_tbl_colnames <- c(
+  "Specimen", "Condition", 
+  "Total (loci)", "Pileup (loci)", "Paired (loci)", "Matched (loci)"
+)
+
+ft_tbl_alignments <- c("l", "l", rep("r", 4))
 
 kable(
     x = ft_tbl_summary, format = report_format, digits = 1, row.names = FALSE,
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE,
-    escape = FALSE, caption = tbl_caps[5]
-  ) %>%
-  kableExtra::add_header_above(
-    c(" " = 2, "All", "Pileup", "Paired", "Matched")
+    escape = FALSE, caption = tbl_caps[5], align = ft_tbl_alignments,
+    col.names = ft_tbl_colnames
   ) %>%
   kableExtra::kable_styling(
     bootstrap_options = bootstrap_options,
-    latex_options = latex_options
-  )
+    latex_options = latex_options,
+    full_width = TRUE
+  ) %>%
+  kableExtra::column_spec(c(1,3:6), width = "0.65in")
 
 ```
 
@@ -504,15 +516,17 @@ enrich_print <- enrich_df %>%
   dplyr::mutate(
     onco.power = round(onco.power * 100, digits = 0),
     onco.is.sig = onco.p.value <= 0.05,
-    onco.p.value = sprintf("%1$.3f (%2$i%%)", onco.p.value, onco.power),
+    onco.p.value = sprintf("%1$.3f", onco.p.value),
+    #onco.p.value = sprintf("%1$.3f (%2$i%%)", onco.p.value, onco.power),
     onco.p.value = kableExtra::cell_spec(
       onco.p.value, format = report_format, bold = onco.is.sig
     ),
     special.power = round(special.power * 100, digits = 0),
     special.is.sig = special.p.value <= 0.05,
-    special.p.value = sprintf(
-      "%1$.3f (%2$i%%)", special.p.value, special.power
-    ),
+    special.p.value = sprintf("%1$.3f", special.p.value),
+    # special.p.value = sprintf(
+    #   "%1$.3f (%2$i%%)", special.p.value, special.power
+    # ),
     special.p.value = kableExtra::cell_spec(
       special.p.value, format = report_format, bold = special.is.sig
     )
@@ -523,8 +537,7 @@ enrich_print <- enrich_df %>%
   dplyr::select(-onco.is.sig, -special.is.sig, -onco.power, -special.power)
 
 names(enrich_print) <- c(
-  "Origin", "Condition", "genes", "genes", "p-value (pwr)", 
-  "genes", "p-value (pwr)"
+  "Origin", "Condition", "genes", "genes", "p-val.", "genes", "p-val."
 )
 
 enrich_print[1,c(5,7)] <- ""
@@ -542,8 +555,11 @@ if( nrow(enrich_print) > 1 ){
     ) %>%
     kableExtra::kable_styling(
       bootstrap_options = bootstrap_options,
-      latex_options = latex_options
-    )
+      latex_options = latex_options,
+      full_width = TRUE
+    ) %>%
+    kableExtra::column_spec(1, width = "1in") %>%
+    kableExtra::column_spec(2, width = "3in")
   
 }else{
   cat("**All comparisons were omitted due to lack of sufficient data.**")
@@ -1018,6 +1034,10 @@ for( i in seq_along(ft_seqs_list) ){
       bootstrap_options = bootstrap_options,
       latex_options = latex_options
     ) %>%
+    kableExtra::column_spec(c(1, 4, 5), width = "0.4in") %>%
+    kableExtra::column_spec(c(7), width = "0.55in") %>%
+    kableExtra::column_spec(c(2, 3), width = "1.25in") %>%
+    kableExtra::column_spec(c(6), width = "2in") %>%
     print()
   
 }
