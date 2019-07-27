@@ -1446,7 +1446,7 @@ rand_df <- data.frame(
 )
 
 ref_df <- data.frame(
-  condition = "Reference",
+  condition = "--",
   "total" = length(unique(ref_genes$annot_sym)),
   "onco" = sum(unique(onco_genes) %in% ref_genes$annot_sym),
   "special" = sum(unique(special_genes) %in% ref_genes$annot_sym)
