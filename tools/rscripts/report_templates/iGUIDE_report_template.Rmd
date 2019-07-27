@@ -558,7 +558,7 @@ if( nrow(enrich_print) > 1 ){
       latex_options = latex_options,
       full_width = TRUE
     ) %>%
-    kableExtra::column_spec(1, width = "1in") %>%
+    kableExtra::column_spec(1, width = "1.1in") %>%
     kableExtra::column_spec(2, width = "3in")
   
 }else{
