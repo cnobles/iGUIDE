@@ -2509,3 +2509,270 @@ plotSeqDiverge <- function(df, ref, nuc.col = NULL, padding = 4,
   p
   
 }
+
+#' Load Sample Info files given a run / project config file and root directory.
+#'
+#' \code{loadSampleInfo} returns a data.frame of the sampleInfo for the specific
+#' run or project configuration file.
+#'
+#' @description Given a configuration file and root directory, the function
+#' loads the sampleInfo file specified by the configuration file into the 
+#' environment as a data.frame. This is accomplished with the data.table::fread
+#' function to allow for variable input formats.
+#'
+#' @usage
+#' loadSampleInfo(config, root.dir)
+#'
+#' @param config an imported yaml object from an iGUIDE run / project 
+#' configuration.
+#' 
+#' @param root.dir path to iGUIDE install directory.
+#' 
+loadSampleInfo <- function(config, root.dir){
+  
+  # Check for required component config object
+  stopifnot("Sample_Info" %in% names(config))
+  
+  # Sample_Info path
+  si_path <- config[["Sample_Info"]]
+  
+  # Load file into environment through relative or absolute paths
+  if( file.exists(file.path(root.dir, si_path)) ){
+    
+    return(data.table::fread(file.path(root.dir, si_path), data.table = FALSE))
+    
+  }else if( file.exists(si_path) ){
+    
+    return(data.table::fread(si_path, data.table = FALSE))
+    
+  }else{
+    
+    stop("\n  Cannot find Sample_Info: ", si_path, ".\n")
+    
+  }
+  
+}
+
+#' Return an object specifying how specimens were experimentally treated.
+#'
+#' \code{getTreatmentInfo} returns a data.frame or list object of indicating
+#' the experimental treatment for each specimen.
+#'
+#' @description Given a configuration file and root directory, the function will
+#' return either a data.frame (default, \code{return.obj = "data.frame"}) or 
+#' list (\code{return.obj = "list"}) indicating the associated experimental 
+#' treatment stategies used for each specimen.
+#'
+#' @usage
+#' getTreatmentInfo(config, root.dir)
+#' getTreatmentInfo(config, root.dir, return.obj = "data.frame")
+#'
+#' @param config an imported yaml object from an iGUIDE run / project 
+#' configuration.
+#' 
+#' @param root.dir path to iGUIDE install directory.
+#' 
+#' @param return.obj character either "data.frame" or "list" indicating the 
+#' prefered object to return.
+#'
+getTreatmentInfo <- function(config, root.dir, return.obj = "data.frame"){
+  
+  # Check for required components within config
+  stopifnot(all(
+    c("Treatment", "Sample_Info", "Sample_Name_Column") %in% names(config)
+  ))
+  
+  # Check for correct input for return object
+  stopifnot( return.obj %in% c("data.frame", "list") )
+  
+  # Identify treatment input data
+  treatments <- config[["Treatment"]]
+  
+  sample.info <- loadSampleInfo(config, root.dir)
+  
+  all_specimens <- unique(stringr::str_extract(
+    string = sample.info[,config$Sample_Name_Column], pattern = "[\\w]+"
+  ))
+  
+  # Determine input format: sampleInfo / all / list / incorrect
+  if( any(grepl("sampleInfo:", treatments)) ){
+    
+    if( tolower(names(treatments)) != "all" ){
+      stop("Config info should be specified for 'all' specimens if in sampleInfo.")
+    }
+    
+    info_col <- match(
+      stringr::str_extract(string = treatments, pattern = "[\\w]+$"), 
+      names(sample.info)
+    )
+    
+    if( length(info_col) != 1 ){
+      stop("\n  Cannot parse treatment data. Check config yaml and sampleInfo.\n")
+    }
+    
+    treatment_df <- data.frame(
+      #run_set = sample_info$run_set,
+      sampleName = sample.info[,sample_name_col], 
+      treatment = sample.info[,info_col]
+    )
+    
+  }else if( any(grepl("all", names(treatments))) ){
+    
+    stopifnot(length(treatments) == 1)
+    
+    treatment_df <- data.frame(
+      sampleName = sample.info[,config$Sample_Name_Column], 
+      treatment = unname(unlist(treatments))
+    )
+    
+  }else if( all(names(treatments) %in% all_specimens) ){
+    
+    if( any(lengths(treatments) > 1) ){
+      treatments <- lapply(treatments, paste, collapse = ";")
+    }
+    
+    treatment_df <- data.frame(
+      sampleName = names(treatments),
+      treatment = unlist(treatments)
+    )
+    
+  }else{
+    
+    stop(
+      "\n  Treatment information not accurately parsed from config(s).\n", 
+      "  Check config(s) formating.\n"
+    )
+    
+  }
+  
+  # Format output objects
+  treatment_df <- treatment_df %>%
+    dplyr::mutate(
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
+    ) %>%
+    dplyr::distinct(specimen, treatment) %>%
+    dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
+    dplyr::select(specimen, treatment)
+  
+  treatment <- strsplit(treatment_df$treatment, ";")
+  names(treatment) <- treatment_df$specimen
+  
+  if( return.obj == "data.frame" ){
+    return(treatment_df)
+  }else{
+    return(treatment)
+  }
+  
+}
+
+#' Return an object specifying how specimens which nucleases were used 
+#' experimentally.
+#'
+#' \code{getNucleaseInfo} returns a data.frame or list object of indicating
+#' the associated nuclease for each specimen.
+#'
+#' @description Given a configuration file and root directory, the function will
+#' return either a data.frame (default, \code{return.obj = "data.frame"}) or 
+#' list (\code{return.obj = "list"}) indicating the associated experimental 
+#' treatment stategies used for each specimen.
+#'
+#' @usage
+#' getNucleaseInfo(config, root.dir)
+#' getNucleaseInfo(config, root.dir, return.obj = "data.frame")
+#'
+#' @param config an imported yaml object from an iGUIDE run / project 
+#' configuration.
+#' 
+#' @param root.dir path to iGUIDE install directory.
+#' 
+#' @param return.obj character either "data.frame" or "list" indicating the 
+#' prefered object to return.
+#'
+getNucleaseInfo <- function(config, root.dir, return.obj = "data.frame"){
+  
+  # Check for required components within config
+  stopifnot(all(
+    c("Nuclease", "Sample_Info", "Sample_Name_Column") %in% names(config)
+  ))
+  
+  # Check for correct input for return object
+  stopifnot( return.obj %in% c("data.frame", "list") )
+  
+  # Identify treatment input data
+  nucleases <- config[["Nuclease"]]
+  
+  sample.info <- loadSampleInfo(config, root.dir)
+  
+  all_specimens <- unique(stringr::str_extract(
+    string = sample.info[,config$Sample_Name_Column], pattern = "[\\w]+"
+  ))
+  
+  # Determine input format: sampleInfo / all / list / incorrect
+  if( any(grepl("sampleInfo:", nucleases)) ){
+    
+    if( tolower(names(nucleases)) != "all" ){
+      stop("Config info should be specified for 'all' specimens if in sampleInfo.")
+    }
+    
+    info_col <- match(
+      stringr::str_extract(string = nucleases, pattern = "[\\w]+$"), 
+      names(sample.info)
+    )
+    
+    if( length(info_col) != 1 ){
+      stop("\n  Cannot parse nucleases data. Check config yaml and sampleInfo.\n")
+    }
+    
+    nuclease_df <- data.frame(
+      sampleName = sample.info[,sample_name_col], 
+      nuclease = sample.info[,info_col]
+    )
+    
+  }else if( any(grepl("all", names(nucleases))) ){
+    
+    stopifnot(length(nucleases) == 1)
+    
+    nuclease_df <- data.frame(
+      sampleName = sample.info[,config$Sample_Name_Column], 
+      nuclease = unname(unlist(nucleases))
+    )
+    
+  }else if( all(names(nucleases) %in% all_specimens) ){
+    
+    if( any(lengths(nucleases) > 1) ){
+      nucleases <- lapply(nucleases, paste, collapse = ";")
+    }
+    
+    nuclease_df <- data.frame(
+      sampleName = names(nucleases),
+      nuclease = unlist(nucleases)
+    )
+    
+  }else{
+    
+    stop(
+      "\n  Treatment information not accurately parsed from config(s).\n", 
+      "  Check config(s) formating.\n"
+    )
+    
+  }
+  
+  # Format output objects
+  nuclease_df <- nuclease_df %>%
+    dplyr::mutate(
+      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
+    ) %>%
+    dplyr::distinct(specimen, nuclease) %>%
+    dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
+    dplyr::select(specimen, nuclease)
+  
+  nuclease <- strsplit(nuclease_df$nuclease, ";")
+  names(nuclease) <- nuclease_df$specimen
+  
+  if( return.obj == "data.frame" ){
+    return(nuclease_df)
+  }else{
+    return(nuclease)
+  }
+  
+}

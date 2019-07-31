@@ -307,22 +307,8 @@ max_target_mismatch <- configs[[1]]$maxTargetMismatch
 
 ## Combine sampleInfo files
 
-sample_info <- dplyr::bind_rows(lapply(
-    sapply(configs, "[[", "Sample_Info"), 
-    function(x){
-      
-      if( file.exists(file.path(root_dir, x)) ){
-        return(data.table::fread(file.path(root_dir, x), data.table = FALSE))
-      }else if( file.exists(x) ){
-        return(data.table::fread(x, data.table = FALSE))
-      }else{
-        stop("\n  Cannot find Sample_Info: ", x, ".\n")
-      }
-
-    }
-  ), 
-  .id = "run_set"
-)
+sample_info <- lapply(configs, loadSampleInfo, root_dir) %>%
+  dplyr::bind_rows(.id = "run_set")
 
 sample_name_col <- unique(sapply(configs, "[[", "Sample_Name_Column"))
 
@@ -386,66 +372,37 @@ on_targets <- unlist(lapply(configs, "[[", "On_Target_Sites")) %>%
 
 
 ## Treatment across runs
-treatments <- lapply(configs, "[[", "Treatment")
+treatment_df <- lapply(configs, getTreatmentInfo, root_dir) %>%
+  dplyr::bind_rows(.id = "run_set") %>%
+  dplyr::filter(specimen %in% specimen_levels) %>%
+  dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
+  dplyr::arrange(specimen)
 
-if( any(grepl("sampleInfo:", treatments[[1]])) ){
+### If only one condition present besides 'Mock', then switch 'Mock' treated
+### specimens to condition for analysis background
+### This block of code may not be appropriate for all circumstances.
+if( any(tolower(treatment_df$treatment) == "mock") ){
   
-  info_col <- match(
-    stringr::str_extract(string = treatments[[1]], pattern = "[\\w]+$"), 
-    names(sample_info)
-  )
+  all_treatments <- unique(unlist(strsplit(treatment_df$treatment, ";")))
   
-  if( length(info_col) != 1 ){
-    stop("\n  Cannot parse treatment data. Check config yaml and sampleInfo.\n")
-  }
+  all_treatments <- all_treatments[
+    !grepl("mock", tolower(all_treatments))
+  ]
   
-  treatment_df <- data.frame(
-      run_set = sample_info$run_set,
-      sampleName = sample_info[,sample_name_col], 
-      treatment = sample_info[,info_col]
-    ) %>%
-    dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
-    ) %>%
-    dplyr::filter(specimen %in% specimen_levels) %>%
-    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-    dplyr::distinct(run_set, specimen, treatment) %>%
-    dplyr::arrange(specimen) %>%
-    dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
-    dplyr::select(run_set, specimen, treatment)
-  
-  treatment <- strsplit(treatment_df$treatment, ";")
-  names(treatment) <- as.character(treatment_df$specimen)
-  
-}else if( any(grepl("all", names(treatments[[1]]))) ){
-  
-  treatment_df <- data.frame(
-      run_set = sample_info$run_set,
-      sampleName = sample_info[,sample_name_col], 
-      treatment = unique(unlist(treatments))
-    ) %>%
-    dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
-    ) %>%
-    dplyr::filter(specimen %in% specimen_levels) %>%
-    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-    dplyr::distinct(run_set, specimen, treatment) %>%
-    dplyr::arrange(specimen) %>%
-    dplyr::mutate(treatment = ifelse(is.na(treatment), "Mock", treatment)) %>%
-    dplyr::select(run_set, specimen, treatment)
-  
-  treatment <- strsplit(treatment_df$treatment, ";")
-  names(treatment) <- treatment_df$specimen
-  
-}else{
-  
-  stop(
-    "\n  Treatment information not accurately parsed from config(s).\n", 
-    "  Check config(s) formating.\n"
+  treatment_df$treatment <- ifelse(
+    tolower(treatment_df$treatment) == "mock", 
+    paste(all_treatments, collapse = ";"), 
+    treatment_df$treatment
   )
   
 }
 
+
+treatment <- structure(
+  strsplit(treatment_df$treatment, ";"), 
+  names = as.character(treatment_df$specimen)
+)
+  
 
 ## Nucleases used across runs
 nuc_profiles <- unlist(
@@ -457,66 +414,38 @@ nuc_profiles <- nuc_profiles[
   match(unique(names(nuc_profiles)), names(nuc_profiles))
 ]
 
-nucleases <- lapply(configs, "[[", "Nuclease")
+nuclease_df <- lapply(configs, getNucleaseInfo, root_dir) %>%
+  dplyr::bind_rows(.id = "run_set") %>%
+  dplyr::filter(specimen %in% specimen_levels) %>%
+  dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
+  dplyr::arrange(specimen)
 
-if( any(grepl("sampleInfo:", nucleases[[1]])) ){
+### If only one condition present besides 'Mock', then switch 'Mock' treated
+### specimens to condition for analysis background
+### This block of code may not be appropriate for all circumstances.
+if( any(tolower(nuclease_df$nuclease) == "mock") ){
   
-  info_col <- match(
-    stringr::str_extract(string = nucleases[[1]], pattern = "[\\w]+$"), 
-    names(sample_info)
-  )
+  all_nucleases <- unique(unlist(strsplit(nuclease_df$nuclease, ";")))
   
-  if( length(info_col) != 1 ){
-    stop("Cannot parse nuclease data. Check config yaml and sampleInfo.")
-  }
+  all_nucleases <- all_nucleases[
+    !grepl("mock", tolower(all_nuclease))
+  ]
   
-  nuclease_df <- data.frame(
-    run_set = sample_info$run_set,
-    sampleName = sample_info[,sample_name_col], 
-    nuclease = sample_info[,info_col]
-    ) %>%
-    dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
-    ) %>%
-    dplyr::filter(specimen %in% specimen_levels) %>%
-    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-    dplyr::distinct(run_set, specimen, nuclease) %>%
-    dplyr::arrange(specimen) %>%
-    dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
-    dplyr::select(run_set, specimen, nuclease)
-  
-  nuclease <- strsplit(nuclease_df$nuclease, ";")
-  names(nuclease) <- nuclease_df$specimen
-  
-}else if( any(grepl("all", names(nucleases[[1]]))) ){
-  
-  nuclease_df <- data.frame(
-    run_set = sample_info$run_set,
-    sampleName = sample_info[,sample_name_col], 
-    nuclease = unique(unlist(nucleases))
-    ) %>%
-    dplyr::mutate(
-      specimen = stringr::str_extract(string = sampleName, pattern = "[\\w]+")
-    ) %>%
-    dplyr::filter(specimen %in% specimen_levels) %>%
-    dplyr::mutate(specimen = factor(specimen, levels = specimen_levels)) %>%
-    dplyr::distinct(run_set, specimen, nuclease) %>%
-    dplyr::arrange(specimen) %>%
-    dplyr::mutate(nuclease = ifelse(is.na(nuclease), "Mock", nuclease)) %>%
-    dplyr::select(run_set, specimen, nuclease)
-  
-  nuclease <- strsplit(nuclease_df$nuclease, ";")
-  names(nuclease) <- nuclease_df$specimen
-  
-}else{
-  
-  stop(
-    "\n  Nuclease information not accurately parsed from config(s).\n", 
-    "  Check config(s) formating.\n"
+  nuclease_df$nuclease <- ifelse(
+    tolower(nuclease_df$nuclease) == "mock", 
+    paste(all_nucleases, collapse = ";"), 
+    nuclease_df$nuclease
   )
   
 }
 
+nuclease <- structure(
+  strsplit(nuclease_df$nuclease, ";"), 
+  names = as.character(nuclease_df$specimen)
+)
+
+
+## Combine treatment and nuclease profiles
 nuclease_treaments <- dplyr::left_join(
   nuclease_df, treatment_df, by = c("run_set", "specimen")
 )
@@ -640,25 +569,23 @@ cond_overview <- spec_overview %>%
 if( !args$quiet ) cat("\nStarting analysis...\n")
 
 ## Read in experimental data and contatenate different sets
-input_data_paths <- lapply(configs, function(x){
-  name <- x$Run_Name
-  file.path(
-    "analysis", name, paste0("output/incorp_sites.", name ,".rds")
-  )
-})
-
-input_data <- lapply(input_data_paths, function(x){
-  if( file.exists(file.path(root_dir, x)) ){
-    return(readRDS(file.path(root_dir, x)))
-  }else if( file.exists(x) ){
-    return(readRDS(x))
-  }else{
-    stop("\n  Cannot find edited_sites file: ", x, ".\n")
-  }
-})
-
-names(input_data) <- names(configs)
-input_data <- dplyr::bind_rows(input_data, .id = "run.set") %>%
+input_data <- lapply(configs, function(x){
+    name <- x$Run_Name
+    
+    path <- file.path(
+      "analysis", name, paste0("output/incorp_sites.", name ,".rds")
+    )
+    
+    if( file.exists(file.path(root_dir, path)) ){
+      return(readRDS(file.path(root_dir, path)))
+    }else if( file.exists(path) ){
+      return(readRDS(path))
+    }else{
+      stop("\n  Cannot find edited_sites file: ", x, ".\n")
+    }
+    
+  }) %>%
+  dplyr::bind_rows(.id = "run.set") %>%
   dplyr::mutate(
     specimen = stringr::str_extract(sampleName, pattern = "[\\w]+")
   ) %>%
