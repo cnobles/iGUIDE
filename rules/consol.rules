@@ -3,11 +3,11 @@
 
 rule consolidate:
   input:
-    RUN_DIR + "/process_data/{sample}.{read}.filt.fastq.gz"
+    RUN_DIR + "/process_data/filtered/{sample}.{read}.filt.fastq.gz"
   output:
-    consol=temp(RUN_DIR + "/process_data/{sample}.{read}.consol.fasta"),
-    key=temp(RUN_DIR + "/process_data/{sample}.{read}.key.csv"),
-    stat=temp(RUN_DIR + "/process_data/{sample}.{read}.consol.stat")
+    consol=temp(RUN_DIR + "/process_data/consol/{sample}.{read}.consol.fasta"),
+    key=temp(RUN_DIR + "/process_data/consol/{sample}.{read}.key.csv"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{read}.consol.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/consol.R"
   log:

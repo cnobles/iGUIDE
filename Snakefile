@@ -29,8 +29,13 @@ sampleInfo = import_sample_info(
     config["Sample_Info"], config["Sample_Name_Column"], delim)
 
 SAMPLES=sampleInfo[config["Sample_Name_Column"]]
-TYPES=config["Read_Types"]
+READ_TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
+REQ_TYPES=READS[:]
+
+if config["UMItags"]: 
+    REQ_TYPES.append("I2")
+
 R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
 R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
 R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
@@ -71,6 +76,9 @@ else:
         config["demultiCores"], snakemake.utils.available_cpu_count()
     )
 
+if not "skipDemultiplexing" in config:
+    config["skipDemultiplexing"] = False
+
 ## Memory and default params
 if not "demultiMB" in config:
     config["demultiMB"] = 16000
@@ -102,6 +110,13 @@ if not "reportMB" in config:
 if not "readNamePattern" in config:
     config["readNamePattern"] = str("'[\\w\\:\\-\\+]+'")
 
+# Regex constraints on wildcards
+wildcard_constraints:
+    sample="[\w]+",
+    read="R[12]",
+    read_type="[RI][12]",
+    req_type="[RI][12]"
+
 # Target Rules
 rule all:
     input: 
@@ -114,15 +129,23 @@ rule all:
 include: "rules/arch.rules"
 
 # Processing Rules
-include: "rules/demulti.rules"
+if (config["skipDemultiplexing"]):
+    include: "rules/skip_demulti.rules"
+else:
+    include: "rules/demulti.rules"
+    
 include: "rules/trim.rules"
+
 if (config["UMItags"]):
     include: "rules/umitag.rules"
     UMIseqs = sampleInfo["barcode2"]
 else:
     include: "rules/umitag_stub.rules"
+
 include: "rules/filt.rules"
+
 include: "rules/consol.rules"
+
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
     include: "rules/align.blat.rules"
     include: "rules/quality.blat.rules"
@@ -131,5 +154,6 @@ elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
 else:
     "Aligner: " + config["Aligner"] + " not supported."
     "Please choose a supported option: BLAT or BWA."
+
 include: "rules/process.rules"
 

@@ -3,10 +3,10 @@
 
 rule align:
   input:
-    seq = RUN_DIR + "/process_data/{sample}.{read}.consol.fasta",
+    seq = RUN_DIR + "/process_data/consol/{sample}.{read}.consol.fasta",
     genome = ancient(ROOT_DIR + "/" + config["Ref_Genome_Path"])
   output:
-    temp(RUN_DIR + "/process_data/{sample}.{read}.psl")
+    temp(RUN_DIR + "/process_data/align/{sample}.{read}.psl")
   params: 
     config["BLATparams"]
   log:
@@ -26,8 +26,8 @@ rule align:
     """
 
 rule compress_align:
-  input: RUN_DIR + "/process_data/{sample}.{type}.psl"
-  output: temp(RUN_DIR + "/process_data/{sample}.{type}.psl.gz")
+  input: RUN_DIR + "/process_data/align/{sample}.{read}.psl"
+  output: temp(RUN_DIR + "/process_data/align/{sample}.{read}.psl.gz")
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "gzip {input}"

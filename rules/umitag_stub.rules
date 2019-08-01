@@ -3,5 +3,5 @@
 
 rule collect_umitags_stub:
   output:
-    stat=temp(RUN_DIR + "/process_data/{sample}.umitags.stat")
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.umitags.stat")
   shell: "touch {output.stat}"

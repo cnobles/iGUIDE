@@ -3,11 +3,12 @@
 
 rule all_uniq_sites:
   input:
-    expand(RUN_DIR + "/process_data/{sample}.uniq.csv", sample=SAMPLES)
+    expand(
+      RUN_DIR + "/process_data/post_align/{sample}.uniq.csv", sample=SAMPLES)
   output:
     temp(RUN_DIR + "/output/unique_sites." + RUN + ".csv")
   params:
-    RUN_DIR + "/process_data"
+    RUN_DIR + "/process_data/post_align"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell:
@@ -22,14 +23,16 @@ rule all_uniq_sites:
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
-      RUN_DIR + "/process_data/{sample}.umitags.fasta.gz", sample = SAMPLES)
+      RUN_DIR + "/process_data/indices/{sample}.umitags.fasta.gz", 
+      sample=SAMPLES)
   else:
     return []
 
 def all_multi_inputs(wildcards):
   if (config["recoverMultihits"]):
     return expand(
-      RUN_DIR + "/process_data/{sample}.multihits.rds", sample = SAMPLES)
+      RUN_DIR + "/process_data/post_align/{sample}.multihits.rds", 
+      sample=SAMPLES)
   else:
     return []
 
@@ -40,7 +43,7 @@ rule assimilate_sites:
     multi=all_multi_inputs
   output:
     incorp=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
-    stat=temp(RUN_DIR + "/process_data/" + RUN + ".assim.stat")
+    stat=temp(RUN_DIR + "/process_data/stats/" + RUN + ".assim.stat")
   params:
     config=RUN_DIR + "/" + "config.yml",
     tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R"
@@ -62,7 +65,7 @@ rule iguide_evaluation:
   input: RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
   output: 
     eval=temp(RUN_DIR + "/output/iguide.eval." + RUN + ".rds"),
-    stat=temp(RUN_DIR + "/process_data/" + RUN + ".eval.stat")
+    stat=temp(RUN_DIR + "/output/" + RUN + ".eval.stat")
   params: 
     tool = ROOT_DIR + "/tools/rscripts/evaluate_incorp_data.R",
     config = RUN_DIR + "/" + "config.yml"

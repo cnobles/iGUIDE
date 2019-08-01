@@ -13,7 +13,6 @@
 
 options(stringsAsFactors = FALSE, scipen = 99, width = 120)
 
-
 # Set up and gather command line arguments ----
 parser <- argparse::ArgumentParser(
   description = "Generate an iGUIDE Stat report for core and eval data.",
@@ -59,6 +58,7 @@ parser$add_argument(
 
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
+
 
 if( !dir.exists(args$iguide_dir) ){
   root_dir <- Sys.getenv(args$iguide_dir)
@@ -161,12 +161,23 @@ stat_df <- dplyr::full_join(core_stat_df, eval_stat_df, by = "sampleName") %>%
 
 sampleName_levels <- unique(stat_df$sampleName)
 
-sampleNames <- sampleName_levels[
-  -match(
-    c("ambiguous_reads", "degenerate_reads", "unassigned_reads"), 
-    sampleName_levels
-  )
-]
+if( 
+  any(c("ambiguous_reads", "degenerate_reads", "unassigned_reads") %in% 
+      sampleName_levels) 
+  ){
+  
+    sampleNames <- sampleName_levels[
+      -match(
+        c("ambiguous_reads", "degenerate_reads", "unassigned_reads"), 
+        sampleName_levels
+      )
+    ]
+    
+}else{
+  
+  sampleNames <- sampleName_levels
+  
+}
 
 sampleName_levels <- c(
   sampleNames, "ambiguous_reads", "degenerate_reads", "unassigned_reads"
