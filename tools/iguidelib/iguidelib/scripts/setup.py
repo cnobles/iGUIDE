@@ -84,7 +84,10 @@ def main( argv = sys.argv ):
     # files.
     read_types = config["Read_Types"] 
      
-    if args.skip_demultiplexing:
+    if config['skipDemultiplexing']:
+        req_read_types = read_types[:]
+        req_read_types.remove("I1")
+        if not config["UMItags"]: req_read_types.remove("I2")
         try:
             sampleInfo = open(config['Sample_Info'])
         except FileNotFoundError:
@@ -92,12 +95,12 @@ def main( argv = sys.argv ):
               os.getenv("IGUIDE_DIR", os.getcwd()) + "/" + config['Sample_Info']
             )
         sampleList = get_sample_list(sampleInfo, config)
-        demultiDir = Path(config['Demulti_Dir'])
+        demultiDir = Path(config['Seq_Path'])
         for sample in sampleList:
-            for type in read_types:
+            for type in req_read_types:
                 os.symlink( 
                     str(demultiDir / str(sample + '.' + type + '.fastq.gz')),
-                    str(analysis_directory / "process_data" / str(
+                    str(analysis_directory / "input_data" / str(
                         sample + '.' + type + '.fastq.gz'
                         )
                     )

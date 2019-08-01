@@ -1,30 +1,18 @@
 # -*- mode: Snakemake -*-
 # Skip Demultiplexing Rules
 
-def skip_demulti_read_types(wildcards):
-  if (config["UMItags"]):
-    return expand(
-      str(Path(config["Seq_Path"]) / {{sample}}.{req_type}.fastq.gz), 
-      req_type = ["R1", "R2", "I2"]
-    )
-  else:
-    return expand(
-      str(Path(config["Seq_Path"]) / {sample}.{req_type}.fastq.gz), 
-      req_type = ["R1", "R2"]
-    )
-
 rule check_input_reads:
   input:
     configFile=ancient("configs/" + RUN + ".config.yml"),
     sampleInfo=ancient(config["Sample_Info"]),
     reads=expand(
-        str(Path(config["Seq_Path"]) / {{sample}}.{req_type}.fastq.gz),
-        req_type = REQ_READS)
+        str(Path(config["Seq_Path"]) / "{{sample}}.{req_type}.fastq.gz"),
+        req_type = REQ_TYPES)
   output:
     data=temp(expand(
-      RUN_DIR + "/input_data/{{sample}}.{req_type}.ready.fastq.gz", \
-      req_type=REQ_READS)),
-    stat=temp(RUN_DIR + "/input_data/{sample}.initdemulti.stat")
+      RUN_DIR + "/process_data/demulti/{{sample}}.{req_type}.fastq.gz",
+      req_type=REQ_TYPES)),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.initdemulti.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/filt.R",
     readNamePatternArg=config["readNamePattern"]
@@ -40,15 +28,20 @@ rule check_input_reads:
     """
 
 rule format_init_stat:
-  input: RUN_DIR + "/input_data/{sample}.initdemulti.stat"
-  output: temp(RUN_DIR + "/input_data/{sample}.fmtdemulti.stat")
+  input: RUN_DIR + "/process_data/stats/{sample}.initdemulti.stat"
+  output: temp(RUN_DIR + "/process_data/stats/{sample}.fmtdemulti.stat")
   shell: 
     """
-    cat {input} | cut -d , -f 2,3 | uniq | sed 's/reads/{sample}.demulti,reads/' > {output}
+    cat {input} | cut -d , -f 2,3 | uniq | sed 's/reads/{wildcards.sample}.demulti,reads/' > {output}
     """
   
 rule combine_fmt_stat:
   input: 
-    expand(RUN_DIR + "/input_data/{sample}.fmtdemulti.stat", sample = SAMPLES)
-  output: temp(RUN_DIR + "/process_data/" + RUN + ".demulti.stat")
-  shell: "cat {input} > {output}"
+    expand(
+      RUN_DIR + "/process_data/stats/{sample}.fmtdemulti.stat", 
+      sample = SAMPLES)
+  output: temp(RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat")
+  shell: 
+    """
+    cat {input} > {output}
+    """

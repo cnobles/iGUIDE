@@ -29,12 +29,12 @@ sampleInfo = import_sample_info(
     config["Sample_Info"], config["Sample_Name_Column"], delim)
 
 SAMPLES=sampleInfo[config["Sample_Name_Column"]]
-TYPES=config["Read_Types"]
+READ_TYPES=config["Read_Types"]
 READS=config["Genomic_Reads"]
+REQ_TYPES=READS[:]
 
-REQ_READS=READS
 if config["UMItags"]: 
-    REQ_READS.append("I2")
+    REQ_TYPES.append("I2")
 
 R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
 R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
@@ -109,6 +109,13 @@ if not "reportMB" in config:
   
 if not "readNamePattern" in config:
     config["readNamePattern"] = str("'[\\w\\:\\-\\+]+'")
+
+# Regex constraints on wildcards
+wildcard_constraints:
+    sample="[\w]+",
+    read="R[12]",
+    read_type="[RI][12]",
+    req_type="[RI][12]"
 
 # Target Rules
 rule all:

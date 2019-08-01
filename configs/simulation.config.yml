@@ -8,7 +8,7 @@ Aligner : "blat"
 UMItags : TRUE
 
 # Sequence files
-Seq_Path : "etc/tests/Data/"
+Seq_Path : "etc/tests/Data/skipDemulti"
 R1: "Undetermined_S0_L001_R1_001.fastq.gz"
 R2: "Undetermined_S0_L001_R2_001.fastq.gz"
 I1: "Undetermined_S0_L001_I1_001.fastq.gz"

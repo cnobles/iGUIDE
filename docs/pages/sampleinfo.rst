@@ -30,8 +30,8 @@ identifier.
 For example, iGSP0002-1 and iGSP0002-2, will be pooled together for 
 the report and analysis, but iGSP0002-1 and iGSP0003-1 will not. These names 
 will be used in naming files, so do not include any special characters that will
-confuse file managment. Try to stick to common delimiters, such as "-", "_", 
-".". 
+confuse file managment. Try to stick to common delimiters, such as ``-`` and ``_``.
+Using a dot, ``.``, as a delimiter is not currently supported. 
 
 A good practice is to put specimen identifiers at the beginning, replicate 
 identifiers at the end following a "-", and anything else descriptive in the 
