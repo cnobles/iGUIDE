@@ -5,10 +5,10 @@ def import_sample_info(filePath, sampleColName, delim):
     sampleInfo = {}
     with open(filePath, 'r') as info:
         data = info.readlines()
-    listData = [row.rstrip().split(delim) for row in data]
+    listData = [row.replace('"', '').rstrip().split(delim) for row in data]
     mcols = listData[0]
     samCol = mcols.index(sampleColName)
-    samNames = [row.rstrip().split(delim)[samCol] for row in data[1:]]
+    samNames = [row.replace('"', '').rstrip().split(delim)[samCol] for row in data[1:]]
     for m in mcols:
         ind = mcols.index(m)
         vals = []
