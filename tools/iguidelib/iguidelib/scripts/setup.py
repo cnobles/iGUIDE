@@ -39,11 +39,11 @@ def main( argv = sys.argv ):
         default = os.getenv("IGUIDE_DIR", os.getcwd()),
         help = "Path to iGUIDE installation")
 
-    parser.add_argument(
-        "--skip_demultiplexing", 
-        action = "count", 
-        help = "Use this option if your data is already demultiplexed."
-               " (Make sure Demulti_Dir is set in config file.)")
+    # parser.add_argument(
+    #     "--skip_demultiplexing", 
+    #     action = "count", 
+    #     help = "Use this option if your data is already demultiplexed."
+    #            " (Make sure Demulti_Dir is set in config file.)")
 
     # The remaining args will not be used
     args, remaining = parser.parse_known_args(argv)
@@ -84,20 +84,23 @@ def main( argv = sys.argv ):
     # files.
     read_types = config["Read_Types"] 
      
-    if args.skip_demultiplexing:
+    if config['skipDemultiplexing']:
+        req_read_types = read_types[:]
+        req_read_types.remove("I1")
+        if not config["UMItags"]: req_read_types.remove("I2")
         try:
             sampleInfo = open(config['Sample_Info'])
         except FileNotFoundError:
             sampleInfo = open(
               os.getenv("IGUIDE_DIR", os.getcwd()) + "/" + config['Sample_Info']
             )
-        sampleList = get_sample_list(sampleInfo)
-        demultiDir = check_existing(Path(config['Demulti_Dir']))
+        sampleList = get_sample_list(sampleInfo, config)
+        demultiDir = Path(config['Seq_Path'])
         for sample in sampleList:
-            for type in read_types:
+            for type in req_read_types:
                 os.symlink( 
                     str(demultiDir / str(sample + '.' + type + '.fastq.gz')),
-                    str(analysis_directory / "process_data" / str(
+                    str(analysis_directory / "input_data" / str(
                         sample + '.' + type + '.fastq.gz'
                         )
                     )
@@ -143,7 +146,7 @@ def check_existing_fastq(path, force=False):
         print("Warning: specified sample file '{}' does not exist. "
               "Make sure it exists before running iguide run.".format(path))
 
-def get_sample_list(sampleInfo):
+def get_sample_list(sampleInfo, config):
     sampleList = []
     for line in sampleInfo:
         items=line.split(',')

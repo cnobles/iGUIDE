@@ -1,0 +1,47 @@
+# -*- mode: Snakemake -*-
+# Skip Demultiplexing Rules
+
+rule check_input_reads:
+  input:
+    configFile=ancient("configs/" + RUN + ".config.yml"),
+    sampleInfo=ancient(config["Sample_Info"]),
+    reads=expand(
+        str(Path(config["Seq_Path"]) / "{{sample}}.{req_type}.fastq.gz"),
+        req_type = REQ_TYPES)
+  output:
+    data=temp(expand(
+      RUN_DIR + "/process_data/demulti/{{sample}}.{req_type}.fastq.gz",
+      req_type=REQ_TYPES)),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.initdemulti.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/filt.R",
+    readNamePatternArg=config["readNamePattern"]
+  log: 
+    RUN_DIR + "/logs/init.demultiplex.{sample}.log"
+  resources: 
+    mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell:
+    """
+    Rscript {params.tool} {input.reads} --output {output.data} \
+      --stat {output.stat} --readNamePattern {params.readNamePatternArg} \
+      --compress > {log} 2>&1
+    """
+
+rule format_init_stat:
+  input: RUN_DIR + "/process_data/stats/{sample}.initdemulti.stat"
+  output: temp(RUN_DIR + "/process_data/stats/{sample}.fmtdemulti.stat")
+  shell: 
+    """
+    cat {input} | cut -d , -f 2,3 | uniq | sed 's/reads/{wildcards.sample}.demulti,reads/' > {output}
+    """
+  
+rule combine_fmt_stat:
+  input: 
+    expand(
+      RUN_DIR + "/process_data/stats/{sample}.fmtdemulti.stat", 
+      sample = SAMPLES)
+  output: temp(RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat")
+  shell: 
+    """
+    cat {input} > {output}
+    """

@@ -30,14 +30,14 @@ if( !file.exists(core_file) | !file.exists(eval_file) ){
 }
 
 # Check output file ----
-if( length(grep("-o", args)) > 0){
+if( length(grep("-o", args)) > 0 ){
   output_file <- args[grep("-o", args) + 1]
 }else{
   stop("\n  Output file is required, please specify with '-o'.\n")
 }
 
 if( file.exists(output_file) ){
-  cat("Removing existing output file of the same name: ", args[2], "\n")
+  cat("Removing existing output file of the same name: ", output_file, "\n")
   unlink(output_file)
 }
 
@@ -143,12 +143,23 @@ stat_df <- dplyr::full_join(core_stat_df, eval_stat_df, by = "sampleName") %>%
 
 sampleName_levels <- unique(stat_df$sampleName)
 
-sampleNames <- sampleName_levels[
-  -match(
-    c("ambiguous_reads", "degenerate_reads", "unassigned_reads"), 
-    sampleName_levels
-  )
-]
+if( 
+  any(c("ambiguous_reads", "degenerate_reads", "unassigned_reads") %in% 
+      sampleName_levels) 
+  ){
+  
+    sampleNames <- sampleName_levels[
+      -match(
+        c("ambiguous_reads", "degenerate_reads", "unassigned_reads"), 
+        sampleName_levels
+      )
+    ]
+    
+}else{
+  
+  sampleNames <- sampleName_levels
+  
+}
 
 sampleName_levels <- c(
   sampleNames, "ambiguous_reads", "degenerate_reads", "unassigned_reads"

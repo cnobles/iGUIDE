@@ -51,6 +51,19 @@ Memory Management
 Demultiplexing parameters
 """""""""""""""""""""""""
 
+``skipDemultiplexing``
+  Logical (either TRUE or FALSE) to indicate if demultiplexing should be carried
+  out. If TRUE, sequence files (*.fastq.gz) need to be placed or linked in the 
+  input_data directory of an existing project directory (as with ``iguide setup``),
+  one sequence file for each type (R1, R2, I1, I2). These need to be identified
+  in the "Run" portion of the config file. If FALSE, then demultiplexed files need
+  to be included in the input_data directory of an existing project directory. The
+  files need to be appropriately named, in the format of ``{sampleName}.{readtype}.fastq.gz``,
+  where ``sampleName`` matches the 'sampleName' column found in the associated 'sampleInfo'
+  file, and ``readtype`` is R1, R2, I1, or I2. If ``UMItags`` is ``FALSE``, then only R1 and R2
+  file types are required for analysis, if ``UMItags`` is ``TRUE``, then I2 is a
+  required file type as well.
+
 ``barcode{1/2}Length``
   Integer values indicating the number of nucleotides in the barcodes or 
   indexing sequences.

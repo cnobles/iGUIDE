@@ -83,12 +83,9 @@ def main( argv = sys.argv ):
         
         files_to_clean = []
         for directory in directories_to_clean:
-            directory = analysis_directory / directory
-            files = os.listdir( directory )
-            for file in files:
-                files_to_clean = files_to_clean + [
-                  os.path.join( directory, file )
-                ]
+            for r, d, f in os.walk( analysis_directory / directory ):
+                for file in f:
+                    files_to_clean.append(os.path.join( r, file ))
           
         for file in files_to_clean:
             if Path( file ).exists():

@@ -4,39 +4,41 @@
 
 rule core_stat_matrix:
   input:
-    demulti=RUN_DIR + "/process_data/" + RUN + ".demulti.stat",
+    demulti=RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat",
     trimR1=expand(
-      RUN_DIR + "/process_data/{sample}.R1.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.R1.trim.stat", sample=SAMPLES),
     trimPrimer=expand(
-      RUN_DIR + "/process_data/{sample}.R2.primer.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.R2.primer.trim.stat", 
+      sample=SAMPLES),
     trimODN=expand(
-      RUN_DIR + "/process_data/{sample}.R2.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.R2.trim.stat", sample=SAMPLES),
     umitags=expand(
-      RUN_DIR + "/process_data/{sample}.umitags.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.umitags.stat", sample=SAMPLES),
     filt=expand(
-      RUN_DIR + "/process_data/{sample}.filt.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.filt.stat", sample=SAMPLES),
     consol=expand(
-      RUN_DIR + "/process_data/{sample}.{read}.consol.stat", 
+      RUN_DIR + "/process_data/stats/{sample}.{read}.consol.stat", 
       sample=SAMPLES, read=READS),
     align=expand(
-      RUN_DIR + "/process_data/{sample}.align.stat", sample=SAMPLES),
-    assim=RUN_DIR + "/process_data/" + RUN + ".assim.stat"
+      RUN_DIR + "/process_data/stats/{sample}.align.stat", sample=SAMPLES),
+    assim=RUN_DIR + "/process_data/stats/" + RUN + ".assim.stat"
   output:
     RUN_DIR + "/output/stats.core." + RUN + ".csv"
   params:
-    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
+    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R",
+    data_dir=RUN_DIR + "/process_data/stats/"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "Rscript {params.tool} {input} -o {output}"
+  shell: "Rscript {params.tool} -d {params.data_dir} -o {output}"
 
 rule eval_stat_matrix:
-  input: RUN_DIR + "/process_data/" + RUN + ".eval.stat"
+  input: RUN_DIR + "/output/" + RUN + ".eval.stat"
   output: RUN_DIR + "/output/stats.eval." + RUN + ".csv"
   params:
     tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "Rscript {params.tool} {input} -o {output}"
+  shell: "Rscript {params.tool} -f {input} -o {output}"
 
 rule gen_stat_report:
   input: 

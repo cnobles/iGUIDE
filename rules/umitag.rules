@@ -3,11 +3,11 @@
 
 rule collect_umitags:
   input:
-    RUN_DIR + "/process_data/{sample}.I2.fastq.gz"
+    RUN_DIR + "/process_data/demulti/{sample}.I2.fastq.gz"
   output:
-    seq=temp(RUN_DIR + "/process_data/{sample}.I2.trim.fastq.gz"),
-    umi=temp(RUN_DIR + "/process_data/{sample}.umitags.fasta.gz"),
-    stat=temp(RUN_DIR + "/process_data/{sample}.umitags.stat")
+    seq=temp(RUN_DIR + "/process_data/indices/{sample}.I2.trim.fastq.gz"),
+    umi=temp(RUN_DIR + "/process_data/indices/{sample}.umitags.fasta.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.umitags.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     seq=lambda wildcards: UMIseqs[wildcards.sample],

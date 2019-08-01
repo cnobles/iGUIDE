@@ -9,8 +9,13 @@ parser <- argparse::ArgumentParser(
 )
 
 parser$add_argument(
-  "files", nargs = "+", type = "character", 
-  help = "Paths to stat containing files (long, csv format). "
+  "-f", "--file", nargs = "+", type = "character", default = "NA",
+  help = "Path to files with *.stat files (long, csv format). "
+)
+
+parser$add_argument(
+  "-d", "--dir", nargs = "+", type = "character", default = "NA",
+  help = "Path to directory with *.stat files (long, csv format). "
 )
 
 parser$add_argument(
@@ -20,24 +25,37 @@ parser$add_argument(
 
 args <- parser$parse_args(commandArgs(trailingOnly = TRUE))
 
-# Manipulate file paths to determine stat types
-files_present <- sapply(args$files, file.exists)
+stopifnot(! all(c(args$file, args$dir) == "NA") )
 
-if( !all(files_present) ){
+# Manipulate file paths to determine stat types
+if( args$file != "NA" ){
+  is_present <- file.exists(args$file)
+}else{
+  is_present <- file.exists(args$dir)
+}
+
+if( !is_present ){
   stop(
-    "\n  Cannot find the following files: ", 
-    paste(args$files[!files_present], collapse = "\n    ")
+    "\n  Cannot find the following file(s) or directory: ", 
+    c(args$file, args$dir)[c(args$file, args$dir) != "NA"]
   )
 }
 
-file_names <- stringr::str_extract(args$files, "[\\w\\.\\-\\_]+$")
+if( args$file != "NA"){
+  file_names <- stringr::str_extract(args$file, "[\\w\\.\\-\\_]+$")
+  file_paths <- args$file
+}else{
+  file_names <- list.files(path = args$dir, pattern = "\\.stat$")
+  file_paths <- file.path(args$dir, file_names)
+}
+
 file_types <- sub("[\\w\\-\\_]+.", "", file_names, perl = TRUE)
 file_types <- sub(".stat", "", file_types)
 
 # Read in data in a long format
 long_data <- dplyr::bind_rows(
   lapply(
-    structure(args$files, names = file_types), 
+    structure(file_paths, names = file_types), 
     function(file){
       
       x <- try(
