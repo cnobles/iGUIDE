@@ -1,0 +1,125 @@
+# Configuration YAML - sections accompanied by brief descriptions
+
+# The sample info is a file that dictates the number of samples to generate 
+# reads for. Feel free to modify the sampleInfo.csv file supplied. Samples 
+# treated with multiple guide RNAs can have all the guide RNA names present but 
+# delimited by a semi-colon ";". Required fields are sampleName, gRNA, barcode1,
+# and barcode2. Barcode1 is associated with the I1 read while barcode2 is 
+# associated with the I2 read.
+sample_info : "../sampleInfo.csv"
+
+# Reference genome, recommened hg38. Genome will need to be installed through
+# the BSgenome R-package (BioConductor).
+ref_genome : "hg38"
+
+# Guide RNA names need to match those given to samples in the sample info file.
+# The following sequence can include or not include PAM sequences. Text can be 
+# input in upper or lower case.
+guide_rna_sequences :
+    B2M : "GAGTAGCGCGAGCACAGCTANGG"
+    TRAC : "TGTGCTAGACATGAGGTCTANGG"
+    TRBC : "GGAGAATGACGAGTGGACCCNGG"
+
+# The PAM sequence is a recongnition site directly adjacent to the guideRNA 
+# matching site. The PAM sequence must match completely for a site to be 
+# considered for off-target. 
+pam_sequence : "NGG"
+
+# On-target sites are the genomic coordinates of the on-target cutting. Each 
+# site expected to be the on-target location (within the reference) should be 
+# included below. Names given to the on-target sites should match the gRNA 
+# names. If multiple sites exist for a single guide RNA, add a number to the end
+# of the name to make each unique, but separate the number with an apostrophe 
+# "'".
+on_target_sites :
+    B2M : "chr15:-:44711569"
+    TRAC : "chr14:+:22547664"
+    TRBC'1 : "chr7:+:142792020"
+    TRBC'2 : "chr7:+:142801367"
+
+# Additional parameters for on-target sites. Abund determines the number of 
+# unique reads associated with each on-target site.
+on_target_params :
+    abund : 250
+
+# Off-target parameters: "num" is the number of off-target sites per guide RNA,
+# "abund" will be the number of unique reads per off-target site, a single 
+# value can be input or a string of values the same length as the quantity of
+# "num", and "mismatch" determines how many mismatches will be allowed for the 
+# search for off-targets. Higher numbers take longer to process, but too low 
+# and the number of returned off-target sites may not be sufficient for the 
+# request. Off-target sites will be chosen from the those with the lowest 
+# mismatch first.
+off_target_params:
+    num : 5
+    abund : [25, 15, 10, 5, 1]
+    mismatch : 3
+
+# False target sites do not have a relation with the guide RNAs. They can be 
+# named whatever you would like. The associated parameters determines how many
+# unique reads will be associated with each site.
+false_target_sites :
+    TET2 : "chr4:+:105272459"
+false_target_params :
+    abund : 10
+
+# Many sites observed in experimental data appear to not be associate with guide
+# RNAs or treatment. These incorporation sites can make up most the data 
+# collected from an iGUIDE or GUIDE-seq experiment. Here, they are simulated 
+# with a random uniform distribution across the reference genome, or on specific
+# chromosomes as determined by "chrs". "num" determines the number of random 
+# sites per gRNA to be included into a pool that will then be drawn from for 
+# each sample. "max_abund" will be the upper limit on the number of unique reads
+# to include for each random site.
+random_background:
+    num : 100
+    chrs : 
+    max_abund : 2
+
+# Seqs are all the associated sequences found appended onto the templates. The 
+# structure of a template is essentially:
+# P5 - BC2* - PI2 - genome - rcODNbit - rcPI1 - BC2 - rcP7
+# where rc refers to reverse complement. *Note: I2 sequence reads are platform
+# specific. Four-color chemistry uses priming from P5 to capture the I2 read, 
+# while Two-color chemistry uses a dedicated primer, similar to I1. This means 
+# that depending on platform, I2 may be sense or anti-sense of the BC2 sequence.
+seqs:
+    # Linker-side flowcell-annealing sequence
+    P5 : "AATGATACGGCGACCACCGAGATCTACAC"
+    # Linker Sequence between ID and genome
+    PI2 : "ACACTCTTTCCCTACACGACGCTCTTCCGATCT"
+    # Incorporation-side flowcell-annealing sequence
+    P7 : "CAAGCAGAAGACGGCATACGAGAT"
+    # Incorporation-side sequence between ID and ODN bit sequence
+    PI1 : "GTGACTGGAGTCCTCTCTATGGGCAGTCGGTGATTTGAGTTGTCATATGTTAATAACGGTAT"
+    # dsODN bit sequence is unprimed against an is between PI1 and genome seqs
+    ODNbit : "ACGCGA"
+    # Sequencing Primers - MiSeq
+    R1 : "ACACTCTTTCCCTACACGACGCTCTTCCGATCT"
+    I1 : "ATCACCGACTGCCCATAGAGAGGACTCCAGTCAC"
+    I2 : "AATGATACGGCGACCACCGAGATCTACAC"
+    R2 : "GTGACTGGAGTCCTCTCTATGGGCAGTCGGTGAT"
+
+# Cycling parameters used for Illumina bases runs.
+seq_dists :
+    R1 : 150
+    I1 : 8
+    I2 : 16
+    R2 : 150
+
+# Output sequence file names.
+seq_files :
+    R1 : "Undetermined_S0_L001_R1_001.fastq.gz"
+    I1 : "Undetermined_S0_L001_I1_001.fastq.gz"
+    I2 : "Undetermined_S0_L001_I2_001.fastq.gz"
+    R2 : "Undetermined_S0_L001_R2_001.fastq.gz"
+
+# Minimum length of genomic template sequence.
+min_length : 35
+
+# Quality score used to fill quality parameters for fastq files.
+fill_qual : "B"
+
+# Type of Illumina based instrument being used. Options include miseq or miniseq
+# platforms. See comments in Seqs for importance.
+instrument : "miseq"
