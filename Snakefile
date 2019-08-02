@@ -112,7 +112,7 @@ if not "readNamePattern" in config:
 
 # Regex constraints on wildcards
 wildcard_constraints:
-    sample="[\w]+",
+    sample="[\w\-\_]+",
     read="R[12]",
     read_type="[RI][12]",
     req_type="[RI][12]"
