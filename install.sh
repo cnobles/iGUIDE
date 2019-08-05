@@ -244,7 +244,7 @@ function install_iguideSupport () {
     if [[ $(__unittest_iguideSupport) != true ]]; then
         installation_error "iGUIDE Support R-package unit tests"
     else
-        debug_capture R CMD INSTALL tools/iguideSupport 2>&1
+        debug_capture R CMD INSTALL tools/iguideSupport &> /dev/null
     fi
     
     if [[ $(__test_iguideSupport) != true ]]; then
