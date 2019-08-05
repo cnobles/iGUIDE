@@ -32,6 +32,8 @@ dependencies:
   - r-digest
   - r-statmod
   - r-devtools
+  - r-testthat
+  - r-roxygen2
   - bioconductor-biocgenerics
   - bioconductor-iranges
   - bioconductor-genomicranges

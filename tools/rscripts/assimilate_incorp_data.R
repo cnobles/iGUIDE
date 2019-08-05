@@ -9,6 +9,7 @@
 # Required / highly suggested option parameters and library ----
 options(stringsAsFactors = FALSE, scipen = 99, width = 999)
 suppressMessages(library("magrittr"))
+suppressMessages(library("iguideSupport"))
 
 # Set up and gather command line arguments ----
 parser <- argparse::ArgumentParser(
@@ -120,17 +121,6 @@ print(
   row.names = FALSE
 )
 
-
-# Source supporting functions ----
-# Set the code_dir from the commandline call to the script
-code_dir <- dirname(sub(
-  pattern = "--file=", 
-  replacement = "", 
-  x = grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
-))
-
-## Load in supporting functions for the analysis
-source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
 
 # Inputs and parameters ----
 # Run parameters and sample parameters

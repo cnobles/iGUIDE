@@ -111,7 +111,7 @@ if( !args$quiet ){
 # Load dependancies ----
 if( !args$quiet ) cat("\nLoading dependencies.\n")
 
-add_packs <- c("magrittr", "knitr")
+add_packs <- c("magrittr", "knitr", "iguideSupport")
 
 add_packs_loaded <- suppressMessages(
   sapply(add_packs, require, character.only = TRUE)
@@ -131,15 +131,6 @@ if( !all(add_packs_loaded) ){
   stop("Check dependancies.\n")
   
 }
-
-code_dir <- dirname(sub(
-  pattern = "--file=", 
-  replacement = "", 
-  x = grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
-))
-
-source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
-source(file.path(code_dir, "supporting_scripts/nucleotideScoringMatrices.R"))
 
 
 # Import metadata and consolidate objects ----
@@ -1529,7 +1520,7 @@ if( nrow(ft_MESL) > 0 ){
     dplyr::group_by(order) %>%
     dplyr::mutate(
       ESL = predictESProb(
-        x = edit.site.dist, density = on_tar_dens[[condition]]
+        z = edit.site.dist, density = on_tar_dens[[condition]]
       ),
       gene_id = matched_summary$gene_id[
         match(edit.site, matched_summary$edit.site)

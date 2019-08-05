@@ -1,0 +1,36 @@
+Package: iguideSupport
+Type: Package
+Title: Support functions for processing and analyzing within the iGUIDE pipeline
+Version: 0.1.0
+Author: Christopher Nobles, Ph.D.
+Maintainer: Christopher Nobles <chris.l.nobles@gmail.com>
+Description: 
+    iGUIDE is a pipeline for identifying double strand breaks from genomic DNA
+    using a small DNA oligo based marker method. Sequences obtained by applying
+    the iGUIDE protocol to a treated sample mark out such double strand breaks.
+    It is therefore up to informatic analysis to discern the signal for nuclease
+    specific double strand breaks from the noise of naturally occurring double
+    strand breaks. This r-package carries many support functions for this 
+    analysis.
+Imports:
+    dplyr (>= 0.5),
+    GenomicRanges (>= 1.30),
+    igraph (>= 1.0.1),
+    IRanges (>= 2.10),
+    magrittr(>= 1.0),
+    Matrix (>= 1.2),
+    parallel(>= 3.2),
+    S4Vectors (>= 0.12)
+Suggests:
+    Biostrings,
+    digest,
+    geneRxCluster,
+    hiAnnotator,
+    plyr,
+    ShortRead,
+    stringr,
+    testthat
+License: GNU General Public License v3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1.9000

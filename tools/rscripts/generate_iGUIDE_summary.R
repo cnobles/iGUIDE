@@ -132,7 +132,7 @@ catOrWrite <- function(obj, args, big.mark = ",", style = "simple", ...){
 
 
 # Load dependancies ----
-add_packs <- c("magrittr")
+add_packs <- c("magrittr", "iguideSupport")
 
 add_packs_loaded <- suppressMessages(
   sapply(add_packs, require, character.only = TRUE)
@@ -152,14 +152,6 @@ if( !all(add_packs_loaded) ){
   stop("Check dependancies.\n")
   
 }
-
-code_dir <- dirname(sub(
-  pattern = "--file=", 
-  replacement = "", 
-  x = grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
-))
-
-source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
 
 
 # Import metadata and consolidate into report objects ----
