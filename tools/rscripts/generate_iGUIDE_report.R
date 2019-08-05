@@ -136,7 +136,7 @@ print(
 # Load dependancies ----
 cat("\nLoading dependencies.\n")
 
-add_packs <- c("magrittr", "knitr")
+add_packs <- c("magrittr", "knitr", "iguideSupport")
 
 add_packs_loaded <- suppressMessages(
   sapply(add_packs, require, character.only = TRUE)
@@ -156,14 +156,6 @@ if( !all(add_packs_loaded) ){
   stop("Check dependancies.\n")
   
 }
-
-code_dir <- dirname(sub(
-  pattern = "--file=", 
-  replacement = "", 
-  x = grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
-))
-
-source(file.path(code_dir, "supporting_scripts/iguide_support.R"))
 
 
 # Import metadata and consolidate into report objects ----
@@ -468,7 +460,9 @@ if( args$data ){
 
 if( args$format == "html" ){
   
-  css_path <- normalizePath(file.path(code_dir, "report_templates/iguide.css"))
+  css_path <- normalizePath(
+    file.path(root_dir, "tools/rscripts/report_templates/iguide.css")
+  )
   
   rmarkdown::render(
     input = template_path,
