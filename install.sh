@@ -6,7 +6,7 @@ read -r -d '' __usage <<-'EOF'
   -e --environment  [arg] Environment to install to. Default: "iguide"
   -s --iguide_dir   [arg] Location of iguide source code. Default: this directory
   -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
-  -u --update [arg]       Update iguide [lib]rary, conda [env], or [all].
+  -u --update [arg]       Update iguide [lib]rary, package [pkg], conda [env], or [all].
   -r --requirements       Install from requirements rather than build (slow).
   -t --test               After installation, run test to check functionality.
   -v --verbose            Show subcommand output
@@ -86,8 +86,11 @@ fi
 if [[ "${arg_u}" = "all" || "${arg_u}" = "env" ]]; then
     __update_lib=true
     __update_env=true
+    __update_pkg=true
 elif [[ "${arg_u}" = "lib" ]]; then
     __update_lib=true
+elif [[ "${arg_u}" = "pkg" ]]; then
+    __update_pkg=true
 fi
 
 function __test_conda() {
@@ -133,9 +136,31 @@ function __test_r_packages () {
     activate_iguide
 
     $(Rscript ${__iguide_dir}/tools/rscripts/check_for_required_packages.R \
-        > /dev/null) && echo true || echo false
+        &> /dev/null) && echo true || echo false
 
     deactivate_iguide
+}
+
+function __unittest_iguideSupport () {
+    if [[ $(__test_env) = true ]]; then
+        activate_iguide
+        $(Rscript ${__iguide_dir}/tools/rscripts/check_iguideSupport.R \
+            &> /dev/null) && echo true || echo false
+        deactivate_iguide
+    else
+        echo false
+    fi
+}
+
+function __test_iguideSupport () {
+    if [[ $(__test_env) = true ]]; then
+        activate_iguide
+        $(Rscript ${__iguide_dir}/tools/rscripts/check_pkgs.R iguideSupport \
+            &> /dev/null) && echo true || echo false
+        deactivate_iguide
+    else
+        echo false
+    fi
 }
 
 function __test_iguidelib() {
@@ -196,7 +221,7 @@ function install_environment () {
         local install_options="--quiet --file etc/requirements.yml"
         debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --yes --file etc/build.b0.9.6.txt"
+        local install_options="--quiet --yes --file etc/build.b0.9.7.txt"
         debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
 
@@ -211,6 +236,22 @@ function install_environment () {
     if [[ $(__test_r_packages) != true ]]; then
         installation_error "R-package installation"
     fi
+}
+
+function install_iguideSupport () {
+    activate_iguide
+    
+    if [[ $(__unittest_iguideSupport) != true ]]; then
+        installation_error "iGUIDE Support R-package unit tests"
+    else
+        debug_capture R CMD INSTALL tools/iguideSupport 2>&1
+    fi
+    
+    if [[ $(__test_iguideSupport) != true ]]; then
+      	installation_error "iGUIDE Support R-package installation"
+    fi
+    
+    deactivate_iguide
 }
 
 function install_env_vars () {
@@ -249,6 +290,8 @@ __conda_installed=$(__test_conda)
 debug "    Conda:         ${__conda_installed}"
 __env_exists=$(__test_env)
 debug "    Environment:   ${__env_exists}"
+__iguidepkg_installed=$(__test_iguideSupport)
+debug "    R-package:     ${__iguidepkg_installed}"
 __iguidelib_installed=$(__test_iguidelib)
 debug "    Library:       ${__iguidelib_installed}"
 
@@ -279,7 +322,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.b0.9.6.txt"
+        __build_source="etc/build.b0.9.7.txt"
     fi
 
     info "Creating iGUIDE environment..."
@@ -287,6 +330,21 @@ else
     install_environment
     __env_changed=true
     info "$__iguide_env environment created."
+fi
+
+
+# Install iguideSupport into environment if changed or requested
+if [[ $__env_changed = true ]]; then
+    info "Environment installed/updated; (re)installing iGUIDE Support R-package..."
+    install_iguideSupport
+elif [[ $__iguidepkg_installed = false ]]; then
+    info "Installing iGUIDE Support R-package..."
+    install_iguideSupport
+elif [[ $__update_pkg = true ]]; then
+    info "Updating iGUIDE Support R-package..."
+    install_iguideSupport
+else
+    info "iGUIDE Support R-package already installed (use '--update pkg' to update)"
 fi
 
 
