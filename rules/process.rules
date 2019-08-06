@@ -75,7 +75,7 @@ rule iguide_evaluation:
   run:
     call_str="Rscript {params.tool} {params.config} -o {output.eval}"
     if (config["suppFile"]):
-      call_str=call_str + " -s " + ROOT_DIR + "/" + config["Supplemental_Info"]
+      call_str=call_str + " -s " + str(SUPPINFO_PATH)
     call_str=call_str + " --stat {output.stat} > {log} 2>&1"
     shell(call_str)
 

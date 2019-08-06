@@ -1,5 +1,7 @@
 from os import getenv, getcwd, path, chdir
 from subprocess import run, PIPE
+from pathlib import Path
+
 
 def import_sample_info(filePath, sampleColName, delim):
     sampleInfo = {}
@@ -18,6 +20,7 @@ def import_sample_info(filePath, sampleColName, delim):
             sampleInfo[m] = colData
     return sampleInfo
 
+
 def choose_sequence_data(config_input, sampleInfo):
     if "sampleInfo" in config_input:
         colnam = config_input.split(":")[1]
@@ -29,6 +32,24 @@ def choose_sequence_data(config_input, sampleInfo):
         samples = list(sampleInfo[initial_col])
         seq = dict(zip(samples, [config_input] * len(samples)))
     return seq
+
+
+def get_file_path(param, config, root):
+    if not str(param) in config:
+        raise SystemExit(
+            "Cannot locate config parameter: {}".format(str(param))
+        )
+    file_path = Path(config[str(param)])
+    if not file_path.exists():
+        abs_file_path = Path(root) / file_path
+        if not abs_file_path.exists():
+            raise SystemExit(
+                "Cannot locate file specified by: {}".format(config[str(param)])
+            )
+        else:
+            file_path = abs_file_path
+    return file_path.absolute()
+
 
 def get_iguide_version(with_hash = False):
     iguide_path = getenv("IGUIDE_DIR", None)

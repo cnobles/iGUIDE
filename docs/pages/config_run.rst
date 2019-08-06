@@ -31,7 +31,9 @@ Run configuration
   samples with identical parameters. The format for this file is quite loose, 
   and it only requires a single column ``Specimen``, which should match the 
   names of specimens in the sample information file. For more information about
-  this file, please see the Supplemental Information page.
+  this file, please see the Supplemental Information page. If no file is to be 
+  used, set the value for this parameter to ``"."`` and make sure to set the 
+  ``suppFile`` in the run protion of the config to ``FALSE``. 
   
 ``Ref_Genome``
   This is a designation for the reference genome to used during processing. The

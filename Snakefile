@@ -9,12 +9,51 @@ import re
 import yaml
 import configparser
 from pathlib import Path
-from iguidelib import import_sample_info, choose_sequence_data
+from iguidelib import import_sample_info, choose_sequence_data, get_file_path
 
 if not config:
     raise SystemExit(
         "No config file specified. Feel free to use the test config as a"
         "template to generate a config file, and specify with --configfile")
+
+# Working paths
+RUN = config["Run_Name"]
+ROOT_DIR = ""
+try:
+    ROOT_DIR = os.environ["IGUIDE_DIR"]
+except KeyError:
+    raise SystemExit(
+        "IGUIDE_DIR environment variable not defined. Are you sure you "
+        "activated the iguide conda environment?")
+RUN_DIR = ROOT_DIR + "/analysis/" + RUN
+
+# Check for directory paths
+if not os.path.isdir(ROOT_DIR):
+    raise SystemExit("Path to iGUIDE is not found. Check environmental variables.")
+
+# Check for sequence file paths
+if not os.path.isdir(config["Seq_Path"]):
+    raise SystemExit("Path to sequencing files is not found (Seq_Path). Check your config file.")
+
+# Check for config symlink to check proper run directory setup
+if not os.path.isfile(RUN_DIR + "/config.yml"):
+    raise SystemExit("Path to symbolic config is not present. Check to make sure you've run 'iguide setup' first.")
+
+# Check for sampleInfo path
+if not "Sample_Info" in config:
+    raise SystemExit("Sample_Info parameter missing in config file. Please specify before continuing.")
+else:
+    SAMPLEINFO_PATH = get_file_path("Sample_Info", config, ROOT_DIR)
+
+# Check for suppInfo path
+if config["suppFile"]:
+    if not "Supplemental_Info" in config:
+        raise SystemExit("Supplemental_Info parameter missing in config file. If not including a file, please specify with '.' .")
+    else:
+        if config["Supplemental_Info"] == ".":
+            SUPPINFO_PATH = "."
+        else:
+            SUPPINFO_PATH = get_file_path("Supplemental_Info", config, ROOT_DIR)
 
 # Import sampleInfo
 if ".csv" in config["Sample_Info"]:
@@ -41,29 +80,6 @@ R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
 R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
 R2_LEAD_ODN=choose_sequence_data(config["R2_Leading_Trim_ODN"], sampleInfo)
 R2_OVER=choose_sequence_data(config["R2_Overreading_Trim"], sampleInfo)
-
-# Working paths
-RUN = config["Run_Name"]
-ROOT_DIR = ""
-try:
-    ROOT_DIR = os.environ["IGUIDE_DIR"]
-except KeyError:
-    raise SystemExit(
-        "IGUIDE_DIR environment variable not defined. Are you sure you "
-        "activated the iguide conda environment?")
-RUN_DIR = ROOT_DIR + "/analysis/" + RUN
-
-# Check for directory paths
-if not os.path.isdir(ROOT_DIR):
-    raise SystemExit("Path to iGUIDE is not found. Check environmental variables.")
-
-# Check for sequence file paths
-if not os.path.isdir(config["Seq_Path"]):
-    raise SystemExit("Path to sequencing files is not found (Seq_Path). Check your config file.")
-
-# Check for config symlink to check proper run directory setup
-if not os.path.isfile(RUN_DIR + "/config.yml"):
-    raise SystemExit("Path to symbolic config is not present. Check to make sure you've run 'iguide setup' first.")
 
 # Default params if not included in config
 if not "maxNcount" in config:
