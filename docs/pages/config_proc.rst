@@ -188,7 +188,8 @@ Report
 ``suppFile``
   Logical (``TRUE`` or ``FALSE``), if the supplemental file provided in 
   ``Supplemental_Info`` should be used in the default report generated at the
-  end of processing.
+  end of processing. If set to ``FALSE``, the ``Supplemental_Info`` parameter
+  is not required for processing.
 
 ``{tables/figures}``
   Logicals indicating if tables and figures should be generated from the report. 

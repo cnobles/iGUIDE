@@ -24,7 +24,7 @@ EOF
 # Load BASH3Boilerplate for command-line parsing and logging
 source etc/b3bp.sh
 
-function __err_report() {
+function __err_report () {
     local error_code
     error_code=${?}
     error "Error in ${__file} in function ${1} on line ${2}"
@@ -73,8 +73,6 @@ __req_r_version="3.4.1"
 __old_path=$PATH
 __output=${2-/dev/stdout}
 
-PATH=$PATH:${__conda_path}/bin
-
 if [[ "${arg_t:?}" = "1" ]]; then
     __run_iguide_tests=true
 fi
@@ -89,15 +87,17 @@ if [[ "${arg_u}" = "all" || "${arg_u}" = "env" ]]; then
     __update_pkg=true
 elif [[ "${arg_u}" = "lib" ]]; then
     __update_lib=true
+    __update_pkg=false
 elif [[ "${arg_u}" = "pkg" ]]; then
+    __update_lib=false
     __update_pkg=true
 fi
 
-function __test_conda() {
+function __test_conda () {
     command -v conda &> /dev/null && echo true || echo false
 }
 
-function __detect_conda_install() {
+function __detect_conda_install () {
     local discovered=$(__test_conda)
 
     if [[ $discovered = true ]]; then
@@ -107,7 +107,7 @@ function __detect_conda_install() {
     fi
 }
 
-function __test_env() {
+function __test_env () {
     if [[ $(__test_conda) = true ]]; then
         $(conda env list \
         | cut -f1 -d' ' \
@@ -280,6 +280,7 @@ function install_iguidelib () {
     deactivate_iguide
 }
 
+
 info "Starting iGUIDE installation..."
 info "    Conda path:  ${__conda_path}"
 info "    iGUIDE src:  ${__iguide_dir}"
@@ -288,12 +289,19 @@ info "    iGUIDE env:  '${__iguide_env}'"
 debug "Components detected:"
 __conda_installed=$(__test_conda)
 debug "    Conda:         ${__conda_installed}"
-__env_exists=$(__test_env)
-debug "    Environment:   ${__env_exists}"
-__iguidepkg_installed=$(__test_iguideSupport)
-debug "    R-package:     ${__iguidepkg_installed}"
-__iguidelib_installed=$(__test_iguidelib)
-debug "    Library:       ${__iguidelib_installed}"
+
+if [[ $__conda_installed = false ]]; then
+    PATH=$PATH:${__conda_path}/bin
+elif [[ $__conda_installed = true ]]; then
+    # Source conda into shell
+    source ${__conda_path}/etc/profile.d/conda.sh
+    __env_exists=$(__test_env)
+    debug "    Environment:   ${__env_exists}"
+    __iguidepkg_installed=$(__test_iguideSupport)
+    debug "    R-package:     ${__iguidepkg_installed}"
+    __iguidelib_installed=$(__test_iguidelib)
+    debug "    Library:       ${__iguidelib_installed}"
+fi
 
 __env_changed=false
 

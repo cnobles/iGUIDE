@@ -35,4 +35,5 @@ broken into a few parts:
    pages/config_nucs.rst
    pages/config_proc.rst
    pages/sampleinfo.rst
+   pages/suppinfo.rst
    pages/changelog.rst   
