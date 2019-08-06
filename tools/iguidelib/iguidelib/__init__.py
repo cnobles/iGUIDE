@@ -37,7 +37,7 @@ def choose_sequence_data(config_input, sampleInfo):
 def get_file_path(param, config, root):
     if not str(param) in config:
         raise SystemExit(
-            "Cannot locate config parameter: {}".format(config[str(param)])
+            "Cannot locate config parameter: {}".format(str(param))
         )
     file_path = Path(config[str(param)])
     if not file_path.exists():
