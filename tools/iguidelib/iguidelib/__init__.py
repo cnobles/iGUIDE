@@ -41,7 +41,7 @@ def get_file_path(param, config, root):
         ).format(config[str(param)])
     file_path = Path(config[str(param)])
     if not file_path.exists():
-        abs_file_path = Path(ROOT_DIR) / file_path
+        abs_file_path = Path(root) / file_path
         if not abs_file_path.exists():
             raise SystemExit(
                 "Cannot locate file specified by: {}"
