@@ -2,23 +2,23 @@
 
 __conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
-read -r -d '' __usage <<-'EOF'
-  -e --environment  [arg] Environment to install to. Default: "iguide"
-  -s --iguide_dir   [arg] Location of iguide source code. Default: this directory
-  -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
-  -u --update [arg]       Update iguide [lib]rary, package [pkg], conda [env], or [all].
-  -r --requirements       Install from requirements rather than build (slow).
-  -t --test               After installation, run test to check functionality.
-  -v --verbose            Show subcommand output
-  -d --debug              Run in debug mode.
-  -h --help               Display this message and exit.
-EOF
-
-read -r -d '' __helptext <<-'EOF'
- This script installs or upgrades iGUIDE, including Conda (if not installed).
- To upgrade, pass the '--upgrade all' option, then be sure to update your config
- files using 'iguide config update'.
-EOF
+# read -r -d '' __usage <<-'EOF'
+#   -e --environment  [arg] Environment to install to. Default: "iguide"
+#   -s --iguide_dir   [arg] Location of iguide source code. Default: this directory
+#   -c --conda  [arg]       Location of Conda installation. Default: ${PREFIX}
+#   -u --update [arg]       Update iguide [lib]rary, package [pkg], conda [env], or [all].
+#   -r --requirements       Install from requirements rather than build (slow).
+#   -t --test               After installation, run test to check functionality.
+#   -v --verbose            Show subcommand output
+#   -d --debug              Run in debug mode.
+#   -h --help               Display this message and exit.
+# EOF
+# 
+# read -r -d '' __helptext <<-'EOF'
+#  This script installs or upgrades iGUIDE, including Conda (if not installed).
+#  To upgrade, pass the '--upgrade all' option, then be sure to update your config
+#  files using 'iguide config update'.
+# EOF
 
 
 # Load BASH3Boilerplate for command-line parsing and logging
@@ -292,6 +292,9 @@ debug "    Conda:         ${__conda_installed}"
 
 if [[ $__conda_installed = false ]]; then
     PATH=$PATH:${__conda_path}/bin
+    __env_exists=$(echo false)
+    __iguidepkg_installed=$(echo false)
+    __iguidelib_installed=$(echo false)
 elif [[ $__conda_installed = true ]]; then
     # Source conda into shell
     source ${__conda_path}/etc/profile.d/conda.sh
