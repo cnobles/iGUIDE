@@ -4,37 +4,42 @@
    :depth: 2
 
 
-Sample Information Files
+Supplemental Information Files
 ========================
 
-Sample information files (or sampleInfo files) contain information that may 
-change from specimen to specimen. They need to contain at lease 3 columns of 
-information: sample names, barcode 1, and barcode 2 sequences. Additionally, 
-other parameters defined in the config file can be defined in the sample 
-information file if they change from specimen to specimen. 
+Supplemental information files (or supp files) contain information that may 
+change from specimen to specimen. They have only one required column, 
+"Specimen", but subsequence columns will be used to define conditions. Let's use
+the below supp file as an example.::
 
-Run specific config file will need to point to the sample information files. For 
-convienence, a directory can be found at ``iGUIDE/sampleInfo/`` for depositing 
-these files.
+  # Supplemental csv file example, padding included for visualization
+  Specimen, Nuclease, gRNA
+  iGXA,     Cas9,     TRAC
+  iGXB,     Cas9,     TRAC
+  iGXC,     Cas9,     B2M
+  iGXD,     Cas9,     B2M
+  iGXE,     Mock,     Mock
+  iGXF,     Mock,     Mock
+  
+This type of setup would indicate that there are 6 specimens to be analyzed 
+(iGXA - iGXF). Each of these would correlate with their sampleName'd replicates,
+so for iGXA, all samples with the format iGXA-{number} or iGXA-{info}-{number}
+would be pooled into the iGXA specimen.
 
-SampleInfo files need to have a specific naming format that follows 
-'{RunName}.sampleinfo.csv'.
+Additionally, there are three conditions, defined by the distinct data excluding
+information in the "Specimen" column. So in this case, the conditions are 
+"Cas9-TRAC", "Cas9-B2M", and "Mock-Mock". Within the report format, there are 
+several analyses that are conditionally based rather than specimen based. This 
+adds to the flexibility and utility of the reporting functions supplied with 
+iGUIDE. 
 
-An appropriate format for the sample names is "{specimen}-{rep}" where 
-'specimen' is an alpha-numeric designator for the specimen and 'rep' is a 
-numeric identifier for technical or biological replicates, separated by a dash 
-(``-``). Replicates will be pooled during the final analysis, so if you want 
-them to be separate in the report, make sure you give each specimen a different 
-identifier. 
+If the user would rather ever specimen analyzed independently and reported in 
+that manner, then they can either run a report without a supp file or in a supp
+file include a column that distinguishes each specimen from each other.
 
-For example, iGSP0002-1 and iGSP0002-2, will be pooled together for 
-the report and analysis, but iGSP0002-1 and iGSP0003-1 will not. These names 
-will be used in naming files, so do not include any special characters that will
-confuse file managment. Try to stick to common delimiters, such as ``-`` and ``_``.
-Using a dot, ``.``, as a delimiter is not currently supported. 
-
-A good practice is to put specimen identifiers at the beginning, replicate 
-identifiers at the end following a "-", and anything else descriptive in the 
-middle. For example, iGSP0002-neg-1, can specify the orientation the sample was 
-processed with.
-
+Column names and formating are transferred directly into the report. 
+Additionally, this files sets the order presented in the report. If "iGXC"
+comes before "iGXB" in the supp file, the it will be orderd as so throughout the
+report. Conditions, as well, follow this format. As presented above, the report
+will order the conditions in the following order "Cas9-TRAC", "Cas9-B2M", and 
+"Mock-Mock", which is the order of first observation.

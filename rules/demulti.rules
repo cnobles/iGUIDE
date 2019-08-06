@@ -3,7 +3,6 @@
 
 rule demultiplex:
   input:
-    #configFile=ancient("configs/" + RUN + ".config.yml"),
     sampleInfo=ancient(str(SAMPLEINFO_PATH)),
     R1=str(Path(config["Seq_Path"]) / config["R1"]),
     R2=str(Path(config["Seq_Path"]) / config["R2"]),
