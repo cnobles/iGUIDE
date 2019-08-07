@@ -23,7 +23,7 @@ rule post_align:
   log:
     RUN_DIR + "/logs/{sample}.couple.log"
   resources:
-    mem_mb=lambda wildcards, attempt: attempt * config["coupleMB"]
+    mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
   shell:
     """
     Rscript {params.tool} {input.sampleR2} {input.sampleR1} \

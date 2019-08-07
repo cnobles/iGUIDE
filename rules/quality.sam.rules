@@ -1,0 +1,49 @@
+# -*- mode: Snakemake -*-
+# Quality Processing: SAM-output aligners
+
+rule sort_bam:
+  input: RUN_DIR + "/process_data/align/{sample}.unsorted.bam"
+  output: temp(RUN_DIR + "/process_data/align/{sample}.bam")
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: "samtools sort {input} -o {output}"
+
+rule index_bam:
+  input: RUN_DIR + "/process_data/align/{sample}.bam"
+  output: temp(RUN_DIR + "/process_data/align/{sample}.bai")
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: "samtools index -b {input} {output}"
+
+rule post_align:
+  input:
+    bam=RUN_DIR + "/process_data/align/{sample}.bam",
+    bai=RUN_DIR + "/process_data/align/{sample}.bai"
+  output:
+    uniq=temp(RUN_DIR + "/process_data/post_align/{sample}.uniq.csv"),
+    chimera=temp(RUN_DIR + "/process_data/post_align/{sample}.chimera.rds"),
+    multihit=temp(RUN_DIR + "/process_data/post_align/{sample}.multihits.rds"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.align.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/samqc.R",
+    ref=config["Ref_Genome"],
+    start=config["maxAlignStart"],
+    pct=config["minPercentIdentity"],
+    minLen=config["minTempLength"],
+    maxLen=config["maxTempLength"],
+    readNamePatternArg=config["readNamePattern"]
+  log:
+    RUN_DIR + "/logs/{sample}.samqc.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
+  shell:
+    """
+    Rscript {params.tool} {input.bam} {input.bai} \
+      -o {output.uniq} --chimera {output.chimera} --multihit {output.multihit} \
+      -g {params.ref} --maxAlignStart {params.start} \
+      --minPercentIdentity {params.pct} --minTempLength {params.minLen} \
+      --maxTempLength {params.maxLen} \
+      --readNamePattern {params.readNamePatternArg} \
+      --stat {output.stat} > {log} 2>&1
+    """
+

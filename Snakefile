@@ -111,8 +111,8 @@ if not "consolMB" in config:
 if not "alignMB" in config:
     config["alignMB"] = 4000
 
-if not "coupleMB" in config:
-    config["coupleMB"] = 4000
+if not "qualCtrlMB" in config:
+    config["qualCtrlMB"] = 4000
     
 if not "assimilateMB" in config:
     config["assimilateMB"] = 4000
@@ -160,13 +160,14 @@ else:
 
 include: "rules/filt.rules"
 
-include: "rules/consol.rules"
-
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
+    include: "rules/consol.rules"
     include: "rules/align.blat.rules"
     include: "rules/quality.blat.rules"
 elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
-    raise SystemExit("BWA aligner not supported yet.")
+    include: "rules/consol_stub.rules"
+    include: "rules/align.bwa.rules"
+    include: "rules/quality.sam.rules"
 else:
     "Aligner: " + config["Aligner"] + " not supported."
     "Please choose a supported option: BLAT or BWA."
