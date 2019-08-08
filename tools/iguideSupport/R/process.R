@@ -1099,16 +1099,25 @@ predictESProb <- function(z, density, range = NULL){
 
   if( is.null(range) & class(density) == "density" ) range <- range(density$x)
 
-  idx <- match(z, round(density$x))
-  vapply(idx, function(i){
-      if(is.na(i)){
-        return(NA)
-      }else{
-        return(with(density, 1 - sum(y[seq_len(i)] * rep(diff(x)[1], i))))
-      }
-    },
-    numeric(1)
-  )
+  if( class(density) == "density"){
+    
+    idx <- match(z, round(density$x))
+    
+    return(vapply(idx, function(i){
+        if(is.na(i)){
+          return(NA)
+        }else{
+          return(with(density, 1 - sum(y[seq_len(i)] * rep(diff(x)[1], i))))
+        }
+      },
+      numeric(1)
+    ))
+    
+  }else{
+    
+    return(rep(NA, length(z)))
+    
+  }
 
 }
 

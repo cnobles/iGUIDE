@@ -191,7 +191,7 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
 
   if( !is.null(grp.col) ){
 
-    stopifnot(all(unlist(lapply(
+    stopifnot(all(BiocGenerics::unlist(BiocGenerics::lapply(
       grl,
       function(x) grp.col %in% names(GenomicRanges::mcols(x))
     ))))
@@ -206,17 +206,19 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
     c(0, cumsum(as.numeric(ref_len))), names = c("start", names(ref_len))
   )
 
-  gen_densities <- lapply(
+  gen_densities <- BiocGenerics::lapply(
     grl,
     function(x){
 
       if( is.null(grp.col) ){
         x <- list(x)
       }else{
-        x <- split(x, GenomicRanges::mcols(x)[,grp.col, drop = FALSE])
+        x <- GenomicRanges::split(
+          x, GenomicRanges::mcols(x)[,grp.col, drop = FALSE]
+        )
       }
 
-      dplyr::bind_rows(lapply(
+      dplyr::bind_rows(BiocGenerics::lapply(
         x,
         function(y){
           y <- genomicDensity(
@@ -227,7 +229,7 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
 
           cum_adj_pos <- ref_cum_len[
             match(df$seqnames, names(ref_cum_len)) - 1
-            ]
+          ]
 
           df$end <- res * ceiling(df$end / res)
           df$width <- df$end - df$start + 1
@@ -269,7 +271,11 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
   }
 
   max_scores <- sapply(
-    split(gen_den[,match(abund.method, names(gen_den))], gen_den$type), max
+      GenomicRanges::split(
+        gen_den[,match(abund.method, names(gen_den))], 
+      gen_den$type
+    ), 
+    max
   )
 
   cum_max_scores <- sapply(
@@ -283,7 +289,7 @@ plotGenomicDensity <- function(grl, res = 1E7, grp.col = NULL, cutoff = 2,
   # Grid layout
   x_breaks <- ref_cum_len[
     seq_len(max(match(unique(gen_den$seqnames), names(ref_cum_len))))
-    ]
+  ]
 
   x_lab_pos <- structure(
     sapply(
