@@ -35,13 +35,20 @@ suppressMessages(library(genName, character.only = TRUE))
 genome <- BiocGenerics::get(genName)
 
 # Check outputfile name
-if( !grepl(".2bit$", outfile) ) outfile <- paste0(outfile, ".2bit")
+if( !grepl(".2bit$", outfile) & !grepl(".fasta$", outfile) ){
+  stop("Specify output format by output file extention: .2bit or .fasta")
+}
 
-# Write to 2bit output format
-BSgenome::export(genome, outfile, format = "2bit")
+if( grepl(".2bit$", outfile) ){
+  # Write to 2bit output format
+  BSgenome::export(genome, outfile, format = "2bit")
+}else{
+  # Write to fasta output format
+  BSgenome::export(genome, outfile, format = "fasta", compress = FALSE)
+}
 
 if( file.exists(outfile) ){
-  message("Genome ", genName, " written to 2bit file.")
+  message("Genome ", genName, " written to file.")
 }else{
   message("Check for output file: ", outfile)
 }

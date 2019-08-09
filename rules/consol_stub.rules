@@ -1,0 +1,7 @@
+# -*- mode: Snakemake -*-
+# Sequence Collecting Rules
+
+rule collect_consol_stub:
+  output:
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{read}.consol.stat")
+  shell: "touch {output.stat}"

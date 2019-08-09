@@ -4,7 +4,7 @@
 rule align:
   input:
     seq = RUN_DIR + "/process_data/consol/{sample}.{read}.consol.fasta",
-    genome = ancient(ROOT_DIR + "/" + config["Ref_Genome_Path"])
+    genome = ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".2bit")
   output:
     temp(RUN_DIR + "/process_data/align/{sample}.{read}.psl")
   params: 
@@ -32,12 +32,12 @@ rule compress_align:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "gzip {input}"
 
-rule generate_2bit:
+rule generate_ref:
   input: ancient("configs/" + RUN + ".config.yml")
-  output: ROOT_DIR + "/" + config["Ref_Genome_Path"]
+  output: ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".2bit"
   params: config["Ref_Genome"]
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: 
-    "Rscript {ROOT_DIR}/tools/rscripts/generate_2bit_genome.R {params} {output}"
+    "Rscript {ROOT_DIR}/tools/rscripts/generate_ref_genome.R {params} {output}"
 

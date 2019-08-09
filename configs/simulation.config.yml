@@ -93,7 +93,7 @@ trimMB : 8000
 filtMB : 4000
 consolMB : 4000
 alignMB : 20000
-coupleMB : 16000
+qualCtrlMB : 16000
 assimilateMB : 16000
 evaluateMB : 8000
 reportMB : 4000
@@ -121,7 +121,7 @@ R2overMaxLength : 20
 
 # Reference Alignment
 BLATparams : "-tileSize=11 -stepSize=9 -minIdentity=85 -maxIntron=5 -minScore=27 -dots=1000 -out=psl -noHead"
-BWAparams : ""
+BWAparams : "-k 30 -w 2500 -P -L 25 -a"
 
 # Post-alignment filtering
 maxAlignStart : 5

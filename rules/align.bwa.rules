@@ -1,0 +1,52 @@
+# -*- mode: Snakemake -*-
+# Sequence Alignment: BWA
+
+rule generate_ref:
+  input: ancient("configs/" + RUN + ".config.yml")
+  output: ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".fasta"
+  params: config["Ref_Genome"]
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: 
+    "Rscript {ROOT_DIR}/tools/rscripts/generate_ref_genome.R {params} {output}"
+
+rule index_ref:
+  input: ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".fasta")
+  output: 
+    aux1=ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".amb",
+    aux2=ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".ann",
+    aux3=ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".bwt",
+    aux4=ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".pac",
+    aux5=ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".sa"
+  params: ROOT_DIR + "/genomes/" + config["Ref_Genome"]
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell:
+    """
+    bwa index -p {params} -a bwtsw {input}
+    """
+
+rule align:
+  input:
+    R1 = RUN_DIR + "/process_data/filtered/{sample}.R1.filt.fastq.gz",
+    R2 = RUN_DIR + "/process_data/filtered/{sample}.R2.filt.fastq.gz",
+    genome=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".fasta"),
+    aux1=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".amb"),
+    aux2=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".ann"),
+    aux3=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".bwt"),
+    aux4=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".pac"),
+    aux5=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".sa")
+  output:
+    temp(RUN_DIR + "/process_data/align/{sample}.unsorted.bam")
+  params: 
+    bwa=config["BWAparams"],
+    index=ROOT_DIR + "/genomes/" + config["Ref_Genome"]
+  log:
+    RUN_DIR + "/logs/{sample}.bwa.log"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["alignMB"]
+  shell:
+    """
+    bwa mem {params.bwa} {params.index} {input.R2} {input.R1} | \
+        samtools view -b -o {output} > {log} 2>&1
+    """
