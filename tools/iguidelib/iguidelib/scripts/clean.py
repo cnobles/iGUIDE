@@ -26,7 +26,8 @@ def main( argv = sys.argv ):
     parser = argparse.ArgumentParser(
         prog = "clean", 
         usage = usage_str,
-        description = description_str
+        description = description_str,
+        allow_abbrev = False
     )
 
     parser.add_argument(
