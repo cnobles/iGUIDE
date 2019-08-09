@@ -36,8 +36,14 @@ iguide report -e analysis/simulation/reports/iguide.eval.simulation.test.rds \
 Rscript tools/rscripts/check_test_accuracy.R configs/simulation.config.yml \
     etc/tests/Data/truth.csv -v
 
-# Test for precise outputs
-Rscript tools/rscripts/check_file_digests.R etc/tests/simulation.digests.yml -v
+# Test for precise outputs if using config::Aligner : "blat"
+function __blat_aligner () {
+    grep Aligner configs/simulation.config.yml | grep blat > /dev/null && echo true || echo false
+}
+
+if [[ $(__blat_aligner) = true ]]; then
+    Rscript tools/rscripts/check_file_digests.R etc/tests/simulation.digests.yml -v
+fi
 
 # Cleanup
 iguide clean configs/simulation.config.yml
