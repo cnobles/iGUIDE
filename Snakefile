@@ -169,7 +169,8 @@ elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
     include: "rules/align.bwa.rules"
     include: "rules/quality.sam.rules"
 else:
-    "Aligner: " + config["Aligner"] + " not supported."
+    "Aligner: " + config["Aligner"] + " not currently supported."
+    "If you are interested in using the aligner, please contact maintainers."
     "Please choose a supported option: BLAT or BWA."
 
 include: "rules/process.rules"
