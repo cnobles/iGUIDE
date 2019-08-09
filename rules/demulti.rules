@@ -54,4 +54,6 @@ rule demultiplex:
 rule move_demulti_stat:
   input: RUN_DIR + "/process_data/demulti/" + RUN + ".demulti.stat"
   output: temp(RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat")
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "mv {input} {output}"
