@@ -6,6 +6,15 @@
 ChangeLog 
 =========
 
+**v0.9.9 (August 9th,2019) - Additional updates**
+
+* Implemented support for BWA aligner
+* Added tools (samqc) for working with other SAM/BAM output aligners as well
+* Switched iguide support code to iguideSupport R-package and added unit tests
+* Fixed bugs related to quoted table inputs (csv/tsv)
+* Implemented a method to skip demultiplexing, see documentation for setup
+* Resoved a number of issues identified, check GitHub for history!
+
 **v0.9.9 (June 10th, 2019)**
 
 * Modified the assimilate + evaluate workflow
