@@ -23,32 +23,35 @@ try:
     ROOT_DIR = os.environ["IGUIDE_DIR"]
 except KeyError:
     raise SystemExit(
-        "IGUIDE_DIR environment variable not defined. Are you sure you "
-        "activated the iguide conda environment?")
+        "\n  IGUIDE_DIR environment variable not defined. Are you sure you "
+        "\n  activated the iguide conda environment?\n ")
 RUN_DIR = ROOT_DIR + "/analysis/" + RUN
 
 # Check for directory paths
 if not os.path.isdir(ROOT_DIR):
-    raise SystemExit("Path to iGUIDE is not found. Check environmental variables.")
+    raise SystemExit("\n  Path to iGUIDE is not found. Check environmental variables.\n")
 
 # Check for sequence file paths
 if not os.path.isdir(config["Seq_Path"]):
-    raise SystemExit("Path to sequencing files is not found (Seq_Path). Check your config file.")
+    raise SystemExit("\n  Path to sequencing files is not found (Seq_Path). Check your config file.\n")
 
 # Check for config symlink to check proper run directory setup
 if not os.path.isfile(RUN_DIR + "/config.yml"):
-    raise SystemExit("Path to symbolic config is not present. Check to make sure you've run 'iguide setup' first.")
+    raise SystemExit("\n  Path to symbolic config is not present. Check to make sure you've run 'iguide setup' first.\n")
 
 # Check for sampleInfo path
 if not "Sample_Info" in config:
-    raise SystemExit("Sample_Info parameter missing in config file. Please specify before continuing.")
+    raise SystemExit("\n  Sample_Info parameter missing in config file. Please specify before continuing.\n")
 else:
     SAMPLEINFO_PATH = get_file_path("Sample_Info", config, ROOT_DIR)
 
 # Check for suppInfo path
 if config["suppFile"]:
     if not "Supplemental_Info" in config:
-        raise SystemExit("Supplemental_Info parameter missing in config file. If not including a file, please specify with '.' .")
+        raise SystemExit(
+            "\n  Supplemental_Info parameter missing in config file."
+            "\n  If not including a file, please specify with '.' .\n"
+        )
     else:
         if config["Supplemental_Info"] == ".":
             SUPPINFO_PATH = "."
@@ -61,7 +64,7 @@ if ".csv" in config["Sample_Info"]:
 elif ".tsv" in config["Sample_Info"]:
     delim = "\t"
 else:
-    raise SystemExit("Sample Info file needs to contain extention '.csv' or '.tsv'.")
+    raise SystemExit("\n  Sample Info file needs to contain extention '.csv' or '.tsv'.\n")
 
 # Sample information
 sampleInfo = import_sample_info(
@@ -169,9 +172,11 @@ elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
     include: "rules/align.bwa.rules"
     include: "rules/quality.sam.rules"
 else:
-    "Aligner: " + config["Aligner"] + " not currently supported."
-    "If you are interested in using the aligner, please contact maintainers."
-    "Please choose a supported option: BLAT or BWA."
+    raise SystemExit( 
+        "\n  Aligner: " + config["Aligner"] + " not currently supported."
+        "\n  If you are interested in using the aligner, please contact maintainers."
+        "\n  Please choose a supported option: BLAT or BWA.\n"
+    )
 
 include: "rules/process.rules"
 

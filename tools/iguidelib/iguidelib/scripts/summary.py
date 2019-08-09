@@ -14,8 +14,8 @@ def main( argv = sys.argv ):
         conda_prefix = os.environ.get("CONDA_PREFIX")
     except (KeyError, IndexError):
         raise SystemExit(
-            "Could not determine Conda prefix. Activate your iGUIDE "
-            "environment and try this command again.")
+            "\n  Could not determine Conda prefix. Activate your iGUIDE "
+            "\n  environment and try this command again.\n")
 
     usage_str = (
         "  \n"
@@ -116,7 +116,7 @@ def main( argv = sys.argv ):
     
     if not iguide_directory.exists():
         sys.stderr.write(
-            "Error: could not find iGUIDE directory '{}'\n".format(
+            "\n  Error: could not find iGUIDE directory '{}'\n".format(
                 args.iguide_dir))
         sys.exit(1)
     
@@ -125,7 +125,7 @@ def main( argv = sys.argv ):
     
     if not r_script.is_file():
         sys.stderr.write(
-            "Error: Could not find a {0} in directory '{1}'\n".format(
+            "\n  Error: Could not find a {0} in directory '{1}'\n".format(
                 "generate_iGUIDE_summary.R", args.iguide_dir + "/tools/rscripts/"
             )
         )
@@ -135,7 +135,7 @@ def main( argv = sys.argv ):
         eval_script = iguide_directory / "tools/rscripts/evaluate_incorp_data.R"
         if not eval_script.is_file():
             sys.stderr.write(
-                "Error: Could not find a {0} in directory '{1}'\n".format(
+                "\n  Error: Could not find a {0} in directory '{1}'\n".format(
                     "evaluate_incorp_data.R", args.iguide_dir + "/tools/rscripts/"
                 )
             )
@@ -175,8 +175,8 @@ def main( argv = sys.argv ):
         
         if eval_cmd.returncode != 0:
             sys.stderr.write(
-                "Error: Evaluation of input data did not exit with a 0 code. ",
-                "Check for errors."
+                "\n  Error: Evaluation of input data did not exit with a 0 code. ",
+                "\n  Check for errors.\n"
             )
             sys.exit(eval_cmd.returncode)
         
@@ -189,7 +189,7 @@ def main( argv = sys.argv ):
     
     if not Path(eval_input).exists():
         sys.stderr.write(
-            "Error: Could not find input evaluation data: {}".format(eval_input)
+            "\n  Error: Could not find input evaluation data: {}\n".format(eval_input)
         )
         sys.exit(1)
     

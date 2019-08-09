@@ -13,15 +13,15 @@ def main( argv = sys.argv ):
         conda_prefix = os.environ.get("CONDA_PREFIX")
     except (KeyError, IndexError):
         raise SystemExit(
-            "Could not determine Conda prefix. Activate your iGUIDE "
-            "environment and try this command again.")
+            "\n  Could not determine Conda prefix. Activate your iGUIDE "
+            "\n  environment and try this command again.\n")
 
     root_dir = os.getenv("IGUIDE_DIR")
     r_script = Path(root_dir + "/tools/rscripts/list_samples.R")
     
     if not r_script.is_file():
         sys.stderr.write(
-            "Error: Could not find a {0} in directory '{1}'\n".format(
+            "\n  Error: Could not find a {0} in directory '{1}'\n".format(
                 "list_samples.R", args.iguide_dir + "/tools/rscripts/"
             )
         )

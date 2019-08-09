@@ -13,14 +13,16 @@ def main( argv = sys.argv ):
         conda_prefix = os.environ.get("CONDA_PREFIX")
     except (KeyError, IndexError):
         raise SystemExit(
-            "Could not determine Conda prefix. Activate your iGUIDE "
-            "environment and try this command again.")
+            "\n  Could not determine Conda prefix. Activate your iGUIDE "
+            "\n  environment and try this command again.\n"
+        )
 
     usage_str = "\n  iguide %(prog)s <path/to/config.file> <options> -- <snakemake.options>"
 
     description_str = (
         "Initiate the processing of an iGUIDE project givin a configuration "
-        "file. Arguments after '--' are passed to Snakemake asis.")
+        "file. Arguments after '--' are passed to Snakemake asis."
+    )
     
     parser = argparse.ArgumentParser(
         prog = "run", 
@@ -46,7 +48,7 @@ def main( argv = sys.argv ):
     snakefile = Path(args.iguide_dir)/"Snakefile"
     if not snakefile.exists():
         sys.stderr.write(
-            "Error: could not find a Snakefile in directory '{}'\n".format(
+            "\n  Error: could not find a Snakefile in directory '{}'\n".format(
                 args.iguide_dir))
         sys.exit(1)
 
@@ -64,9 +66,9 @@ def main( argv = sys.argv ):
 def check_existing(path, force = False):
     if path.is_dir():
         raise SystemExit(
-            "Error: specified file '{}' exists and is a directory".format(path))
+            "\n  Error: specified file '{}' exists and is a directory.\n".format(path))
     if path.is_file() and not force:
         raise SystemExit(
-            "Error: specified file '{}' exists. Use --force to "
-            "overwrite.".format(path))
+            "\n  Error: specified file '{}' exists. Use --force to "
+            "\n  overwrite.\n".format(path))
     return path

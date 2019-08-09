@@ -27,31 +27,12 @@ Consolidation is the process of identifying all unique sequences and producing a
 This is useful for sequence processing, such as alignment, as it reduces the total number of processes, typically leading to an increase in performance.
 
 ## Alignment Rules
-These rules direct how the consolidated sequences will be aligned. 
+These rules direct how the sequences will be aligned. BLAT outputs to 'psl' format while BWA and many other aligners output to 'sam/bam' outputs. Other aligners that output to 'sam/bam' formats could be incorporated into the workflow, similar to BWA. Please contact the maintainer(s) if you would like to use a different aligner.
 
-Options for alignment:
+Supported sequence aligners:
 
-* blat (v35) - BLAST-like Alignment Tool
-* bwa (v??) - Burrows-Wheeler Aligner
-
-### Pros / Cons :
-#### BLAT
-Pros:
-* all possible alignments for a sequence above a certain threshold (unique alignment and multihits).
-* prefered method for total inclusion and discovery
-
-Cons:
-* requires reads (R1 and R2) to be aligned independently
-* requires more computational resources and can take much longer
-
-#### BWA
-Pros:
-* fast and resource efficient
-* typically gives best match for paired alignment
-
-Cons:
-* Minimal success in detecting multiple alignments
-* Lower inclusion may lead to missing potential alignments in certain regions of the genome.
+* BLAT / blat (v35) - BLAST-like Alignment Tool
+* BWA / bwa (v0.7.17) - Burrows-Wheeler Aligner
 
 ## Post-Alignment Rules
 After alignment of consolidated sequences, alignment data needs to be assigned to each read.

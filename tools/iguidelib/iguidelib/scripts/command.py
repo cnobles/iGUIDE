@@ -74,10 +74,11 @@ def main():
         Summary(remaining)
     elif args.command == "config":
         raise SystemExit(
-          print("  'iguide config' subcommand is currently under development.\n"
-                "  Checkout https://github.com/cnobles/iGUIDE/ for updates   \n"
-                "  and announcements. Thanks for using iGUIDE!               \n"
-          )
+            print(
+                "\n  'iguide config' subcommand is currently under development."
+                "\n  Checkout https://github.com/cnobles/iGUIDE/ for updates"
+                "\n  and announcements. Thanks for using iGUIDE!\n"
+            )
         )
         #Config(remaining)
     elif args.command == "list_samples":

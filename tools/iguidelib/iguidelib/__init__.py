@@ -37,14 +37,14 @@ def choose_sequence_data(config_input, sampleInfo):
 def get_file_path(param, config, root):
     if not str(param) in config:
         raise SystemExit(
-            "Cannot locate config parameter: {}".format(str(param))
+            "\n  Cannot locate config parameter: {} \n".format(str(param))
         )
     file_path = Path(config[str(param)])
     if not file_path.exists():
         abs_file_path = Path(root) / file_path
         if not abs_file_path.exists():
             raise SystemExit(
-                "Cannot locate file specified by: {}".format(config[str(param)])
+                "\n  Cannot locate file specified by: {} \n".format(config[str(param)])
             )
         else:
             file_path = abs_file_path
@@ -56,20 +56,24 @@ def get_iguide_version(with_hash = False):
 
     if iguide_path is None:
         raise SystemExit(
-          print("  IGUIDE_DIR cannot be found as an environmental variable.\n"
-                "  Check to make sure your iGUIDE environment is active,   \n"
-                "  you may need to restart your environment, update, or    \n"
-                "  reinstall iGUIDE with the install.sh script.")
+            print(
+                "\n  IGUIDE_DIR cannot be found as an environmental variable."
+                "\n  Check to make sure your iGUIDE environment is active,"
+                "\n  you may need to restart your environment, update, or"
+                "\n  reinstall iGUIDE with the install.sh script.\n"
+            )
         )
     else:
         iguide_version_path = iguide_path + "/.version"
 
     if not path.exists(iguide_version_path):
         raise SystemExit(
-          print("  iGUIDE version cannot be located. Check environmental\n"
-                "  variables, such as IGUIDE_DIR, otherwise you may want\n"
-                "  to restart your environment, update, or reinstall    \n"
-                "  iGUIDE using the install.sh script.")
+            print(
+                "\n  iGUIDE version cannot be located. Check environmental"
+                "\n  variables, such as IGUIDE_DIR, otherwise you may want"
+                "\n  to restart your environment, update, or reinstall"
+                "\n  iGUIDE using the install.sh script.\n"
+            )
         )
 
     iguide_version = open(iguide_version_path, "r").readlines()[0].rstrip()
