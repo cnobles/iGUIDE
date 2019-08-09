@@ -4,4 +4,6 @@
 rule collect_umitags_stub:
   output:
     stat=temp(RUN_DIR + "/process_data/stats/{sample}.umitags.stat")
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "touch {output.stat}"

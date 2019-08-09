@@ -30,6 +30,8 @@ rule check_input_reads:
 rule format_init_stat:
   input: RUN_DIR + "/process_data/stats/{sample}.initdemulti.stat"
   output: temp(RUN_DIR + "/process_data/stats/{sample}.fmtdemulti.stat")
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: 
     """
     cat {input} | cut -d , -f 2,3 | uniq | sed 's/reads/{wildcards.sample}.demulti,reads/' > {output}
@@ -41,6 +43,8 @@ rule combine_fmt_stat:
       RUN_DIR + "/process_data/stats/{sample}.fmtdemulti.stat", 
       sample = SAMPLES)
   output: temp(RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat")
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: 
     """
     cat {input} > {output}
