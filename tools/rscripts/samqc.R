@@ -512,6 +512,13 @@ printHead(
   )
 )
 
+# Stop if there are no remaining alignments
+if( nrow(input_hits) == 0 ){ 
+  cat("\nNo alignments in input bam file.\n")
+  writeNullOutput(args)
+  q()
+}
+
 ## Initial quality filtering: min percent ID, minimum size, max align start ----
 read_hits <- input_hits %>%
   dplyr::mutate(

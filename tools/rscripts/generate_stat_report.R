@@ -188,8 +188,9 @@ sampleName_levels <- c(
 read_tbl <- dplyr::select(
     stat_df, c(sampleName, demulti.reads, R1.trim.reads, R2.primer.trim.reads,
     R2.trim.reads, if( config$UMItags ) umitags.reads, filt.reads, 
-    R1.consol.reads, R2.consol.reads, align.unique.reads, align.chimera.reads, 
-    align.multihit.reads
+    if( tolower(config$Aligner) == "blat") R1.consol.reads, 
+    if( tolower(config$Aligner) == "blat") R2.consol.reads, 
+    align.unique.reads, align.chimera.reads, align.multihit.reads
   )) %>%
   dplyr::mutate(sampleName = factor(sampleName, levels = sampleName_levels)) %>%
   dplyr::arrange(sampleName)
