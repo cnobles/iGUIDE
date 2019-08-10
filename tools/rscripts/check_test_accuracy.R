@@ -145,7 +145,15 @@ readFile <- function(path, root){
     
   }else if( any(exts %in% c("rds")) ){
     
-    return(readRDS(path))
+    rds_import <- readRDS(path)
+
+     if( class(rds_import) == "list" ){
+      return(rds_import[[
+        which(sapply(rds_import, class) == "data.frame")
+      ]])
+    }else{
+      return(rds_import)
+    }
     
   }else{
     
