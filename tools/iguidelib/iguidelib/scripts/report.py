@@ -112,6 +112,11 @@ def main( argv = sys.argv ):
     )
 
     parser.add_argument(
+        "--override", action="store_true",
+        help = "Override software and build version control checks on input data."
+    )
+
+    parser.add_argument(
         "--template", nargs = 1,
         default = "tools/rscripts/report_templates/iGUIDE_report_template.Rmd",
         help = "File path to standard or custom iGUIDE report template.",
@@ -197,6 +202,9 @@ def main( argv = sys.argv ):
         
         if args.support is not None:
             eval_comps = eval_comps + ["-s"] + args.support
+
+        if args.override is True:
+            eval_comps = eval_comps + ["--override"]
         
         eval_comps = eval_comps + ["--iguide_dir", str(iguide_directory)]
         

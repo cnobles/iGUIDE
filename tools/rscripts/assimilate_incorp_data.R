@@ -122,6 +122,15 @@ print(
 )
 
 
+# Get versioning ----
+soft_version <- as.character(read.delim(
+  file = file.path(root_dir, ".version"), header = FALSE))
+
+build_version <- list.files(file.path(root_dir, "etc")) %>%
+  grep(pattern = "build.b[0-9\\.]+.*", x = ., value = TRUE) %>%
+  stringr::str_extract(pattern = "b[0-9]+\\.[0-9]+\\.[0-9]+")
+
+
 # Inputs and parameters ----
 # Run parameters and sample parameters
 config <- yaml::yaml.load_file(args$config)
@@ -363,9 +372,17 @@ if( args$stat != FALSE ){
 # Output data ----
 ## rds file that can be read into evaluation or reports or loaded into a 
 ## database with some additional scripting.
-reads %>%
-  dplyr::select(-lociPairKey, -readPairKey) %>%
-  saveRDS(file = args$output)
+fmt_reads <- reads %>%
+  dplyr::select(-lociPairKey, -readPairKey)
+
+output_file <- list(
+  "soft_version" = soft_version,
+  "build_version" = build_version,
+  "config" = config,
+  "reads" = fmt_reads
+)
+  
+saveRDS(output_file, file = args$output)
 
 if( all(sapply(output_files, file.exists)) ){
   message("Successfully completed script.")
