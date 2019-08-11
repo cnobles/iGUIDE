@@ -467,7 +467,7 @@ processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
 # Additional parameters ---- 
 # BAM parameters to get from file
 bam_params <- c(
-  "qname", "flag", "rname", "strand", "pos", "qwidth", "mapq", "cigar", "isize"
+  "qname", "flag", "rname", "strand", "pos", "qwidth", "mapq", "cigar"
 )
 
 # BAM Tags to get from files
@@ -492,8 +492,9 @@ unkn_flags <- unique(input_hits$flag)[
 
 if( length(unkn_flags) != 0 ){
   
-  warning(paste0(
-    "  Unknown flags found in alignments: ", 
+  cat(paste0(
+    "\nWarning:",
+    "\n  Unknown flags found in alignments: ", 
     paste(unkn_flags, collapse = " "), 
     "\n  These reads will be binned in with artifactual chimera output if",
     "\n  specified during input.\n"
@@ -536,11 +537,12 @@ read_hits <- input_hits %>%
   )
 
 # Stop if there are no remaining alignments
-if( nrow(read_hits) == 0 ){
+if( nrow(read_hits) == 0 | dplyr::n_distinct(read_hits$type) == 1 ){
   
   cat(
     "\nNo valid alignments were found within the data given input criteria.\n"
   )
+
   writeNullOutput(args)
   q()
   
