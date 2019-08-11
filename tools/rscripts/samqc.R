@@ -81,16 +81,6 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "--anchorFlags", nargs = "+", type = "integer", 
-  default = c(81L, 97L, 337L, 353L, 369L, 65L, 321L), help = desc$anchorFlags
-)
-
-parser$add_argument(
-  "--adriftFlags", nargs = "+", type = "integer", 
-  default = c(129L, 145L, 161L, 385L, 401L, 417L, 433L), help = desc$adriftFlags
-)
-
-parser$add_argument(
   "--keepAltChr", action = "store_true", help = desc$keepAltChr
 )
 
@@ -463,6 +453,54 @@ processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
 
 }
 
+#' Determine if pair of reads are mapped
+#' @param flag numeric or integer vector of flag codes indicating mapping 
+#' status. This integer will be converted into binary bits and decoded to 
+#' determine if the flag indicates paired mapping.
+#' @description Given flag integer codes, this function returns a logical to 
+#' indicate if the pair of reads are both mapped. If one or both reads are 
+#' unmapped, then the return is "FALSE".
+
+pair_is_mapped <- function(flag){
+  
+  #Check if input is in correct format.
+  stopifnot( all(is.numeric(flag) | is.integer(flag)) )
+  
+  # Switch flag codes to binary bit matrix
+  x <- matrix(as.integer(intToBits(flag)), ncol = 32, byrow = TRUE)
+  
+  # Flag codes designate 3rd and 4th bits to indicate unmapped read or mate
+  # As long as both are zero, then the pair of reads are both mapped
+  rowSums(x[,c(3,4)]) == 0
+  
+}
+
+#' Determine the alignment is for the read or mate
+#' @param flag numeric or integer vector of flag codes indicating mapping 
+#' status. This integer will be converted into binary bits and decoded to 
+#' determine if the flag indicates read or mate maping.
+#' @param output character vector of length 2, indicating the output designation
+#' for if the alignment is for the read or the mate.
+#' @description Given flag integer codes, this function returns a logical or 
+#' character vector to indicate if the alignment is for the read or mate
+
+read_or_mate <- function(flag, output = NULL){
+  
+  #Check if input is in correct format.
+  stopifnot( all(is.numeric(flag) | is.integer(flag)) )
+  
+  # Switch flag codes to binary bit matrix
+  x <- matrix(as.integer(intToBits(flag)), ncol = 32, byrow = TRUE)
+  
+  # Flag codes designate 7th bit to indicate 1st read (read) and the 8th for mate
+  # As long as both are zero, then the pair of reads are both mapped
+  if( is.null(output) ){
+    return(x[,c(7)] == 1)
+  }else{
+    return(ifelse(x[,c(7)] == 1, output[1], output[2]))
+  }
+  
+}
 
 # Additional parameters ---- 
 # BAM parameters to get from file
@@ -473,34 +511,10 @@ bam_params <- c(
 # BAM Tags to get from files
 bam_tags <- c("MD")
 
-# Flag codes -- may need to be updated after reviewing more data
-anchor_flags <- args$anchorFlags
-adrift_flags <- args$adriftFlags
-
-if( length(intersect(anchor_flags, adrift_flags)) != 0 ){
-  stop("\n  Flags specifying anchor and adrift alignments are intersecting.\n")
-}
-
 # Import read alignments and filter on input criteria ----
 input_hits <- loadBAM(
   bam = args$bam, bai = args$bai, params = bam_params, tags = bam_tags
 )
-
-unkn_flags <- unique(input_hits$flag)[
-  !unique(input_hits$flag) %in% c(anchor_flags, adrift_flags)
-]
-
-if( length(unkn_flags) != 0 ){
-  
-  cat(paste0(
-    "\nWarning:",
-    "\n  Unknown flags found in alignments: ", 
-    paste(unkn_flags, collapse = " "), 
-    "\n  These reads will be binned in with artifactual chimera output if",
-    "\n  specified during input.\n"
-  ))
-  
-}
 
 # Top of inputs from alignments
 printHead(
@@ -525,10 +539,8 @@ read_hits <- input_hits %>%
   dplyr::mutate(
     clip5p = cntClipped(cigar),
     pctID = calcPctID(cigar, MD),
-    type = ifelse(
-      flag %in% anchor_flags, "anchor", ifelse(
-        flag %in% adrift_flags, "adrift", NA)
-    )
+    pair.mapped = pair_is_mapped(flag),
+    type = read_or_mate(flag, c("anchor", "adrift"))
   ) %>%
   dplyr::filter(
     pctID >= args$minPercentIdentity,
