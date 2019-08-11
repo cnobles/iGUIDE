@@ -110,7 +110,7 @@ input_table <- input_table[
     c("bam :", "bai :", "uniqOutput :", "condSites :", "chimeras :", 
       "multihits :", "stat :", "refGenome :", "maxAlignStart :", 
       "minPercentIdentity :", "minTempLength :", "maxTempLength :", 
-      "anchorFlags :", "adriftFlags :", "keepAltChr :", "readNamePattern :"
+      "keepAltChr :", "readNamePattern :"
     ),
     input_table$Variables
   ),
