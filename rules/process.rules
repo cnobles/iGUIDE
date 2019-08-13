@@ -31,7 +31,7 @@ rule combine_multihits:
   params:
     tool=ROOT_DIR + "/tools/rscripts/combine_multihits.R",
     dir=RUN_DIR + "/process_data/post_align",
-    pattern="{sample}.bin*.multihits.rds"
+    pattern="{sample}.bin[0-9]+.multihits.rds"
   log:
     RUN_DIR + "/logs/{sample}.multihits.log"
   resources:

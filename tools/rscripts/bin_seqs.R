@@ -170,7 +170,8 @@ null <- mapply(
           unlink(file.path(args$output, outfile))
         }
   
-        if( stringr::str_detect(x, ".fastq") | stringr::str_detect(x, ".fq") ){
+        if( stringr::str_detect(outfile, ".fastq") | 
+            stringr::str_detect(outfile, ".fq") ){
               
           ShortRead::writeFastq(
             object = seqs[matched_idx],

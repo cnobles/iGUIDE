@@ -87,9 +87,37 @@ long_data <- dplyr::bind_rows(
   .id = "type"
 )
 
+fmt_long_data <- long_data %>%
+  dplyr::mutate(
+    is_binned = stringr::str_detect(type, "bin[0-9]+"),
+    is_R1 = stringr::str_detect(type, "R1"),
+    idx = ifelse(
+      is_binned, 
+      ifelse(
+        is_R1, 
+        paste0("A", as.integer(factor(metric))),
+        paste0("B", as.integer(factor(metric)))
+      ),
+      paste0("C", seq_len(n()))
+    )
+  ) %>% 
+  dplyr::group_by(sampleName, metric, idx) %>%
+  dplyr::summarise(
+    type = unique(stringr::str_remove(type, "bin[0-9]+.")),
+    count = sum(count)
+  ) %>%
+  dplyr::distinct(sampleName, metric, type, count) %>%
+  dplyr::filter(
+    (stringr::str_detect(metric, "multihit") & 
+      stringr::str_detect(type, "multihits")) | 
+      !stringr::str_detect(metric, "multihit")
+  ) %>%
+  dplyr::mutate(type = ifelse(type == "multihits", "align", type)) %>%
+  dplyr::ungroup()
+
 # Transform data into a wide format
 wide_data <- dplyr::mutate(
-    long_data, 
+    fmt_long_data, 
     type = paste0(type, ".", metric),
     type = factor(type, levels = unique(type))
   ) %>%

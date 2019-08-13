@@ -33,7 +33,10 @@ rule core_stat_matrix:
     data_dir=RUN_DIR + "/process_data/stats/"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
-  shell: "Rscript {params.tool} -d {params.data_dir} -o {output}"
+  shell: 
+    """
+    Rscript {params.tool} -d {params.data_dir} -o {output}
+    """
 
 rule eval_stat_matrix:
   input: RUN_DIR + "/output/" + RUN + ".eval.stat"
@@ -47,7 +50,8 @@ rule eval_stat_matrix:
 rule gen_stat_report:
   input: 
     core = RUN_DIR + "/output/stats.core." + RUN + ".csv",
-    eval = RUN_DIR + "/output/stats.eval." + RUN + ".csv"
+    eval = RUN_DIR + "/output/stats.eval." + RUN + ".csv",
+    site = RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
   output: RUN_DIR + "/reports/runstats." + RUN + ".html"
   params: 
     tool = ROOT_DIR + "/tools/rscripts/generate_stat_report.R",
@@ -57,5 +61,6 @@ rule gen_stat_report:
     mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
   shell:
     """
-    Rscript {params.tool} {input} -o {output} -c {params.config} > {log} 2>&1
+    Rscript {params.tool} -r {input.core} -e {input.eval} -i {input.site} \
+        -o {output} -c {params.config} > {log} 2>&1
     """

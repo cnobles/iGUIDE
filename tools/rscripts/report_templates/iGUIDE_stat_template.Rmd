@@ -145,7 +145,7 @@ read_print <- kable(
   kableExtra::add_header_above(
     c(
       " ", " ", "Trimming" = 3, if( config$UMItags ) " ", 
-      " ", if( tolower(config$Aligner) == "blat") "Consol" = 2, 
+      " ", if( tolower(config$Aligner) == "blat") c("Consol" = 2),
       "Alignment" = 3
     )
   ) %>%

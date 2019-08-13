@@ -41,7 +41,7 @@ rule bin_passing_reads:
     level=config["level"],
     readNamePatternArg=config["readNamePattern"]
   log:
-    RUN_DIR + "logs/{sample}.bin.log"
+    RUN_DIR + "/logs/{sample}.bin.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
   shell:

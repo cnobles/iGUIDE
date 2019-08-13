@@ -119,6 +119,10 @@ R2odnMismatch : 0
 R2overMismatch : 4
 R2overMaxLength : 20
 
+# Binning
+bins : 3
+level : 250
+
 # Reference Alignment
 BLATparams : "-tileSize=11 -stepSize=9 -minIdentity=85 -maxIntron=5 -minScore=27 -dots=1000 -out=psl -noHead"
 BWAparams : "-k 30 -w 2500 -P -L 25 -a"

@@ -125,16 +125,31 @@ if not "evaluateMB" in config:
     
 if not "reportMB" in config:
     config["reportMB"] = 4000
-  
+
+if not "bins" in config:
+    config["bins"] = 5
+
+if not "level" in config:
+    config["level"] = 300000
+
 if not "readNamePattern" in config:
     config["readNamePattern"] = str("'[\\w\\:\\-\\+]+'")
+
+
+# Define BINS
+BINS = []
+
+for i in range(1, config["bins"] + 1, 1):
+    BINS.append("bin" + str(i).zfill(len(str(config["bins"]))))
+
 
 # Regex constraints on wildcards
 wildcard_constraints:
     sample="[\w\-\_]+",
     read="R[12]",
     read_type="[RI][12]",
-    req_type="[RI][12]"
+    req_type="[RI][12]",
+    bin="bin[\d]+"
 
 # Target Rules
 rule all:
