@@ -4,7 +4,8 @@
 rule all_uniq_sites:
   input:
     expand(
-      RUN_DIR + "/process_data/post_align/{sample}.uniq.csv", sample=SAMPLES)
+      RUN_DIR + "/process_data/post_align/{sample}.{bin}.uniq.csv", 
+      sample=SAMPLES, bin=BINS)
   output:
     temp(RUN_DIR + "/output/unique_sites." + RUN + ".csv")
   params:
@@ -19,6 +20,28 @@ rule all_uniq_sites:
     done
     """
 
+rule combine_multihits:
+  input:
+    expand(
+      RUN_DIR + "/process_data/post_align/{{sample}}.{bin}.multihits.rds",
+      bin=BINS)
+  output:
+    hits=temp(RUN_DIR + "/process_data/multihits/{sample}.multihits.rds"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.multihits.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/combine_multihits.R",
+    dir=RUN_DIR + "/process_data/post_align",
+    pattern="{sample}.bin*.multihits.rds"
+  log:
+    RUN_DIR + "/logs/{sample}.multihits.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
+  shell:
+    """
+    Rscript {params.tool} -d {params.dir} -p {params.pattern} \
+      -o {output.hits} -s {output.stat} > {log} 2>&1
+    """
+
 
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
@@ -31,7 +54,7 @@ def all_umitag_inputs(wildcards):
 def all_multi_inputs(wildcards):
   if (config["recoverMultihits"]):
     return expand(
-      RUN_DIR + "/process_data/post_align/{sample}.multihits.rds", 
+      RUN_DIR + "/process_data/multihits/{sample}.multihits.rds", 
       sample=SAMPLES)
   else:
     return []

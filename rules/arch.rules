@@ -17,10 +17,14 @@ rule core_stat_matrix:
     filt=expand(
       RUN_DIR + "/process_data/stats/{sample}.filt.stat", sample=SAMPLES),
     consol=expand(
-      RUN_DIR + "/process_data/stats/{sample}.{read}.consol.stat", 
-      sample=SAMPLES, read=READS),
+      RUN_DIR + "/process_data/stats/{sample}.{read}.{bin}.consol.stat", 
+      sample=SAMPLES, read=READS, bin=BINS),
     align=expand(
-      RUN_DIR + "/process_data/stats/{sample}.align.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.align.stat", 
+      sample=SAMPLES, bin=BINS),
+    multihits=expand(
+      RUN_DIR + "/process_data/stats/{sample}.multihits.stat", 
+      sample=SAMPLES),   
     assim=RUN_DIR + "/process_data/stats/" + RUN + ".assim.stat"
   output:
     RUN_DIR + "/output/stats.core." + RUN + ".csv"

@@ -3,15 +3,15 @@
 
 rule post_align:
   input:
-    sampleR1=RUN_DIR + "/process_data/align/{sample}.R1.psl.gz",
-    sampleR2=RUN_DIR + "/process_data/align/{sample}.R2.psl.gz",
-    keyR1=RUN_DIR + "/process_data/consol/{sample}.R1.key.csv",
-    keyR2=RUN_DIR + "/process_data/consol/{sample}.R2.key.csv"
+    sampleR1=RUN_DIR + "/process_data/align/{sample}.R1.{bin}.psl.gz",
+    sampleR2=RUN_DIR + "/process_data/align/{sample}.R2.{bin}.psl.gz",
+    keyR1=RUN_DIR + "/process_data/consol/{sample}.R1.{bin}.key.csv",
+    keyR2=RUN_DIR + "/process_data/consol/{sample}.R2.{bin}.key.csv"
   output:
-    uniq=temp(RUN_DIR + "/process_data/post_align/{sample}.uniq.csv"),
-    chimera=temp(RUN_DIR + "/process_data/post_align/{sample}.chimera.rds"),
-    multihit=temp(RUN_DIR + "/process_data/post_align/{sample}.multihits.rds"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.align.stat")
+    uniq=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.uniq.csv"),
+    chimera=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.chimera.rds"),
+    multihit=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.multihits.rds"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{bin}.align.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/couple.R",
     ref=config["Ref_Genome"],
@@ -21,7 +21,7 @@ rule post_align:
     maxLen=config["maxTempLength"],
     readNamePatternArg=config["readNamePattern"]
   log:
-    RUN_DIR + "/logs/{sample}.couple.log"
+    RUN_DIR + "/logs/{sample}.{bin}.couple.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
   shell:

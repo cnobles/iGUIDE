@@ -115,7 +115,7 @@ if not "alignMB" in config:
     config["alignMB"] = 4000
 
 if not "qualCtrlMB" in config:
-    config["qualCtrlMB"] = 4000
+    config["qualCtrlMB"] = 8000
     
 if not "assimilateMB" in config:
     config["assimilateMB"] = 4000
