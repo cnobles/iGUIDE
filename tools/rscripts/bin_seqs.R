@@ -96,7 +96,12 @@ if( length(seq_files[[1]]) <= args$bins * args$level ){
       ceiling(seq_along(seq_files[[1]]) / args$level)
   )
   
-  seq_idx <- c(seq_idx, split(integer(), seq(length(seq_idx)+1, args$bins, 1)))
+  if( length(seq_idx) < args$bins ){
+    seq_idx <- c(
+      seq_idx, 
+      split(integer(), seq(length(seq_idx)+1, args$bins, 1))
+    )
+  }
   
 }else{
 
