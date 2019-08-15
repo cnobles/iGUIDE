@@ -11,6 +11,7 @@ from iguidelib.scripts.evaluate import main as Eval
 from iguidelib.scripts.report import main as Report
 from iguidelib.scripts.summary import main as Summary
 from iguidelib.scripts.clean import main as Clean
+from iguidelib.scripts.hints import main as Hints
 
 def main():
 
@@ -21,12 +22,14 @@ def main():
         "    setup        \tCreate a new config file for a project using local data.\n"
         "    run          \tExecute the iGUIDE pipeline.\n\n"
         "  auxiliary:\n"
+        "    list_samples \tOutput a list of samples from a project.\n"
         "    eval         \tEvaluate a set or sets of assimilated iGUIDE outputs.\n"
         "    report       \tGenerate a custom report from iGUIDE output files.\n"
-        "    summary      \tGenerate a consise summary from iGUIDE output files.\n"
-        "    list_samples \tOutput a list of samples from a project.\n"
+        "    summary      \tGenerate a consise summary from iGUIDE output files.\n\n"
+        "  additional:\n"
         "    config       \t[inDev] Modify or update iGUIDE config files.\n"
-        "    clean        \tCleanup project directory to reduce size. Keeps terminal files.\n\n"
+        "    clean        \tCleanup project directory to reduce size. Keeps terminal files.\n"
+        "    hints        \tPrint helpful snakemake options to use during processing.\n\n"
     ).format(version=__version__)
 
     parser = argparse.ArgumentParser(
@@ -51,7 +54,7 @@ def main():
     
     sub_cmds = [
         "setup", "run", "eval", "report", 
-        "summary", "config", "list_samples", "clean"
+        "summary", "config", "list_samples", "clean", "hints"
     ]
     
     if not args.command in sub_cmds:
@@ -85,5 +88,7 @@ def main():
         ListSamples(remaining)
     elif args.command == "clean":
         Clean(remaining)
+    elif args.command == "hints":
+        Hints()
     else:
         parser.print_help()

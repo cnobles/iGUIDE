@@ -6,7 +6,14 @@
 ChangeLog 
 =========
 
-**v0.9.9 (August 9th,2019) - Additional updates**
+**v1.0.0 (August 15th, 2019)
+
+* Complete support for BLAT and BWA aligners
+* Included a binning system to distribute workload into smaller loads
+* Implemented a version tracking system into the intermediate data files (incorp_sites)
+* Updated CLI with "hints" for snakemake processing
+
+**v0.9.9 (August 9th, 2019) - Additional updates**
 
 * Implemented support for BWA aligner
 * Added tools (samqc) for working with other SAM/BAM output aligners as well

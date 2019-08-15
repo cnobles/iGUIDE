@@ -39,19 +39,18 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "-u", "--umitags", nargs = "+", type = "character",
+  "-u", "--umitags", nargs = 1, type = "character",
   help = paste(
-    "Path(s) to associated fasta files containing read specific",
-    "random captured sequences. Multiple file paths can be separated by",
-    "a space."
+    "Path to directory with associated fasta files containing read specific",
+    "random captured sequences (*.umitags.fasta.gz)."
   )
 )
 
 parser$add_argument(
-  "-m", "--multihits", nargs = "+", type = "character",
+  "-m", "--multihits", nargs = 1, type = "character",
   help = paste(
-    "Path(s) to associated multihit files (.rds) as produced by coupling",
-    "alignment output files. Multiple file paths can be separated by a space."
+    "Path to directory with associated multihit files (*.multihits.rds) as",
+    "produced by coupling alignment output files."
   )
 )
 
@@ -236,7 +235,13 @@ if( all(!is.null(args$multihits)) ){
     seqinfo = GenomeInfoDb::seqinfo(ref_genome)
   )
   
-  multi_reads <- unlist(GRangesList(lapply(args$multihits, function(x){
+  multihit_files <- list.files(path = args$multihit, full.names = TRUE)
+  
+  mulithit_files <- multihit_files[
+    stringr::str_detect(mulithit_files, ".multihits.rds")
+  ]
+  
+  multi_reads <- unlist(GRangesList(lapply(mulithit_files, function(x){
     
     multi <- readRDS(x)
     GenomeInfoDb::seqinfo(multi$unclustered_multihits) <- 
@@ -336,7 +341,13 @@ rm(temp_table)
 
 if( all(!is.null(args$umitags)) ){
   
-  umitags <- lapply(args$umitags, ShortRead::readFasta)
+  umitag_files <- list.files(path = args$umitags, full.names = TRUE)
+  
+  umitag_files <- umitag_files[
+    stringr::str_detect(umitag_files, ".umitags.fasta")
+  ]
+  
+  umitags <- lapply(umitag_files, ShortRead::readFasta)
   umitags <- serialAppendS4(umitags)
   
   reads$umitag <- as.character(ShortRead::sread(umitags))[

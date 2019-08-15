@@ -168,6 +168,7 @@ if (config["skipDemultiplexing"]):
 else:
     include: "rules/demulti.rules"
     
+include: "rules/binning.rules"
 include: "rules/trim.rules"
 
 if (config["UMItags"]):

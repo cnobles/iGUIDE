@@ -239,17 +239,17 @@ calcPctID <- function(cigar, MD){
   
   data.frame("cig" = cigar, "md" = MD, stringsAsFactors = FALSE) %>%
     dplyr::mutate(
-      mismatch = S4Vectors::rowSums(matrix(
+      mismatch = rowSums(matrix(
         stringr::str_extract_all(md, "[ATGC]", simplify = TRUE) %in% 
           c("A", "T", "G", "C"), 
         nrow = n()), na.rm = TRUE
       ),
-      match = S4Vectors::rowSums(matrix(as.numeric(gsub(
+      match = rowSums(matrix(as.numeric(gsub(
           "M", "",stringr::str_extract_all(cig, "[0-9]+M", simplify = TRUE)
         )), 
         nrow = n()), na.rm = TRUE
       ) - mismatch,
-      length = S4Vectors::rowSums(matrix(as.numeric(gsub(
+      length = rowSums(matrix(as.numeric(gsub(
           "[HSMIDX=]", "", stringr::str_extract_all(
             cig, "[0-9]+[HSMIDX=]", simplify = TRUE
           )
@@ -296,7 +296,7 @@ cntClipped <- function(cigar, type = "both", end = "5p"){
   }
   
   # Capture all patterns and return integer of clipped bases
-  S4Vectors::rowSums(matrix(as.numeric(
+  rowSums(matrix(as.numeric(
         gsub("[HS]", "", stringr::str_extract_all(
           cigar, query_pat, simplify = TRUE)
         )
@@ -537,17 +537,20 @@ if( nrow(input_hits) == 0 ){
 ## Initial quality filtering: min percent ID, minimum size, max align start ----
 read_hits <- input_hits %>%
   dplyr::mutate(
-    clip5p = cntClipped(cigar),
-    pctID = calcPctID(cigar, MD),
-    pair.mapped = pair_is_mapped(flag),
+    pairMapped = pair_is_mapped(flag),
     type = read_or_mate(flag, c("anchor", "adrift"))
+  ) %>%
+  dplyr::filter(pairMapped) %>%
+  dplyr::mutate(
+    clip5p = cntClipped(cigar),
+    pctID = calcPctID(cigar, MD)
   ) %>%
   dplyr::filter(
     pctID >= args$minPercentIdentity,
     qwidth >= args$minTempLength,
     clip5p <= args$maxAlignStart
   )
-
+  
 # Stop if there are no remaining alignments
 if( nrow(read_hits) == 0 | dplyr::n_distinct(read_hits$type) == 1 ){
   

@@ -46,8 +46,8 @@ rule combine_multihits:
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
-      RUN_DIR + "/process_data/indices/{sample}.umitags.fasta.gz", 
-      sample=SAMPLES)
+      RUN_DIR + "/process_data/indices/{sample}.{bin}.umitags.fasta.gz", 
+      sample=SAMPLES, bin=BINS)
   else:
     return []
 
@@ -68,8 +68,10 @@ rule assimilate_sites:
     incorp=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
     stat=temp(RUN_DIR + "/process_data/stats/" + RUN + ".assim.stat")
   params:
-    config=RUN_DIR + "/" + "config.yml",
-    tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R"
+    config=RUN_DIR + "/config.yml",
+    tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R",
+    umitagDir=RUN_DIR + "/process_data/indices",
+    multiDir=RUN_DIR + "/process_data/multihits"
   log:
     RUN_DIR + "/logs/" + RUN + ".assim.log"
   resources:
@@ -77,9 +79,9 @@ rule assimilate_sites:
   run:
     call_str="Rscript {params.tool} {input.sites} -o {output.incorp} "
     if (config["UMItags"]):
-        call_str=call_str + "-u {input.umitag} "
+        call_str=call_str + "-u {params.umitagDir} "
     if (config["recoverMultihits"]):
-        call_str=call_str + "-m {input.multi} "
+        call_str=call_str + "-m {params.multiDir} "
     call_str=call_str + "-c {params.config} --stat {output.stat} > {log} 2>&1"
     shell(call_str)
 

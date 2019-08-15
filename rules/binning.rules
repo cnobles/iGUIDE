@@ -1,0 +1,31 @@
+# -*- mode: Snakemake -*-
+# Sequence Binning Rules
+
+rule bin_passing_reads:
+  input:
+    expand(
+      RUN_DIR + "/process_data/demulti/{{sample}}.{req_type}.fastq.gz",
+      req_type=REQ_TYPES
+    )
+  output:
+    temp(expand(
+      RUN_DIR + "/process_data/binned/{{sample}}.{req_type}.{bin}.fastq.gz", 
+      req_type=REQ_TYPES, bin=BINS
+    ))
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/bin_seqs.R",
+    outdir=RUN_DIR + "/process_data/binned",
+    bins=config["bins"],
+    level=config["level"],
+    readNamePatternArg=config["readNamePattern"]
+  log:
+    RUN_DIR + "/logs/{sample}.bin.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {params.outdir} \
+      -b {params.bins} -l {params.level} --compress \
+      --readNamePattern {params.readNamePatternArg} > {log} 2>&1
+    """
+

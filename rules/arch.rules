@@ -6,16 +6,20 @@ rule core_stat_matrix:
   input:
     demulti=RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat",
     trimR1=expand(
-      RUN_DIR + "/process_data/stats/{sample}.R1.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.R1.{bin}.trim.stat", 
+      sample=SAMPLES, bin=BINS),
     trimPrimer=expand(
-      RUN_DIR + "/process_data/stats/{sample}.R2.primer.trim.stat", 
-      sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.primer.trim.stat", 
+      sample=SAMPLES, bin=BINS),
     trimODN=expand(
-      RUN_DIR + "/process_data/stats/{sample}.R2.trim.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.trim.stat", 
+      sample=SAMPLES, bin=BINS),
     umitags=expand(
-      RUN_DIR + "/process_data/stats/{sample}.umitags.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.umitags.stat", 
+      sample=SAMPLES, bin=BINS),
     filt=expand(
-      RUN_DIR + "/process_data/stats/{sample}.filt.stat", sample=SAMPLES),
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.filt.stat", 
+      sample=SAMPLES, bin=BINS),
     consol=expand(
       RUN_DIR + "/process_data/stats/{sample}.{read}.{bin}.consol.stat", 
       sample=SAMPLES, read=READS, bin=BINS),
