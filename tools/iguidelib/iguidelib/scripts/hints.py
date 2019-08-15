@@ -6,6 +6,7 @@ def main():
         "  --nolock            \tDon't lock iGUIDE directory, for running multiple processes 'iguide run'.\n"
         "  --notemp            \tKeep all temporary files which are defaultly removed during processing.\n"
         "  --keep-going        \tKeep processing even if one job has an error.\n"
+        "  -k                  \tShort option for --keep-going.\n"
         "  --latency-wait [X]  \tWait X seconds after a job completes to for output verification, can help with slow servers.\n"
         "  -w [X]              \tShort option for '--latency-wait'.\n"
         "  --restart-times X   \tX is the number of times to restart a job if it fails. Increases 'attempt' each time.\n"

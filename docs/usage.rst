@@ -7,47 +7,286 @@ User Guide
    :depth: 3
 
 
+Nomenclature and Semantics
+**************************
 
-Nomenclature / Semantics
-************************
+Before diving too far into the documentation, it is important to understand some
+of the nomenclature and semantics used throughout this documentation. Focus will
+be mostly spent on words important to the workflow and that may be ambiguous to
+when used without definition. Some of these words may seem like they overlap in
+definition, and in certain situation, they do. In these situations, we should 
+still give proper designation to each catagory to distiguish them from each 
+other.
 
-Walk through of an generalized experiment with consistent terminology
 
-Specimen vs Sample
+The three S's
+-------------
 
-Naming restrictions on Specimens vs Samples
+We'll focus first on the three S's that relate to what we are working with, 
+Subject, Specimen, and Sample. 
+
+* Subject: the who or what we are working with, this could be a patient or an
+  experiment. It is important to remember which of the downstream identifiers 
+  are associated with a specific subject.
+* Specimen: is collected from a subject and is the start of the protocol. A 
+  specimen for iGUIDE could be considered a tube of starting gDNA. This will be
+  the actual material that will be worked with for the protocol.
+* Sample: While many people commonly use specimen and sample interchangibly,
+  here we note that a sample comes from a specimen. We make this distiction 
+  because we realize there are multiple ways to workup a single specimen, each 
+  of these different ways is a different sample. Samples are taken from the 
+  specimen, just like the specimen is taken from the Subject.
+  
+In the following workflow, you'll notice that in certain places, we refer to 
+'sampleName' (such as in the sampleInfo file), or 'specimen' (such as in the 
+supplemental data file). These designations are consistent with the above 
+definitions and it is expected that the user will follow these customs.
+
+How do we destinguish Subject, Specimen, and Sample? During processing these 
+identifiers will need to be distiguished from each other using different 
+nomenclature. Below is an example of a naming scheme for the three
+identifiers.::
+  
+  Subject   Specimen    Sample
+  {patient} {Spec.ID}   {Spec.ID-info-rep.ID}
+  pND405    iGSP0015    iGSP0015-neg-1
+  pND405    iGSP0015    iGSP0015-neg-2
+  pND405    iGSP0015    iGSP0015-neg-3
+
+Here we have an example workflow. Subject identifiers are not usually part of
+the processing, we consider Subject typically during data interpretation through
+reviewing the output reports. Subject identifiers can be included in 
+supplemental files with runs. Specimens can have identifiers (or IDs). For 
+iGUIDE, it is easiest to use a single alpha-numeric string as an identifier 
+(without delimiters!). 
+
+Following the above practice, the specimen ID can be included in a sample ID 
+(or sampleName) along with additional information. As indicated above, iGUIDE
+will treat sampleNames as three part strings, the specimen ID is at the
+beginning, delimited (or separated by a "-") from additional information.
+The last part of the string is a replicate identifier, expected to be numeric.
+In practice, we find it best to create 4 samples for processing from a single
+specimen. This limits the possibility for PCR jackpotting an allows an analyst 
+to utilize capture-recapture statistics for population estimation. The remainder
+of the string that is not captured in the first or last components is not
+directly used by iGUIDE, except as a unique identifier of the specimen. 
+Therefore it is a great place to indicate sample specific treatments.
+
+Given the above example, three different samples have been indicated, all from
+a single specimen and single subject. During processing, the user will indicate
+each of sample in the sampleName column of the sampleInfo file. When iGUIDE 
+returns the analysis, each specimen will be indicated. So while three samples go
+into the pipeline, data will be combined in the output to represent the single 
+specimen.
+
+More information can be found about specimen and sampleNames in this user guide.
+
+
+The Experiment
+--------------
+
+While writing this documentation, I thought it would be helpful to explain in a
+general sense what an experiment might look like using with repective 
+terminology of this software.
+
+For a respecitive subject (patient, individual experiment, ...) that has been 
+treated with the marker dsODN during genome editing, specimens are harvested
+from various conditions (with nuclease, with different targets controlled by 
+gRNAs, ...). This harvesting yeilds genomic DNA which is commonly cataloged
+into a specimen database holding metadata and experimental parameters for the 
+different specimens. Samples are then taken from these specimens, typically 4 
+samples (see protocol from iGUIDE manuscript), and processed through the iGUIDE
+protocol. Before sequencing, a sampleInfo sheet would be constructed where each
+row of a csv file indicates a different sample that was processed along with the
+samples barcode and demultiplexing information. During sequencing (or after), a
+run specific configuration file (config file) would be constructed by one or two
+parties. There is run specific information that needs to be included, such as: 
+target sequence patterns, nuclease profiles, treatment information, .... If a 
+variable changes throughout the samples, then it can be indicated in the 
+sampleInfo file, while if it is constant, it can be indicated in the config 
+file. The latter part of the config is reviewed and checked by the individual 
+who will computationally process the run. This portion of the config file 
+contains parameters that modify or tune the software to run on different
+systems. After the computational processing has completed, a stat report and 
+analytical report are generated in the reports directory. These can be reviewed
+by respecitive parties. Additionally, if multiple runs contain samples to be 
+analyzed together, auxiliary commands in iGUIDE allow for the computational 
+analyst to generate new reports combining multiple sequencing runs together.
+
+If the user is unsure if the experiment or would work with this type of 
+analysis, feel free to contact the maintainers of iGUIDE. 
+
 
 Subcommands
 ***********
 
-Overview of subcommands: setup, run, eval, report, summary, clean
+Once installed, iGUIDE utilization is broken down into subcommands as indicated
+in the Figure 1 below. A description of these commands are reviewed here to give
+the user an understanding of how the software would work from a workflow view
+point.
 
 .. figure:: figures/iguide_subcmd_fig.pdf
    :figwidth: 50%
    :alt: iGUIDE Subcommands: setup, run, eval, report, summary, clean.
    :align: center
 
+  Figure 1. iGUIDE Subcommands: setup, run, eval, report, summary, clean.
 
-Workflow
+Primary subcommands: Used for standard or primary workflow of processing 
+sequencing runs.
+
+* ``setup`` : This subcommand initiates a project or run directory. It requires
+  a config file and will create the new project directory within the 
+  iGUIDE/analysis directory.
+* ``run`` : This subcommand will process a run given a config file using a 
+  `Snakemake<http://snakemake.readthedocs.io/en/latest/executable.html>`_ 
+  workflow. Therefore, Snakemake specific commands can be passed into the 
+  ``run`` subcommand. All Snakemake specific commands should come after a ``--``
+  break in the options.
+
+Auxiliary subcommands: Used for auxiliary workflows which further dive into 
+analyzing the processed data.
+
+* ``eval`` : Short for evaluation, this subcommand will analyze a run's data and
+  yeild an RDS file (R-based data file). Supplemental data can additionally be
+  passed into the evaluation to group specimens together for analysis and
+  include metadata. This output object has a host of broad analysis that are 
+  based in the input information.
+* ``report`` : This will generate a full report on the given config file(s) or 
+  input evaluated RDS file. The report is defaultly produced as an html document
+  but can be changed to a pdf if the correct latex libraries are installed. 
+  Additionally, all figures and tables can be output as independent files (pdf 
+  and png formats for figures and csv formats for tables).
+* ``summary`` : Similar to the report but with some reduced utility, this 
+  subcommand will output a single text file that overviews the data. This is 
+  readable on the terminal and is helpful for getting quick answers to data
+  questions if working on the command line.
+  
+Additional subcommands: Used for cleanup and helpful suggestions for processing.
+
+* ``clean`` : After processing, most intermediate data files are removed as they
+  are designated temparary, but other file still exist within the run directory
+  that may inflate the size and are no longer needed, such as input data and 
+  log files. The ``clean`` subcommand will remove files no longer required. A 
+  "clean" run directory can still be used with ``eval``, ``report``, and 
+  ``summary``. Additionally, this subcommand can remove the entire run directory
+  by passing the ``--remove_proj`` flag.
+* ``hints`` : Prints out a message with Snakemake option hints to help with 
+  using the ``run`` subcommand.
+
+
+Workflows
 ********
 
-A generalized workflow, example with associated figures, primary then auxiliary
+A workflow is simply how data is moved from an unprocessed state (like 
+sequencing data off an Illumina sequencer) to a processed state (a final 
+report). Below we will review the primary and auxiliary workflows iGUIDE is 
+designed to handle.
+
+
+Primary Workflow
+----------------
+
+In the primary workflow, we consider how to get from input sequence information
+to processed reports. To initiate this process, the user needs to gather the 
+information and complete two files, the configuration file (config file) and the
+sample information file (sampleInfo file). These two files will tell iGUIDE how
+to process the sequence information, sample specific parameters should be
+included in the sampleInfo file while constant parameters can be simply
+specified in the config file. Once these two files are completed, they can be
+deposited into their repective directories (config file --> iGUIDE/configs and 
+sampleInfo file --> iGUIDE/sampleInfo). Additionally, if a supplemental file
+(supp file) is to be included, it is easiest to deposit this file with the 
+sampleInfo file, in iGUIDE/sampleInfo. 
 
 .. figure:: figures/iguide_prime_workflow_fig.pdf
    :figwidth: 90%
    :alt: Primary iGUIDE Workflow: setup, transfer/link data, run.
    :align: center
    
+   Figure 2. Primary workflow for processing input sequencing files to processed
+   runs with data deliverables like reports and figures.
+
+With the config, sampleInfo, and potentially supp files in place, the user can 
+use ``iguide setup {path/to/[run].config.yml}`` to create a new run directory.
+In Figure 1, three runs have been developed, named proj1, proj2, and proj3. 
+Each of these would have a different config and sampleInfo file. With the files
+in their respective directories, the user would run 
+``iguide setup configs/proj1.config.yml`` to create the "proj1" run directory
+in the analysis directory, and then repeat the command with the other two config
+files to have a total of three empty run directories under the analysis 
+directory. 
+
+Once the run directories are setup, the input data needs to be located. This can
+be done in a number of ways. In the config file, the user can specify the path
+to the sequence files (preferably not demultiplexed, see latter sections for 
+skipping demultiplexing). The user can create symbolic links to the data within 
+the input_data directory of the run directory, or the user can simply deposit 
+the sequence files (fastq.gz) into the input_data directory. 
+
+With config file, sampleInfo file, and sequencing files ready, the user can 
+start processing with ``iguide run configs/{run}.config.yml``. Recall that the 
+``run`` subcommand is built on a Snakemake workflow, so additional Snakemake 
+options can be passed after ``--`` when issuing the command. For example, 
+``iguide run configs/proj1.config.yml -- --cores 6 --nolock -k``, tells 
+Snakemake to use 6 cores for processing, do not lock the working directory 
+(helpful for running multiple processing runs at the same time), and keep going
+even if one job has an error.
+
+Allowing the ``iguide run`` command to go to completion will yeild a processed
+data run. At this point, if calling the same "run" command on a project, 
+Snakemake should return a message indicating that there is nothing to do. If 
+for some reason processing gets terminated, ``iguide run`` and Snakemake will 
+pickup from where it left off in the processing. 
+
+If the user is content with the processing, then they can run the 
+``iguide clean`` command to clean up a specific run directory (shown in 
+Figure 3 below). This leaves the output data (useful in the auxiliary workflow) 
+and the reports, but will remove input_data and log files. Additionally if the 
+user wants to remove the run directory completely, they can also use the 
+``iguide clean`` command with an optional flag.
 
 
+Auxiliary Workflow
+------------------
+
+After running the primary workflow on several runs, or if the user would like
+to change specific parameters (gene lists, target sequences, ...) then the 
+auxiliary workflow becomes quite useful.
 
 .. figure:: figures/iguide_aux_workflow_fig.pdf
    :figwidth: 90%
    :alt: Auxiliary iGUIDE Workflow: eval, report, summary, clean.
    :align: center
    
+   Figure 3. Auxiliary workflow helps with subsequent analysis of the processed
+   data.
+   
+There are three subcommands included in this workflow: ``eval``, ``report``, and
+``summary``. Each of them work in similar ways, but have different outputs. 
 
+``iguide eval`` is a focal point of the auxiliary workflow. This command will 
+process one or more runs and analyze them in a consistent manner, so the the 
+user is confident they don't have a mixed data set. This subcommand will output 
+a binary R-based file (*.rds) which can be read into an R environment with the 
+function base::readRDS(). This file contains a host of analysis and can be used 
+with the other two subcommands, ``report`` and ``summary``.
 
+``iguide report`` will output an html or pdf analysis of the evaluated dataset.
+This is the standard deliverable from the iGUIDE package. Additionally, the 
+command can generate the figures and tables along with the report. 
+``iguide summary`` is very similar, but only generates a text-file based report.
+Both will take ``eval`` output files as an input, but they can also be used with
+the same input as would be given to ``eval``, config file(s).
+
+Supplemental files carrying specimen-based metadata can also be included in the 
+auxiliary commands. Any specimen not indicated in the supp file will be dropped
+from the analysis. This means the user can select which samples are included in
+the analysis by specifying the associated specimens to include, even if the 
+specimens are across multiple runs.
+
+With this knowlege in hand, the remainder of the documentation should have more
+context as to how it is applied to processing data with the iGUIDE software.
 
 
 Requirements
@@ -55,42 +294,32 @@ Requirements
 
 - A relatively-recent Linux computer with more than 2Gb of RAM
 
-We do not currently support Windows or Mac. (You may be able to run this on
+We do not currently support Windows or Mac. (iGUIDE may be able to run on
 Windows using the [WSL](https://docs.microsoft.com/en-us/windows/wsl/about), but
-it has not been tested.
-
-
+it has not been tested).
 
 
 Installing
 **********
 
-To install iGUIDE, simply clone the repository to the desired destination.
+To install iGUIDE, simply clone the repository to the desired destination.::
 
-.. code-block:: shell
-  
   git clone https://github.com/cnobles/iGUIDE.git
 
-Then initiate the install using the install script. If you would like the 
+Then initiate the install using the install script. If the user would like the 
 installed environment to be named something other than 'iguide', the new conda 
-environment name can be provided to the ``install.sh`` script as provided below.
-
-.. code-block:: shell
+environment name can be provided to the ``install.sh`` script as shown below.::
 
   cd path/to/iGUIDE
   bash install.sh
 
-Or:
-
-.. code-block:: shell
+Or specify a different environment name.::
 
   cd path/to/iGUIDE
   bash install.sh -e {env_name}
   
 Additionally, help information on how to use the ``install.sh`` can be accessed
-by:
-
-.. code-block:: shell
+with the ``-h`` flag.::
 
   bash install.sh -h
   
@@ -98,15 +327,72 @@ by:
 Testing
 -------
 
-How to run the test case and what to expect
-Simulation dataset builder
+If the user would like to run a test of the software during the installation,
+the install script has a ``-t`` option that helps with just that. The below 
+command will install the software with the environment named 'iguide' and test
+the software with the built-in simulated dataset during installation. Be ready
+for the testing to take a little bit of time through (up to 30 mins or so).::
 
+  bash install.sh -e iguide -t
+
+Otherwise, the testing can be initiated after install using the following 
+command.::
+
+  bash etc/tests/test.sh {env} {cores}
+  
+Where ``{env}`` would be the environment the user would like to test, "iguide" 
+by default, and ``{cores}`` would be the number of cores to run the test on. The
+test will complete faster given more cores. 
+
+The test dataset can be regenerated with a script provided in the 
+iGUIDE/etc/tests/construct_scripts directory, ``simulate_incorp_data.R``. This 
+script is configured by a partner config.yml file, ``sim_config.yml``. A quick
+look through this configuration and the user can change the size of the
+simulated data output, rerun the script to generate new data, and develop a new
+test for iGUIDE.::
+
+  cd etc/tests/construct_scripts
+  Rscript simulate_incorp_data.R sim_config.yml
+  
+There are two scripts included in the tools/rscript directory that work with the
+simulated data. The first is designed to check the accuracy compared to the 
+"truth" dataset that the simulated data was built on. To run that script, follow
+the command below.::
+
+  Rscript tools/rscripts/check_test_accuracy.R configs/simulation.config.yml etc/tests/Data/truth.csv -v
+  
+The second script checks output files by their md5 digest, therefore any changes
+to the test (including generating new data, changing the aligner, 
+changing parameters, ...) could make the test fail.::
+
+  Rscript tools/rscripts/check_file_digests.R etc/tests/simulation.digests.yml -v
+  
+Both testing scripts will exit with exit code 1 if they fail, which makes them 
+easy to build into integration testing.
 
 
 Updating
 --------
 
-how to use the "install.sh" script for updating components (env, lib, pkg)
+Over time, components of iGUIDE will be updated, including environmental builds,
+the commandline interface (python library or lib), and the supporting R-package
+(iguideSupport or pkg), as well as the standard code base. To update these, pull
+the latest release from GitHub with the following command after installation.::
+
+  git pull origin master
+  
+Once this has updated, the user should update their install by running the 
+install script with the update option.::
+
+  bash install.sh -u all
+  
+It is recommended to update everything if the user is unsure of what has been
+updated. If the user just wants to update specific parts of the software 
+through, they can use ``env``, ``pkg``, or ``lib`` after the ``-u`` flag to
+specify a component.
+
+It is recommened that after updating, the user rerun the testing scripts to make
+sure the software is working appropriately on the specified system.
 
 
 Uninstalling
@@ -145,117 +431,6 @@ used::
   rm -r path/to/miniconda3
 
 
-
-
-
-
-Setup a Run
-***********
-
-Once the config and sampleInfo files have been configured, a run directory 
-can be created using the command below where {ConfigFile} is the path to your 
-configuration file::
-
-  cd path/to/iGUIDE
-  iguide setup {ConfigFile}
-
-The directory should look like this (RunName is specified in the ConfigFile)::
-  
-  > tree analysis/{RunName}
-  analysis/{RunName}/
-  ├── config.yml -> {path to ConfigFile}
-  ├── input_data
-  ├── logs
-  ├── output
-  ├── process_data
-  └── reports
-
-Components within the run directory:
-
-* config.yml - This is a symbolic link to the config file for the run
-* input_data - Directory where input fastq.gz files can be deposited
-* logs - Directory containing log files from processing steps
-* output - Directory containing output data from the analysis
-* process_data - Directory containing intermediate processing files
-* reports - Directory containing output reports and figures
-
-As a current convention, all processing is done within the analysis directory. 
-The above command will create a file directory under the analysis directory for 
-the run specified in by the config ('/iGUIDE/analysis/{RunName}'). At the end of 
-this process, iGUIDE will give the user a note to deposit the input sequence 
-files into the /analysis/{RunName}/input_data directory. Copy the fastq.gz files 
-from the sequencing instrument into this directory if you do not have paths to
-the files specified in the config file.
-
-iGUIDE typically uses each of the sequencing files (R1, R2, I1, and I2) for 
-processing since it is based on a dual barcoding scheme. If I1 and I2 are 
-concatenated into the read names of R1 and R2, it is recommended the you run 
-``bcl2fastq ... --create-fastq-for-index-reads`` on the machine output 
-directory to generate the I1 and I2 files. 
-
-As iGUIDE has its own demultiplexing, it is recommend to not use the Illumina 
-machine demultiplexing through input of index sequences in the SampleSheet.csv.
-If your sequence data has already been demultiplexed though, please see the 
-:ref:`usage` for setup instructions.
-
-
-List Samples in a Run
-*********************
-
-As long as the config and sampleInfo files are present and in their respective 
-locations, you can get a quick view of what samples are related to the project.
-Using the ``iguide list_samples`` command will produce an overview table on 
-the console or write the table to a file (specified by the output option).
-Additionally, if a supplemental information file is associated with the run, the
-data will be combined with the listed table.::
-
-  > iguide list_samples configs/simulation.config.yml
-  
-  Specimen Info for : simulation.
-
-   specimen   replicates       gRNA        nuclease
-  ---------- ------------ --------------- ----------
-     iGXA         1            TRAC         Cas9v1
-     iGXB         1        TRAC;TRBC;B2M    Cas9v1
-     iGXD         1             NA            NA
-
-
-Processing a Run
-****************
-
-Once the input_data directory has the required sequencing files, the run can be 
-processed using the following command::
-
-  cd path/to/iGUIDE/
-  iguide run {ConfigFile}
-
-Snakemake offers a great number of resources for managing the processing through 
-the pipeline. I recommend familiarizing yourself with the utility 
-(https://snakemake.readthedocs.io/en/stable/). Here are some helpful snakemake
-options that can be passed to iGUIDE by appending to the iguide command after 
-``--``:
-
-* ``[--configfile X]`` associate a specific configuration for processing, 
-  essential for processing but already passed in by ``iguide``.
-* ``[--cores X]`` multicored processing, specified cores to use by X.
-* ``[--nolock]`` process multiple runs a the same time, from different sessions.
-* ``[--notemp]`` keep all temporary files, otherwise removed.
-* ``[--keep-going]`` will keep processing if one or more job error out.
-* ``[-w X, --latency-wait X]`` wait X seconds for the output files to appear 
-  before erroring out.
-* ``[--restart-times X]`` X is the number of time to restart a job if it fails. 
-  Defaults to 0, but is used in ``iguide`` to increase memory allocation.
-* ``[--resources mem_mb=X]`` Defined resources, for ``iguide`` the mem_mb is the
-  MB units to allow for memory allocation to the whole run. For HPC, this can be
-  coupled with ``--cluster-config`` to request specific resources for each job.
-* ``[--rerun-incomplete, --ri]`` Re-run all jobs that the output is recognized 
-  as incomplete, useful if your run gets terminated before finishing.
-* ``[--cluster-config FILE]`` A JSON or YAML file that defines wildcards used 
-  for HPC.
-
-
-
-
 Config Files
 ************
 
@@ -278,6 +453,7 @@ files can be placed in ``iGUIDE/configs/``.
 For sample specific information, input is more easily placed in a sampleInfo 
 file. See the included section regarding sample info files.
 
+
 File Layout
 -----------
 
@@ -290,13 +466,6 @@ and sequences they are using.
 The second part (below the divide ``----``) should be filled out by an 
 individual familiar with the bioinformatic processing. Explanations of the 
 different portions can be found in the following pages.
-
-
-
-
-
-
-
 
 
 Run Specific Information
@@ -337,14 +506,11 @@ Run configuration
   default. Please see information on the BioConductoR package 'BSgenome' for 
   installing alternative genomes.
   
-``Ref_Genome_Path``
-  This is the file path (following the same workflow as the ``Sample_Info`` 
-  parameter) to a reference genome file, if one is already available in a fasta
-  format.
-  
 ``Aligner``
   Options include either 'blat' or 'bwa', though at this time, only 'blat' is 
-  supported. Future versions of iGUIDE will support other alignment softwares.
+  supported. Future versions of iGUIDE may support other alignment softwares.
+  Please contact the maintainers if you have a favorite you would like to see 
+  listed here.
   
 ``UMItags``
   This is a logical parameter indicating whether to use unique molecular indices
@@ -365,10 +531,6 @@ Sequence files
   analyzed by the iGUIDE software. It is recommened to pass complete sequencing
   files to iGUIDE rather than demultiplexing prior to analysis.
 
-``Demulti_Dir``
-  Path to the directory containing demultiplexed sequence data. This is still
-  under development and may present with bugs.
-
 
 SampleInfo formating
 """"""""""""""""""""
@@ -384,10 +546,11 @@ SampleInfo formating
   iGSP0002-2, will be pooled together for the report and analysis, but 
   iGSP0002-1 and iGSP0003-1 will not. These names will be used in naming files,
   so do not include any special characters that will confuse file managment. 
-  Try to stick to common delimiters, such as "-", "_", ".". A good practice is
+  Try to stick to common delimiters, such as "-" and "_". A good practice is
   to put specimen identifiers at the beginning, replicate identifiers at the end
   following a "-", and anything else descriptive in the middle. For example, 
-  iGSP0002-neg-1, can specify the orientation the sample was processed with.
+  iGSP0002-neg-1, can specify the priming orientation the sample was processed 
+  with.
 
 
 Sequence information
@@ -452,9 +615,7 @@ Target sequence information
   the nucleotide(s) of editing. For Cas9, the position of editing is commonly 
   between the 3rd and 4th nucleotide from the 3' end of the targeting sequence 
   (not including the PAM). Being off by a nucleotide or so will not cause any 
-  problems. Example below.
-  
-  .. code-block:: shell
+  problems. Example below.::
   
     On_Target_Sites :
       TRAC.5 : "chr14:+:22547664"
@@ -495,17 +656,10 @@ Specimen nuclease treatment
   with multiple classes of nuclease profiles. Only one profile can be specified
   per specimen.
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+``Nuclease_Profies``
+  See below section on nuclease profiles.
+
+
 Processing Information
 ----------------------
 
@@ -516,7 +670,7 @@ are particulars for computational scientists.
 
 Resource management is not required, but it can help when using HPC or limiting
 jobs. You are encouraged to spend some time optimizing if you would like, these
-parameters work out well on the designers platform.
+parameters work out well on the designer's platform.
 
 
 iGUIDE configuration
@@ -531,6 +685,13 @@ iGUIDE configuration
 ``Genomic_Reads``
   This parameter is similar to the ``Read_Types`` but only indicates which reads
   contain genomic information rather than indexing.
+  
+``readNamePattern``
+  This is a regex pattern for which to gather read names, it should not make the
+  read name sequencing orientation specific, R1 and R2 should have the same read
+  name. The default works well for Illumina based readnames ``[\w\:\-\+]+``. For
+  R-based scripts to interpret the regex correctly, you will need to use double 
+  escapes, ``[\\w\\:\\-\\+]+``.
 
 
 Memory Management
@@ -732,8 +893,6 @@ Report
   getting credit for your work.
 
 
-
-
 Nuclease Profiles
 -----------------
 
@@ -754,7 +913,7 @@ sure you have a profile named "Cas9v2".
 
 Below is some ascii art that indicates the differences between nucleases. 
 Additionally, below the art are example profiles for input into the iGUIDE 
-software::
+software.::
 
   Editing strategies by designer nucleases
   Cas9 :
@@ -793,43 +952,43 @@ software::
   TAGGA TACGTACGTACGTACGTACG AATTGGCCAATTGGCC ATGCATGCATGCATGCATGC GCCAG
 
 
-Below are the example profiles::
+Below are the example profiles.::
 
   Nuclease_Profiles :
-  Cas9 :
-    PAM : "NGG"
-    PAM_Loc : "3p"
-    PAM_Tol : 1
-    Cut_Offset : -4
-    Insert_size : FALSE
-
-  Cpf1 :
-    PAM : "TTTV"
-    PAM_Loc : "5p"
-    PAM_Tol : 1
-    Cut_Offset : 26     #(Anywhere between 23 and 28)
-    Insert_size : FALSE
-
-  CasX :
-    PAM : "TTCN"
-    PAM_Loc : "5p"
-    PAM_Tol : 1
-    Cut_Offset : 22     #(Anywhere between 16 and 29)
-    Insert_size : FALSE
-
-  TALEN :
-    PAM : FALSE
-    PAM_Loc : FALSE
-    PAM_Tol : 0
-    Cut_Offset : Mid_insert
-    Insert_size : "15:21"
-
-  CasCLOVER :
-    PAM : "NGG"
-    PAM_Loc : "3p"
-    PAM_Tol : 1
-    Cut_Offset : Mid_insert
-    Insert_size : "10:30"
+    Cas9 :
+      PAM : "NGG"
+      PAM_Loc : "3p"
+      PAM_Tol : 1
+      Cut_Offset : -4
+      Insert_size : FALSE
+  
+    Cpf1 :
+      PAM : "TTTV"
+      PAM_Loc : "5p"
+      PAM_Tol : 1
+      Cut_Offset : 26     #(Anywhere between 23 and 28)
+      Insert_size : FALSE
+  
+    CasX :
+      PAM : "TTCN"
+      PAM_Loc : "5p"
+      PAM_Tol : 1
+      Cut_Offset : 22     #(Anywhere between 16 and 29)
+      Insert_size : FALSE
+  
+    TALEN :
+      PAM : FALSE
+      PAM_Loc : FALSE
+      PAM_Tol : 0
+      Cut_Offset : Mid_insert
+      Insert_size : "15:21"
+  
+    CasCLOVER :
+      PAM : "NGG"
+      PAM_Loc : "3p"
+      PAM_Tol : 1
+      Cut_Offset : Mid_insert
+      Insert_size : "10:30"
 
 
 Profile parameters
@@ -859,18 +1018,6 @@ Profile parameters
   a range, delimit the min and max by a colon, ie. 15:21. All names of 
   nucleases used to treat specimens need to have a profile. Additional profiles
   should be added under the 'Nuclease_Profiles' parameter.
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Sample Information Files
@@ -906,12 +1053,6 @@ A good practice is to put specimen identifiers at the beginning, replicate
 identifiers at the end following a "-", and anything else descriptive in the 
 middle. For example, iGSP0002-neg-1, can specify the orientation the sample was 
 processed with.
-
-
-
-
-
-
 
 
 Supplemental Information Files
@@ -955,8 +1096,108 @@ will order the conditions in the following order "Cas9-TRAC", "Cas9-B2M", and
 "Mock-Mock", which is the order of first observation.
 
 
+Setup a Run
+***********
+
+Once the config and sampleInfo files have been configured, a run directory 
+can be created using the command below where {ConfigFile} is the path to your 
+configuration file::
+
+  cd path/to/iGUIDE
+  iguide setup {ConfigFile}
+
+The directory should look like this (RunName is specified in the ConfigFile)::
+  
+  > tree analysis/{RunName}
+  analysis/{RunName}/
+  ├── config.yml -> {path to ConfigFile}
+  ├── input_data
+  ├── logs
+  ├── output
+  ├── process_data
+  └── reports
+
+Components within the run directory:
+
+* config.yml - This is a symbolic link to the config file for the run
+* input_data - Directory where input fastq.gz files can be deposited
+* logs - Directory containing log files from processing steps
+* output - Directory containing output data from the analysis
+* process_data - Directory containing intermediate processing files
+* reports - Directory containing output reports and figures
+
+As a current convention, all processing is done within the analysis directory. 
+The above command will create a file directory under the analysis directory for 
+the run specified in by the config ('/iGUIDE/analysis/{RunName}'). At the end of 
+this process, iGUIDE will give the user a note to deposit the input sequence 
+files into the /analysis/{RunName}/input_data directory. Copy the fastq.gz files 
+from the sequencing instrument into this directory if you do not have paths to
+the files specified in the config file.
+
+iGUIDE typically uses each of the sequencing files (R1, R2, I1, and I2) for 
+processing since it is based on a dual barcoding scheme. If I1 and I2 are 
+concatenated into the read names of R1 and R2, it is recommended the you run 
+``bcl2fastq ... --create-fastq-for-index-reads`` on the machine output 
+directory to generate the I1 and I2 files. 
+
+As iGUIDE has its own demultiplexing, it is recommend to not use the Illumina 
+machine demultiplexing through input of index sequences in the SampleSheet.csv.
+If your sequence data has already been demultiplexed though, please see the 
+:ref:`usage` for setup instructions.
 
 
+List Samples in a Run
+*********************
+
+As long as the config and sampleInfo files are present and in their respective 
+locations, you can get a quick view of what samples are related to the project.
+Using the ``iguide list_samples`` command will produce an overview table on 
+the console or write the table to a file (specified by the output option).
+Additionally, if a supplemental information file is associated with the run, the
+data will be combined with the listed table.::
+
+  > iguide list_samples configs/simulation.config.yml
+  
+  Specimen Info for : simulation.
+
+   specimen   replicates       gRNA        nuclease
+  ---------- ------------ --------------- ----------
+     iGXA         1            TRAC         Cas9v1
+     iGXB         1        TRAC;TRBC;B2M    Cas9v1
+     iGXD         1             NA            NA
+
+
+Processing a Run
+****************
+
+Once the input_data directory has the required sequencing files, the run can be 
+processed using the following command::
+
+  cd path/to/iGUIDE/
+  iguide run {ConfigFile}
+
+Snakemake offers a great number of resources for managing the processing through 
+the pipeline. I recommend familiarizing yourself with the utility 
+(https://snakemake.readthedocs.io/en/stable/). Here are some helpful snakemake
+options that can be passed to iGUIDE by appending to the iguide command after 
+``--``:
+
+* ``[--cores X]`` multicored processing, specified cores to use by X.
+* ``[--nolock]`` prevents locking of the working directory, allows for multiple 
+  sessions to run at the same time.
+* ``[--notemp]`` keep all temporary files which are otherwise removed.
+* ``[-k, --keep-going]`` will keep processing if one or more job error out.
+* ``[-w X, --latency-wait X]`` wait X seconds for the output files to appear 
+  before erroring out.
+* ``[--restart-times X]`` X is the number of time to restart a job if it fails. 
+  Defaults to 0, but is used in ``iguide`` to increase memory allocation.
+* ``[--resources mem_mb=X]`` Defined resources, for ``iguide`` the mem_mb is the
+  MB units to allow for memory allocation to the whole run. For HPC, this can be
+  coupled with ``--cluster-config`` to request specific resources for each job.
+* ``[--rerun-incomplete, --ri]`` Re-run all jobs that the output is recognized 
+  as incomplete, useful if your run gets terminated before finishing.
+* ``[--cluster-config FILE]`` A JSON or YAML file that defines wildcards used 
+  for HPC.
 
 
 Outputs and Reports

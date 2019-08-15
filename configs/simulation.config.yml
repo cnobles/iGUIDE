@@ -3,7 +3,6 @@ Run_Name : "simulation"
 Sample_Info : "sampleInfo/simulation.sampleInfo.csv"
 Supplemental_Info : "sampleInfo/simulation.supp.csv"
 Ref_Genome : "hg38"
-Ref_Genome_Path : "genomes/hg38.2bit"
 Aligner : "blat"
 UMItags : TRUE
 
