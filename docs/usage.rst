@@ -702,14 +702,15 @@ Memory Management
   snakemake processing. While working on a server or multicored machine, these
   parameters will work internally to help schedule jobs. Each value will act as
   an upper limit for the amount of MB of RAM to expect the process to take, and 
-  schedule jobs appropriately using the ``--resources mem_mb={limitMB}`` flag with
-  snakemake. During HPC use, these parameters can be combined with the cluster config
-  to schedule specific memory requirements for jobs. Additionally, if the 
-  ``--restart-times {x}`` is used where "x" is the number of times to restart a job
-  if it fails, then the amount of memory for the job will increase by a unit of the 
-  parameter. For example, if a trimming job fails because it runs out of memory, then
-  restarting the job will try to allocate 2 times the memory for the second attempt.
-  All parameters should be in megabytes (MB).
+  schedule jobs appropriately using the ``--resources mem_mb={limitMB}`` flag 
+  with Snakemake. During HPC use, these parameters can be combined with the 
+  cluster config to schedule specific memory requirements for jobs. 
+  Additionally, if the ``--restart-times {x}`` is used where "x" is the number 
+  of times to restart a job if it fails, then the amount of memory for the job 
+  will increase by a unit of the parameter. For example, if a trimming job fails
+  because it runs out of memory, then restarting the job will try to allocate 2 
+  times the memory for the second attempt. All parameters should be in megabytes
+  (MB).
 
 
 Demultiplexing parameters
@@ -718,15 +719,16 @@ Demultiplexing parameters
 ``skipDemultiplexing``
   Logical (either TRUE or FALSE) to indicate if demultiplexing should be carried
   out. If TRUE, sequence files (*.fastq.gz) need to be placed or linked in the 
-  input_data directory of an existing project directory (as with ``iguide setup``),
-  one sequence file for each type (R1, R2, I1, I2). These need to be identified
-  in the "Run" portion of the config file. If FALSE, then demultiplexed files need
-  to be included in the input_data directory of an existing project directory. The
-  files need to be appropriately named, in the format of ``{sampleName}.{readtype}.fastq.gz``,
-  where ``sampleName`` matches the 'sampleName' column found in the associated 'sampleInfo'
-  file, and ``readtype`` is R1, R2, I1, or I2. If ``UMItags`` is ``FALSE``, then only R1 and R2
-  file types are required for analysis, if ``UMItags`` is ``TRUE``, then I2 is a
-  required file type as well.
+  input_data directory of an existing project directory (as with 
+  ``iguide setup``), one sequence file for each type (R1, R2, I1, I2). These 
+  need to be identified in the "Run" portion of the config file. If FALSE, then 
+  demultiplexed files need to be included in the input_data directory of an 
+  existing project directory. The files need to be appropriately named, in the 
+  format of ``{sampleName}.{readtype}.fastq.gz``, where ``sampleName`` matches 
+  the 'sampleName' column found in the associated 'sampleInfo' file, and 
+  ``readtype`` is R1, R2, I1, or I2. If ``UMItags`` is ``FALSE``, then only R1 
+  and R2 file types are required for analysis, if ``UMItags`` is ``TRUE``, then 
+  I2 is a required file type as well.
 
 ``barcode{1/2}Length``
   Integer values indicating the number of nucleotides in the barcodes or 
@@ -872,9 +874,10 @@ Report
 
 ``{tables/figures}``
   Logicals indicating if tables and figures should be generated from the report. 
-  Data will be included under the ``reports`` directory in the project run directory. 
-  For figures, both PDF and PNG formats will be generated if set to ``TRUE`` at 300 dpi
-  while tables will be generated in a comma-separated values (csv) format.
+  Data will be included under the ``reports`` directory in the project run 
+  directory. For figures, both PDF and PNG formats will be generated if set to 
+  ``TRUE`` at 300 dpi while tables will be generated in a comma-separated values
+  (csv) format.
 
 ``reportData``
   Logical indicating if a RData object should be saved during the report 
@@ -1203,19 +1206,51 @@ options that can be passed to iGUIDE by appending to the iguide command after
 Outputs and Reports
 *******************
 
+After the ``iguide run`` command has completed, the final run directory will 
+contain a number of output and report files depending on the config parameters.
+Additionally, the if user is content with the analysis, they can use the 
+``iguide clean`` command to "clean up" the run directory. This will remove input
+data files, log files, and any remaining process data files, but will leave 
+output and report files. This makes the "cleaned" run directories still 
+compatible with the auxiliary workflow. A clean run directory will look 
+something like the below tree.::
 
-Overview of different reports, runstats, summary and iguide report
+  > tree analysis/{RunName}
+  analysis/{RunName}/
+  ├── config.yml -> {path to ConfigFile}
+  ├── input_data
+  ├── process_data
+  ├── logs
+  ├── output
+  | ├── incorp_sites.{RunName}.rds
+  | ├── stats.core.{RunName}.csv
+  | └── stats.eval.{RunName}.csv
+  └── reports
+    ├── report.{RunName}.html
+    ├── runstats.{RunName}.html
+    └── summary.{RunName}.txt
+
+There are several standard output files. The ``incorp_sites.{RunName}.rds`` is 
+the intermediate object that can be reprocessed into final data object and 
+reports if the user would like to change most parameters. The ``stats`` files
+contain processing related information in a condensed form. These stats can be
+viewed in a more interpretable fashion from the ``runstats.{RunName}.html`` 
+report.
+
+The ``report.{RunName}.html`` would be the main data analysis report. The 
+``summary`` is a similar report but in a text based format. These are ample 
+descriptions within the report template that will be included with the report. 
+But if the user would like to customize this report, then they can modify the 
+report template, found 
+``tools/rscripts/report_templates/iGUIDE_report_template.Rmd``. Custom Rmd
+templates can also be provided through the ``iguide report`` command which will
+use ``eval`` output objects to "knit" reports in html or pdf output formats.
 
 
+Contacts
+********
 
-
-
-
-
-
-
-
-
-
-
-
+Should you have any questions or comments and would like to contact the 
+maintainer and designer of the iGUIDE software,
+please send a email to Chris [dot] L [dot] Nobles [at] Gmail [dot] com, with 
+iGUIDE in the subject.
