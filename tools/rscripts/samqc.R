@@ -85,6 +85,14 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "--batches", nargs = 1, type = "integer", default = 500L,
+  help = paste(
+    "A tuning parameter to batch process the alignments, specifies how many", 
+    "batches to do. Default: 500."
+  )
+)
+
+parser$add_argument(
   "--readNamePattern", nargs = 1, type = "character", 
   default = "[\\w\\:\\-\\+]+", help = desc$readNamePattern
 )
@@ -479,9 +487,12 @@ cntClipped <- function(cigar, type = "both", end = "5p"){
 #' @param maxLen numeric or integer value indicating the maximum distance 
 #' between the two alignments that should be considered.
 #' @param refGen BSgenome object or other object with GenomeInfoDb::seqinfo.
+#' @param batches integer indicating the number of batches to serialize the 
+#' data processing with. The number of reads analyzed within a batch will be
+#' the number of unique `id`'s divided by the `batches`.
 
 processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
-                              maxLen = 2500L, refGen = NULL){
+                              maxLen = 2500L, refGen = NULL, batches = 500L){
   
   # Check inputs
   inputs <- list(
@@ -513,19 +524,43 @@ processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
     IRanges::LogicalList(split(input_df$type == "adrift", input_df$grp))
   ]
   
-  expansion_lengths <- lengths(anchor_idx_list) * lengths(adrift_idx_list)
-  
-  dplyr::bind_rows(lapply(names(idx_list), function(x){
+  batch_list <- split(
+    seq_along(idx_list), 
+    ceiling(seq_along(idx_list) / (length(idx_list) / batches))
+  )
+
+  dplyr::bind_rows(lapply(batch_list, function(idxs){
     
-    anchor_aligns <- input_df[anchor_idx_list[[x]],]
-    adrift_aligns <- input_df[adrift_idx_list[[x]],] %>%
+    # Identify which reads to analyze
+    x <- names(idx_list)[idxs]
+    
+    # Pull in all anchors associated with reads
+    anchor_aligns <- input_df[unlist(anchor_idx_list[x]),]
+    
+    # Pull in all adrift alignments associated with reads
+    adrift_aligns <- input_df[unlist(adrift_idx_list[x]),] %>%
       dplyr::select(grp, "chr.d" = chr, "strand.d" = strand, "pos.d" = pos)
     
-    adrift_aligns[rep(seq_len(nrow(adrift_aligns)), nrow(anchor_aligns)),] %>%
+    anc_idx <- IRanges::IntegerList(
+      split(seq_len(nrow(anchor_aligns)), anchor_aligns$grp)
+    )
+    
+    adr_idx <- IRanges::IntegerList(
+      split(seq_len(nrow(adrift_aligns)), adrift_aligns$grp)
+    )
+    
+    exp_anc_idxs <- unlist(lapply(
+      seq_along(anc_idx), 
+      function(i) rep(anc_idx[[i]], each = length(adr_idx[[i]]))
+    ))
+        
+    adrift_aligns[
+        unlist(unname(adr_idx[rep(names(anc_idx), lengths(anc_idx))])),
+      ] %>%
       dplyr::mutate(
-        chr.n = rep(anchor_aligns$chr, each = nrow(adrift_aligns)),
-        strand.n = rep(anchor_aligns$strand, each = nrow(adrift_aligns)),
-        pos.n = rep(anchor_aligns$pos, each = nrow(adrift_aligns))
+        chr.n = anchor_aligns$chr[exp_anc_idxs],
+        strand.n = anchor_aligns$strand[exp_anc_idxs],
+        pos.n = anchor_aligns$pos[exp_anc_idxs]
       ) %>%
       dplyr::filter(
         # Filter for opposite strands
@@ -676,7 +711,8 @@ if( nrow(read_hits) == 0 | dplyr::n_distinct(read_hits$type) == 1 ){
 all_valid_aligns <- with(
     read_hits, 
     processAlignments(
-      qname, rname, strand, pos, qwidth, type, refGen = ref_genome
+      qname, rname, strand, pos, qwidth, type, 
+      refGen = ref_genome, batches = args$batches
     )
   ) %>%
   dplyr::mutate(
