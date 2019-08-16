@@ -207,11 +207,19 @@ if( args$stat != FALSE ){
 #' @param tags character vector indicating the additional tags to import. Again,
 #' refer to the SAMtools or BWA manual for tag names.
 
-loadBAM <- function(bam, bai, params, tags){
+loadBAM <- function(bam, bai, params, tags, onlyPairMapped = TRUE){
 
   algn <- unlist(Rsamtools::scanBam(
       file = bam, index = bai,
-      param = Rsamtools::ScanBamParam(what = params, tag = tags)
+      param = Rsamtools::ScanBamParam(
+        flag = Rsamtools::scanBamFlag(
+          isPaired = ifelse(onlyPairMapped, TRUE, NA), 
+          isUnmappedQuery = ifelse(onlyPairMapped, FALSE, NA),
+          hasUnmappedMate = ifelse(onlyPairMapped, FALSE, NA)
+        ), 
+        what = params, 
+        tag = tags
+      )
     ),
     recursive = FALSE
   )
@@ -298,8 +306,8 @@ cntClipped <- function(cigar, type = "both", end = "5p"){
   # Capture all patterns and return integer of clipped bases
   rowSums(matrix(as.numeric(
         gsub("[HS]", "", stringr::str_extract_all(
-          cigar, query_pat, simplify = TRUE)
-        )
+          cigar, query_pat, simplify = TRUE
+        ))
       ), 
       nrow = length(cigar)
     ), 
@@ -325,8 +333,9 @@ cntClipped <- function(cigar, type = "both", end = "5p"){
 #' @param maxLen numeric or integer value indicating the maximum distance 
 #' between the two alignments that should be considered.
 #' @param refGen BSgenome object or other object with GenomeInfoDb::seqinfo.
+#' This method is currently depreciated for the latter method.
 
-processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
+.processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
                               maxLen = 2500L, refGen = NULL){
   
   # Check inputs
@@ -453,6 +462,93 @@ processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
 
 }
 
+#' Process alignment data to valid paired-end alignments representing the input
+#' template DNA.
+#' @param id character vector indicating grouping of alignments.
+#' @param chr character vector of seqnames. If using reference genome, these 
+#' will need to match seqnames present in the reference object passed to 
+#' `refGen`.
+#' @param strand character vector of strand or alignment orientation, must be 
+#' either "+" or "-".
+#' @param pos numeric or integer vector indicating the "start" of the alignment.
+#' @param width numeric or integer vector indicating the width of the alignment.
+#' @param type character vector indicating type of alignment 
+#' ("anchor" or "adrift").
+#' @param maxLen numeric or integer value indicating the minimum distance 
+#' between the two alignments that should be considered.
+#' @param maxLen numeric or integer value indicating the maximum distance 
+#' between the two alignments that should be considered.
+#' @param refGen BSgenome object or other object with GenomeInfoDb::seqinfo.
+
+processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
+                              maxLen = 2500L, refGen = NULL){
+  
+  # Check inputs
+  inputs <- list(
+    "grp" = id, "chr" = chr, "strand" = strand, 
+    "pos" = pos, "width" = width, "type" = type
+  )
+  
+  stopifnot( length(unique(sapply(inputs, length))) == 1 ) # All same length
+  
+  # Combine into data.frame and build GenomicRanges
+  input_df <- as.data.frame(inputs) %>%
+    dplyr::mutate(
+      grp = as.character(grp),
+      start = pos,
+      end = pos + width - 1,
+      type = as.character(type),
+      strand = as.character(strand),
+      pos = ifelse(strand == "+", start, end)
+    ) %>%
+    dplyr::select(grp, chr, strand, pos, type)
+  
+  idx_list <- IRanges::IntegerList(split(seq_len(nrow(input_df)), input_df$grp))
+  
+  anchor_idx_list <- idx_list[
+    IRanges::LogicalList(split(input_df$type == "anchor", input_df$grp))
+  ]
+  
+  adrift_idx_list <- idx_list[
+    IRanges::LogicalList(split(input_df$type == "adrift", input_df$grp))
+  ]
+  
+  expansion_lengths <- lengths(anchor_idx_list) * lengths(adrift_idx_list)
+  
+  dplyr::bind_rows(lapply(names(idx_list), function(x){
+    
+    anchor_aligns <- input_df[anchor_idx_list[[x]],]
+    adrift_aligns <- input_df[adrift_idx_list[[x]],] %>%
+      dplyr::select(grp, "chr.d" = chr, "strand.d" = strand, "pos.d" = pos)
+    
+    adrift_aligns[rep(seq_len(nrow(adrift_aligns)), nrow(anchor_aligns)),] %>%
+      dplyr::mutate(
+        chr.n = rep(anchor_aligns$chr, each = nrow(adrift_aligns)),
+        strand.n = rep(anchor_aligns$strand, each = nrow(adrift_aligns)),
+        pos.n = rep(anchor_aligns$pos, each = nrow(adrift_aligns))
+      ) %>%
+      dplyr::filter(
+        # Filter for opposite strands
+        strand.n != strand.d,
+        # Filter for correct size window
+        ifelse(strand.n == "+", pos.d - pos.n, pos.n - pos.d) >= minLen,
+        ifelse(strand.n == "+", pos.d - pos.n, pos.n - pos.d) <= maxLen,
+        # Filter for same chromosome
+        chr.n == chr.d
+      ) %>%
+      dplyr::mutate(
+        start = ifelse(strand.n == "+", pos.n, pos.d),
+        end = ifelse(strand.n == "+", pos.d, pos.n)
+      ) %>%
+      dplyr::select(
+        "id" = grp, "chr" = chr.n, "strand" = strand.n, start, end
+      )
+    
+  }))
+  
+
+}
+
 #' Determine if pair of reads are mapped
 #' @param flag numeric or integer vector of flag codes indicating mapping 
 #' status. This integer will be converted into binary bits and decoded to 
@@ -539,7 +635,7 @@ read_hits <- input_hits %>%
   dplyr::mutate(
     pairMapped = pair_is_mapped(flag),
     type = read_or_mate(flag, c("anchor", "adrift"))
-  ) %>%
+  ) %>% 
   dplyr::filter(pairMapped) %>%
   dplyr::mutate(
     clip5p = cntClipped(cigar),
@@ -550,7 +646,20 @@ read_hits <- input_hits %>%
     qwidth >= args$minTempLength,
     clip5p <= args$maxAlignStart
   )
+
+read_wo_pairs_after_init_filter <- read_hits %>%
+  dplyr::group_by(qname) %>%
+  dplyr::summarise(
+    anchors = sum(type == "anchor"), 
+    adrifts = sum(type == "adrift")
+  ) %>%
+  dplyr::filter(anchors == 0 | adrifts == 0) %>%
+  dplyr::pull(qname)
   
+read_hits <- dplyr::filter(
+  read_hits, !qname %in% read_wo_pairs_after_init_filter
+)
+
 # Stop if there are no remaining alignments
 if( nrow(read_hits) == 0 | dplyr::n_distinct(read_hits$type) == 1 ){
   
