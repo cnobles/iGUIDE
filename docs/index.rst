@@ -31,6 +31,6 @@ To get started, see :ref:`quickstart`!
    :maxdepth: 2
    :caption: Contents:
 
-   pages/quickstart.rst
-   pages/usage.rst
-   pages/changelog.rst
+   quickstart.rst
+   usage.rst
+   changelog.rst

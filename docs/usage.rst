@@ -94,24 +94,32 @@ treated with the marker dsODN during genome editing, specimens are harvested
 from various conditions (with nuclease, with different targets controlled by 
 gRNAs, ...). This harvesting yeilds genomic DNA which is commonly cataloged
 into a specimen database holding metadata and experimental parameters for the 
-different specimens. Samples are then taken from these specimens, typically 4 
-samples (see protocol from iGUIDE manuscript), and processed through the iGUIDE
-protocol. Before sequencing, a sampleInfo sheet would be constructed where each
-row of a csv file indicates a different sample that was processed along with the
-samples barcode and demultiplexing information. During sequencing (or after), a
-run specific configuration file (config file) would be constructed by one or two
-parties. There is run specific information that needs to be included, such as: 
-target sequence patterns, nuclease profiles, treatment information, .... If a 
-variable changes throughout the samples, then it can be indicated in the 
-sampleInfo file, while if it is constant, it can be indicated in the config 
-file. The latter part of the config is reviewed and checked by the individual 
-who will computationally process the run. This portion of the config file 
-contains parameters that modify or tune the software to run on different
-systems. After the computational processing has completed, a stat report and 
-analytical report are generated in the reports directory. These can be reviewed
-by respecitive parties. Additionally, if multiple runs contain samples to be 
-analyzed together, auxiliary commands in iGUIDE allow for the computational 
-analyst to generate new reports combining multiple sequencing runs together.
+different specimens. 
+
+Samples are then taken from these specimens, typically 4 samples (see protocol 
+from iGUIDE manuscript), and processed through the iGUIDE protocol. Before 
+sequencing, a sampleInfo sheet would be constructed where each row of a csv file
+indicates a different sample that was processed along with the samples barcode 
+and demultiplexing information. 
+
+During sequencing (or after), a run specific configuration file (config file) 
+would be constructed by one or two parties. There is run specific information 
+that needs to be included, such as: target sequence patterns, nuclease profiles,
+treatment information, etc. If a variable changes throughout the samples, then 
+it can be indicated in the sampleInfo file, while if it is constant, it can be 
+indicated in the config file. 
+
+The latter part of the config is reviewed and checked by the individual who will
+computationally process the run. This portion of the config file contains 
+parameters that modify or tune the software to run on different systems. 
+
+After the computational processing has completed, a stat report and analytical 
+report are generated in the reports directory. These can be reviewed by 
+respecitive parties. 
+
+Additionally, if multiple runs contain samples to be analyzed together, 
+auxiliary commands in iGUIDE allow for the computational analyst to generate new
+reports combining multiple sequencing runs together.
 
 If the user is unsure if the experiment or would work with this type of 
 analysis, feel free to contact the maintainers of iGUIDE. 
@@ -125,11 +133,10 @@ in the Figure 1 below. A description of these commands are reviewed here to give
 the user an understanding of how the software would work from a workflow view
 point.
 
-.. figure:: figures/iguide_subcmd_fig.pdf
-   :figwidth: 50%
-   :alt: iGUIDE Subcommands: setup, run, eval, report, summary, clean.
-   :align: center
-
+.. figure:: /iguide_subcmd_fig.*
+  :figwidth: 75%
+  :align: center
+   
   Figure 1. iGUIDE Subcommands: setup, run, eval, report, summary, clean.
 
 Primary subcommands: Used for standard or primary workflow of processing 
@@ -139,10 +146,10 @@ sequencing runs.
   a config file and will create the new project directory within the 
   iGUIDE/analysis directory.
 * ``run`` : This subcommand will process a run given a config file using a 
-  `Snakemake<http://snakemake.readthedocs.io/en/latest/executable.html>`_ 
-  workflow. Therefore, Snakemake specific commands can be passed into the 
-  ``run`` subcommand. All Snakemake specific commands should come after a ``--``
-  break in the options.
+  Snakemake workflow (https://snakemake.readthedocs.io/en/stable/). 
+  Therefore, Snakemake specific commands can be passed into the ``run`` 
+  subcommand. All Snakemake specific commands should come after a ``--`` break 
+  in the options.
 
 Auxiliary subcommands: Used for auxiliary workflows which further dive into 
 analyzing the processed data.
@@ -176,7 +183,7 @@ Additional subcommands: Used for cleanup and helpful suggestions for processing.
 
 
 Workflows
-********
+*********
 
 A workflow is simply how data is moved from an unprocessed state (like 
 sequencing data off an Illumina sequencer) to a processed state (a final 
@@ -199,11 +206,10 @@ sampleInfo file --> iGUIDE/sampleInfo). Additionally, if a supplemental file
 (supp file) is to be included, it is easiest to deposit this file with the 
 sampleInfo file, in iGUIDE/sampleInfo. 
 
-.. figure:: figures/iguide_prime_workflow_fig.pdf
-   :figwidth: 90%
-   :alt: Primary iGUIDE Workflow: setup, transfer/link data, run.
+.. figure:: /iguide_prime_workflow_fig.*
+   :figwidth: 100%
    :align: center
-   
+
    Figure 2. Primary workflow for processing input sequencing files to processed
    runs with data deliverables like reports and figures.
 
@@ -254,27 +260,26 @@ After running the primary workflow on several runs, or if the user would like
 to change specific parameters (gene lists, target sequences, ...) then the 
 auxiliary workflow becomes quite useful.
 
-.. figure:: figures/iguide_aux_workflow_fig.pdf
-   :figwidth: 90%
-   :alt: Auxiliary iGUIDE Workflow: eval, report, summary, clean.
+.. figure:: /iguide_aux_workflow_fig.*
+   :figwidth: 100%
    :align: center
-   
+
    Figure 3. Auxiliary workflow helps with subsequent analysis of the processed
    data.
    
 There are three subcommands included in this workflow: ``eval``, ``report``, and
 ``summary``. Each of them work in similar ways, but have different outputs. 
 
-``iguide eval`` is a focal point of the auxiliary workflow. This command will 
-process one or more runs and analyze them in a consistent manner, so the the 
+The ``iguide eval`` is a focal point of the auxiliary workflow. This command 
+will process one or more runs and analyze them in a consistent manner, so the 
 user is confident they don't have a mixed data set. This subcommand will output 
-a binary R-based file (*.rds) which can be read into an R environment with the 
+a binary R-based file (\*.rds) which can be read into an R environment with the 
 function base::readRDS(). This file contains a host of analysis and can be used 
 with the other two subcommands, ``report`` and ``summary``.
 
-``iguide report`` will output an html or pdf analysis of the evaluated dataset.
-This is the standard deliverable from the iGUIDE package. Additionally, the 
-command can generate the figures and tables along with the report. 
+The ``iguide report`` will output an html or pdf analysis of the evaluated 
+dataset. This is the standard deliverable from the iGUIDE package. Additionally,
+the command can generate the figures and tables along with the report. 
 ``iguide summary`` is very similar, but only generates a text-file based report.
 Both will take ``eval`` output files as an input, but they can also be used with
 the same input as would be given to ``eval``, config file(s).
@@ -656,7 +661,7 @@ Specimen nuclease treatment
   with multiple classes of nuclease profiles. Only one profile can be specified
   per specimen.
   
-``Nuclease_Profies``
+``Nuclease_Profiles``
   See below section on nuclease profiles.
 
 
@@ -718,7 +723,7 @@ Demultiplexing parameters
 
 ``skipDemultiplexing``
   Logical (either TRUE or FALSE) to indicate if demultiplexing should be carried
-  out. If TRUE, sequence files (*.fastq.gz) need to be placed or linked in the 
+  out. If TRUE, sequence files (\*.fastq.gz) need to be placed or linked in the 
   input_data directory of an existing project directory (as with 
   ``iguide setup``), one sequence file for each type (R1, R2, I1, I2). These 
   need to be identified in the "Run" portion of the config file. If FALSE, then 
@@ -904,13 +909,13 @@ Profiles. The user can specify which nuclease they are using and include
 and profile to help identify edit sites. Nuclease can range from Cas9 to Cpf1
 or TALEN based nickases. 
 
-**Note:** For TALEN and dual flanking nickases / nucleases, each side will need
-to be input as a different target. Specify in `Target_Sequences` the sequence
-and `On_Target_Sites` the actual editing site. Make sure you include two 
+**Note:** For TALEN and dual flanking nickases or nucleases, each side will need
+to be input as a different target. Specify in ``Target_Sequences`` the sequence
+and ``On_Target_Sites`` the actual editing site. Make sure you include two 
 distinct identifiers for the sequences on-target sites, then specify the 
-target treatment as `{target_seq1};{target_seq2}.
+target treatment as ``{target_seq1};{target_seq2}``.
 
-Any name can be given in the `Nuclease` section, but that name needs to match
+Any name can be given in the ``Nuclease`` section, but that name needs to match
 the profile name as well. So if you want to call it "Cas9v2", then just make 
 sure you have a profile named "Cas9v2".
 
