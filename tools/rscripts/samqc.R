@@ -85,7 +85,7 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "--batches", nargs = 1, type = "integer", default = 500L,
+  "--batches", nargs = 1, type = "integer", default = 25L,
   help = paste(
     "A tuning parameter to batch process the alignments, specifies how many", 
     "batches to do. Default: 500."
@@ -492,7 +492,7 @@ cntClipped <- function(cigar, type = "both", end = "5p"){
 #' the number of unique `id`'s divided by the `batches`.
 
 processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
-                              maxLen = 2500L, refGen = NULL, batches = 500L){
+                              maxLen = 2500L, refGen = NULL, batches = 25L){
   
   # Check inputs
   inputs <- list(
@@ -529,7 +529,10 @@ processAlignments <- function(id, chr, strand, pos, width, type, minLen = 30L,
     ceiling(seq_along(idx_list) / (length(idx_list) / batches))
   )
 
-  dplyr::bind_rows(lapply(batch_list, function(idxs){
+  dplyr::bind_rows(lapply(seq_along(batch_list), function(i){
+    
+    print(i)
+    idxs <- batch_list[[i]]
     
     # Identify which reads to analyze
     x <- names(idx_list)[idxs]
