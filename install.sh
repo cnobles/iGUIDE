@@ -68,6 +68,7 @@ __iguide_env="${arg_e:-iguide}"
 __run_iguide_tests=false
 __reqs_install=false
 __update_lib=false
+__update_pkg=false
 __update_env=false
 __req_r_version="3.4.1"
 __old_path=$PATH
