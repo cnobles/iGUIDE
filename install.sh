@@ -68,6 +68,7 @@ __iguide_env="${arg_e:-iguide}"
 __run_iguide_tests=false
 __reqs_install=false
 __update_lib=false
+__update_pkg=false
 __update_env=false
 __req_r_version="3.4.1"
 __old_path=$PATH
@@ -163,7 +164,7 @@ function __test_iguideSupport () {
     fi
 }
 
-function __test_iguidelib() {
+function __test_iguidelib () {
     if [[ $(__test_env) = true ]]; then
       	activate_iguide
       	command -v iguide &> /dev/null && echo true || echo false
@@ -173,7 +174,7 @@ function __test_iguidelib() {
     fi
 }
 
-function __test_iguide() {
+function __test_iguide () {
     if [[ $(__test_env) = true ]]; then
       	$(bash ${__iguide_dir}/etc/tests/test.sh ${__iguide_env} &> /dev/null) && \
       	    echo true || echo false
@@ -221,7 +222,7 @@ function install_environment () {
         local install_options="--quiet --file etc/requirements.yml"
         debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --yes --file etc/build.b0.9.8.txt"
+        local install_options="--quiet --yes --file etc/build.b1.0.0.txt"
         debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
 
@@ -333,7 +334,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.b0.9.8.txt"
+        __build_source="etc/build.b1.0.0.txt"
     fi
 
     info "Creating iGUIDE environment..."

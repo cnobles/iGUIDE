@@ -39,19 +39,18 @@ parser$add_argument(
 )
 
 parser$add_argument(
-  "-u", "--umitags", nargs = "+", type = "character",
+  "-u", "--umitags", nargs = 1, type = "character",
   help = paste(
-    "Path(s) to associated fasta files containing read specific",
-    "random captured sequences. Multiple file paths can be separated by",
-    "a space."
+    "Path to directory with associated fasta files containing read specific",
+    "random captured sequences (*.umitags.fasta.gz)."
   )
 )
 
 parser$add_argument(
-  "-m", "--multihits", nargs = "+", type = "character",
+  "-m", "--multihits", nargs = 1, type = "character",
   help = paste(
-    "Path(s) to associated multihit files (.rds) as produced by coupling",
-    "alignment output files. Multiple file paths can be separated by a space."
+    "Path to directory with associated multihit files (*.multihits.rds) as",
+    "produced by coupling alignment output files."
   )
 )
 
@@ -120,6 +119,15 @@ print(
   right = FALSE, 
   row.names = FALSE
 )
+
+
+# Get versioning ----
+soft_version <- as.character(read.delim(
+  file = file.path(root_dir, ".version"), header = FALSE))
+
+build_version <- list.files(file.path(root_dir, "etc")) %>%
+  grep(pattern = "build.b[0-9\\.]+.*", x = ., value = TRUE) %>%
+  stringr::str_extract(pattern = "b[0-9]+\\.[0-9]+\\.[0-9]+")
 
 
 # Inputs and parameters ----
@@ -227,7 +235,13 @@ if( all(!is.null(args$multihits)) ){
     seqinfo = GenomeInfoDb::seqinfo(ref_genome)
   )
   
-  multi_reads <- unlist(GRangesList(lapply(args$multihits, function(x){
+  multihit_files <- list.files(path = args$multihit, full.names = TRUE)
+  
+  mulithit_files <- multihit_files[
+    stringr::str_detect(mulithit_files, ".multihits.rds")
+  ]
+  
+  multi_reads <- unlist(GRangesList(lapply(mulithit_files, function(x){
     
     multi <- readRDS(x)
     GenomeInfoDb::seqinfo(multi$unclustered_multihits) <- 
@@ -327,7 +341,13 @@ rm(temp_table)
 
 if( all(!is.null(args$umitags)) ){
   
-  umitags <- lapply(args$umitags, ShortRead::readFasta)
+  umitag_files <- list.files(path = args$umitags, full.names = TRUE)
+  
+  umitag_files <- umitag_files[
+    stringr::str_detect(umitag_files, ".umitags.fasta")
+  ]
+  
+  umitags <- lapply(umitag_files, ShortRead::readFasta)
   umitags <- serialAppendS4(umitags)
   
   reads$umitag <- as.character(ShortRead::sread(umitags))[
@@ -363,9 +383,17 @@ if( args$stat != FALSE ){
 # Output data ----
 ## rds file that can be read into evaluation or reports or loaded into a 
 ## database with some additional scripting.
-reads %>%
-  dplyr::select(-lociPairKey, -readPairKey) %>%
-  saveRDS(file = args$output)
+fmt_reads <- reads %>%
+  dplyr::select(-lociPairKey, -readPairKey)
+
+output_file <- list(
+  "soft_version" = soft_version,
+  "build_version" = build_version,
+  "config" = config,
+  "reads" = fmt_reads
+)
+  
+saveRDS(output_file, file = args$output)
 
 if( all(sapply(output_files, file.exists)) ){
   message("Successfully completed script.")

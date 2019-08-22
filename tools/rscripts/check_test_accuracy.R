@@ -145,7 +145,22 @@ readFile <- function(path, root){
     
   }else if( any(exts %in% c("rds")) ){
     
-    return(readRDS(path))
+    rds_import <- readRDS(path)
+
+    if( class(rds_import) == "list" ){
+
+      if( any(sapply(rds_import, class) == "data.frame") ){
+
+        idx <- which(sapply(rds_import, class) == "data.frame")
+        return(rds_import[[idx[1]]])
+
+      }else{
+        return(as.data.frame(rds_import[[1]], row.names = NULL))
+      }
+
+    }else{
+      return(rds_import)
+    }
     
   }else{
     
@@ -172,14 +187,15 @@ names(check_data) <- c("uniq_sites")
 check_data$multihits <- suppressMessages(dplyr::bind_rows(lapply(
   sample_info$sampleName, 
   function(x){
-    y <- readFile(
+
+    readFile(
       paste0(
-        "analysis/", run_config$Run_Name, "/process_data/post_align/", 
+        "analysis/", run_config$Run_Name, "/process_data/multihits/", 
         x, ".multihits.rds"
       ), 
       args$iguide_dir
     )
-    as.data.frame(y$unclustered_multihits, row.names = NULL)
+
   }), 
   .id = "specimen"
 ))

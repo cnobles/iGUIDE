@@ -3,10 +3,10 @@
 
 rule seq_trim_R1:
   input:
-    RUN_DIR + "/process_data/demulti/{sample}.R1.fastq.gz"
+    RUN_DIR + "/process_data/binned/{sample}.R1.{bin}.fastq.gz"
   output:
-    trim=temp(RUN_DIR + "/process_data/trimmed/{sample}.R1.trim.fastq.gz"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R1.trim.stat")
+    trim=temp(RUN_DIR + "/process_data/trimmed/{sample}.R1.{bin}.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R1.{bin}.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R1_LEAD[wildcards.sample],
@@ -15,7 +15,7 @@ rule seq_trim_R1:
     overMis=config["R1overMismatch"],
     overLen=config["R1overMaxLength"]
   log:
-    RUN_DIR + "/logs/{sample}.R1.trim.log"
+    RUN_DIR + "/logs/{sample}.R1.{bin}.trim.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:
@@ -29,10 +29,10 @@ rule seq_trim_R1:
 
 rule seq_trim_R2_primer:
   input:
-    RUN_DIR + "/process_data/demulti/{sample}.R2.fastq.gz"
+    RUN_DIR + "/process_data/binned/{sample}.R2.{bin}.fastq.gz"
   output:
-    trim=temp(RUN_DIR + "/process_data/trimmed/primer/{sample}.R2.primer.trim.fastq.gz"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R2.primer.trim.stat")
+    trim=temp(RUN_DIR + "/process_data/trimmed/primer/{sample}.R2.{bin}.primer.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.primer.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD[wildcards.sample],
@@ -41,7 +41,7 @@ rule seq_trim_R2_primer:
     overMis=config["R2overMismatch"],
     overLen=config["R2overMaxLength"]
   log:
-    RUN_DIR + "/logs/{sample}.R2.primer.trim.log"
+    RUN_DIR + "/logs/{sample}.R2.{bin}.primer.trim.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:
@@ -55,16 +55,16 @@ rule seq_trim_R2_primer:
 
 rule seq_trim_R2_odn:
   input:
-    RUN_DIR + "/process_data/trimmed/primer/{sample}.R2.primer.trim.fastq.gz"
+    RUN_DIR + "/process_data/trimmed/primer/{sample}.R2.{bin}.primer.trim.fastq.gz"
   output:
-    trim=temp(RUN_DIR + "/process_data/trimmed/{sample}.R2.trim.fastq.gz"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R2.trim.stat")
+    trim=temp(RUN_DIR + "/process_data/trimmed/{sample}.R2.{bin}.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.trim.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     lead=lambda wildcards: R2_LEAD_ODN[wildcards.sample],
     leadMis=config["R2odnMismatch"]
   log:
-    RUN_DIR + "/logs/{sample}.R2.odn.trim.log"
+    RUN_DIR + "/logs/{sample}.R2.{bin}.odn.trim.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:

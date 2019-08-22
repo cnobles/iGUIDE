@@ -3,7 +3,6 @@ Run_Name : "simulation"
 Sample_Info : "sampleInfo/simulation.sampleInfo.csv"
 Supplemental_Info : "sampleInfo/simulation.supp.csv"
 Ref_Genome : "hg38"
-Ref_Genome_Path : "genomes/hg38.2bit"
 Aligner : "blat"
 UMItags : TRUE
 
@@ -118,6 +117,10 @@ R2leadMismatch : 3
 R2odnMismatch : 0
 R2overMismatch : 4
 R2overMaxLength : 20
+
+# Binning
+bins : 3
+level : 250
 
 # Reference Alignment
 BLATparams : "-tileSize=11 -stepSize=9 -minIdentity=85 -maxIntron=5 -minScore=27 -dots=1000 -out=psl -noHead"

@@ -4,7 +4,8 @@
 rule all_uniq_sites:
   input:
     expand(
-      RUN_DIR + "/process_data/post_align/{sample}.uniq.csv", sample=SAMPLES)
+      RUN_DIR + "/process_data/post_align/{sample}.{bin}.uniq.csv", 
+      sample=SAMPLES, bin=BINS)
   output:
     temp(RUN_DIR + "/output/unique_sites." + RUN + ".csv")
   params:
@@ -19,19 +20,41 @@ rule all_uniq_sites:
     done
     """
 
+rule combine_multihits:
+  input:
+    expand(
+      RUN_DIR + "/process_data/post_align/{{sample}}.{bin}.multihits.rds",
+      bin=BINS)
+  output:
+    hits=temp(RUN_DIR + "/process_data/multihits/{sample}.multihits.rds"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.multihits.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/combine_multihits.R",
+    dir=RUN_DIR + "/process_data/post_align",
+    pattern="{sample}.bin[0-9]+.multihits.rds"
+  log:
+    RUN_DIR + "/logs/{sample}.multihits.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
+  shell:
+    """
+    Rscript {params.tool} -d {params.dir} -p {params.pattern} \
+      -o {output.hits} -s {output.stat} > {log} 2>&1
+    """
+
 
 def all_umitag_inputs(wildcards):
   if (config["UMItags"]):
     return expand(
-      RUN_DIR + "/process_data/indices/{sample}.umitags.fasta.gz", 
-      sample=SAMPLES)
+      RUN_DIR + "/process_data/indices/{sample}.{bin}.umitags.fasta.gz", 
+      sample=SAMPLES, bin=BINS)
   else:
     return []
 
 def all_multi_inputs(wildcards):
   if (config["recoverMultihits"]):
     return expand(
-      RUN_DIR + "/process_data/post_align/{sample}.multihits.rds", 
+      RUN_DIR + "/process_data/multihits/{sample}.multihits.rds", 
       sample=SAMPLES)
   else:
     return []
@@ -45,8 +68,10 @@ rule assimilate_sites:
     incorp=RUN_DIR + "/output/incorp_sites." + RUN + ".rds",
     stat=temp(RUN_DIR + "/process_data/stats/" + RUN + ".assim.stat")
   params:
-    config=RUN_DIR + "/" + "config.yml",
-    tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R"
+    config=RUN_DIR + "/config.yml",
+    tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R",
+    umitagDir=RUN_DIR + "/process_data/indices",
+    multiDir=RUN_DIR + "/process_data/multihits"
   log:
     RUN_DIR + "/logs/" + RUN + ".assim.log"
   resources:
@@ -54,9 +79,9 @@ rule assimilate_sites:
   run:
     call_str="Rscript {params.tool} {input.sites} -o {output.incorp} "
     if (config["UMItags"]):
-        call_str=call_str + "-u {input.umitag} "
+        call_str=call_str + "-u {params.umitagDir} "
     if (config["recoverMultihits"]):
-        call_str=call_str + "-m {input.multi} "
+        call_str=call_str + "-m {params.multiDir} "
     call_str=call_str + "-c {params.config} --stat {output.stat} > {log} 2>&1"
     shell(call_str)
 

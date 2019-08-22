@@ -28,8 +28,8 @@ rule index_ref:
 
 rule align:
   input:
-    R1 = RUN_DIR + "/process_data/filtered/{sample}.R1.filt.fastq.gz",
-    R2 = RUN_DIR + "/process_data/filtered/{sample}.R2.filt.fastq.gz",
+    R1 = RUN_DIR + "/process_data/filtered/{sample}.R1.{bin}.filt.fastq.gz",
+    R2 = RUN_DIR + "/process_data/filtered/{sample}.R2.{bin}.filt.fastq.gz",
     genome=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".fasta"),
     aux1=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".amb"),
     aux2=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".ann"),
@@ -37,12 +37,12 @@ rule align:
     aux4=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".pac"),
     aux5=ancient(ROOT_DIR + "/genomes/" + config["Ref_Genome"] + ".sa")
   output:
-    temp(RUN_DIR + "/process_data/align/{sample}.unsorted.bam")
+    temp(RUN_DIR + "/process_data/align/{sample}.{bin}.unsorted.bam")
   params: 
     bwa=config["BWAparams"],
     index=ROOT_DIR + "/genomes/" + config["Ref_Genome"]
   log:
-    RUN_DIR + "/logs/{sample}.bwa.log"
+    RUN_DIR + "/logs/{sample}.{bin}.bwa.log"
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["alignMB"]
   shell:

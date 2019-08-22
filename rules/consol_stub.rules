@@ -3,7 +3,7 @@
 
 rule collect_consol_stub:
   output:
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{read}.consol.stat")
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{read}.{bin}.consol.stat")
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "touch {output.stat}"

@@ -133,7 +133,7 @@ parser$add_argument(
 parser$add_argument(
   "--readNamePattern", nargs = 1, type = "character", 
   default = "[\\w\\:\\-\\+]+", 
-  help = desc$readNamePatter
+  help = desc$readNamePattern
 )
 
 

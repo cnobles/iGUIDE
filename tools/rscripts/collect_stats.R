@@ -87,15 +87,42 @@ long_data <- dplyr::bind_rows(
   .id = "type"
 )
 
+fmt_long_data <- long_data %>%
+  dplyr::distinct(type, sampleName, metric, count) %>%
+  dplyr::mutate(
+    bin = stringr::str_extract(type, "bin[0-9]+"),
+    read = ifelse(
+      stringr::str_detect(type, "R[12]."),
+      ifelse(stringr::str_detect(type, "R1."), "R1", "R2"),
+      NA
+    ),
+    type = stringr::str_remove(type, "bin[0-9]+.")
+  ) %>%
+  dplyr::group_by(sampleName, type, metric, read) %>%
+  dplyr::summarise(count = sum(count)) %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(
+    (stringr::str_detect(metric, "multihit") & 
+      stringr::str_detect(type, "multihits")) | 
+      !stringr::str_detect(metric, "multihit")
+  ) %>%
+  dplyr::mutate(type = ifelse(type == "multihits", "align", type)) %>%
+  dplyr::ungroup()
+
 # Transform data into a wide format
 wide_data <- dplyr::mutate(
-    long_data, 
+    fmt_long_data, 
     type = paste0(type, ".", metric),
     type = factor(type, levels = unique(type))
   ) %>%
-  dplyr::select(-metric) %>%
-  dplyr::distinct() %>%
+  dplyr::select(-metric, -read) %>%
   tidyr::spread(type, count)
+
+wide_cols <- names(wide_data)
+
+wide_data <- wide_data[
+  ,c("sampleName", sort(wide_cols[-match("sampleName", wide_cols)]))
+]
 
 # Write data to output
 write.csv(wide_data, file = args$output, quote = FALSE, row.names = FALSE)

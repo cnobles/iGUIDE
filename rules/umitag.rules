@@ -3,17 +3,17 @@
 
 rule collect_umitags:
   input:
-    RUN_DIR + "/process_data/demulti/{sample}.I2.fastq.gz"
+    RUN_DIR + "/process_data/binned/{sample}.I2.{bin}.fastq.gz"
   output:
-    seq=temp(RUN_DIR + "/process_data/indices/{sample}.I2.trim.fastq.gz"),
-    umi=temp(RUN_DIR + "/process_data/indices/{sample}.umitags.fasta.gz"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.umitags.stat")
+    seq=temp(RUN_DIR + "/process_data/indices/{sample}.I2.{bin}.trim.fastq.gz"),
+    umi=temp(RUN_DIR + "/process_data/indices/{sample}.{bin}.umitags.fasta.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{bin}.umitags.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/trim.R",
     seq=lambda wildcards: UMIseqs[wildcards.sample],
     mis=config["bc2Mismatch"]
   log:
-    RUN_DIR + "/logs/{sample}.umitag.log"
+    RUN_DIR + "/logs/{sample}.{bin}.umitag.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
   shell:

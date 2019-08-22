@@ -37,15 +37,21 @@ def main( argv = sys.argv ):
     )
     
     parser.add_argument(
-        "-q", "--quiet", 
+        "-k", "--keep_input", 
         action="store_true",
-        help = "Will not print messages."
+        help = "Will not remove files from the input_data directory."
     )
 
     parser.add_argument(
         "--remove_proj", 
         action="store_true",
         help = "Removes the entire project analysis directory. This will delete everything."
+    )
+
+    parser.add_argument(
+        "-q", "--quiet", 
+        action="store_true",
+        help = "Will not print messages."
     )
 
     parser.add_argument(
@@ -80,7 +86,10 @@ def main( argv = sys.argv ):
         sys.exit(1)
 
     if not args.remove_proj:
-        directories_to_clean = ["input_data", "logs", "process_data"]
+        directories_to_clean = ["logs", "process_data"]
+        
+        if not args.keep_input:
+            directories_to_clean.append("input_data")
         
         files_to_clean = []
         for directory in directories_to_clean:

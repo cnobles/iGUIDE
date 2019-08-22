@@ -49,6 +49,11 @@ parser$add_argument(
 )
 
 parser$add_argument(
+  "--override", action = "store_true", 
+  help = "Override software and build version control checks."
+)
+
+parser$add_argument(
   "-q", "--quiet", action = "store_true", 
   help = "Hide standard output messages."
 )
@@ -278,9 +283,9 @@ if( multihit_option ){
   ){
     
     stop(
-      "\n  Inconsistant upstream or downstream distances between config files.\n",
-      "  Comparisons between groups with different run specific criteria\n", 
-      "  is not recommended when considering the recover multihit option.\n"
+      "\n  Inconsistant upstream or downstream distances between config files.",
+      "\n  Comparisons between groups with different run specific criteria", 
+      "\n  is not recommended when considering the recover multihit option.\n"
     )
     
   }
@@ -556,7 +561,7 @@ cond_overview <- spec_overview %>%
   dplyr::select(specimen, condition)
 
 
-# Beginnin analysis ----
+# Beginning analysis ----
 if( !args$quiet ) cat("\nStarting analysis...\n")
 
 ## Read in experimental data and contatenate different sets
@@ -568,12 +573,18 @@ input_data <- lapply(configs, function(x){
     )
     
     if( file.exists(file.path(root_dir, path)) ){
-      return(readRDS(file.path(root_dir, path)))
+      y <- readRDS(file.path(root_dir, path))
     }else if( file.exists(path) ){
-      return(readRDS(path))
+      y <- readRDS(path)
     }else{
-      stop("\n  Cannot find edited_sites file: ", x, ".\n")
+      stop("\n  Cannot find incorp_sites file: ", x, ".\n")
     }
+
+    y$reads %>%
+      dplyr::mutate(
+        soft.version = y$soft_version,
+        build.version = y$build_version
+      )
     
   }) %>%
   dplyr::bind_rows(.id = "run.set") %>%
@@ -586,6 +597,25 @@ if( !multihit_option ){
   input_data <- dplyr::filter(input_data, type == "uniq")
 }
 
+## Check versioning for imported data ----
+vc_check <- input_data %>%
+  dplyr::distinct(run.set, soft.version, build.version)
+
+input_data <- dplyr::select(input_data, -soft.version, -build.version)
+
+cat("\nVersioning:\n")
+print(vc_check, right = FALSE, row.names = FALSE)
+
+if( dplyr::n_distinct(vc_check$soft.version) > 1 | 
+      dplyr::n_distinct(vc_check$build.version) > 1 ){
+
+  if( args$override ){
+    warning("Data processed under different software versions.")
+  }else{
+    stop("\n  Data processed with inconsistent software versions.")
+  }
+
+}
 
 ## Format input alignments ----
 ## Determine abundance metrics, with or without UMItags
@@ -1625,6 +1655,7 @@ saveRDS(
       "configs" = configs, 
       "soft_version" = soft_version, 
       "build_version" = build_version,
+      "input_vc" = vc_check,
       "specimen_levels" = specimen_levels
     ),
     "spec_info" = list(

@@ -6,14 +6,11 @@
 Welcome to iGUIDE's documentation
 ==================================
 
-Description
-===========
-
-Software pipeline for processing and analyzing double-strand DNA break events. 
-These events may be induced, such as by designer nucleases like Cas9, or 
-spontaneous, as produced through DNA replication or ionizing radiation. A 
-laboratory bench-side protocol accompanies this software pipeline, and can be 
-found (https://doi.org/10.1186/s13059-019-1625-3). 
+iGUIDE is a software pipeline for processing and analyzing double-strand DNA 
+break events. These events may be induced, such as by designer nucleases like 
+Cas9, or spontaneous, as produced through DNA replication or ionizing 
+radiation. A laboratory bench-side protocol accompanies this software pipeline, 
+and can be found (https://doi.org/10.1186/s13059-019-1625-3). 
 
 This documentation gives the reader an overview of the pipeline, including
 how to install and process a sample dataset. Processing a sample data set is 
@@ -23,17 +20,17 @@ broken into a few parts:
 #. Setting up a run directory and acquiring the sequence data
 #. Initializing the pipeline and understanding the output
 
+After processing sequencing run(s), additional evaluation and analysis can be 
+performed by supplying supplemental data and combining specimen outputs from
+several runs.
+
+To get started, see :ref:`quickstart`!
+
 .. toctree::
    :hidden:
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: Contents:
 
-   pages/install.rst
-   pages/quickstart.rst
-   pages/config_setup.rst
-   pages/config_run.rst
-   pages/config_nucs.rst
-   pages/config_proc.rst
-   pages/sampleinfo.rst
-   pages/suppinfo.rst
-   pages/changelog.rst   
+   quickstart.rst
+   usage.rst
+   changelog.rst

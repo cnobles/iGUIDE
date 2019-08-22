@@ -2,28 +2,28 @@
 # Quality Processing: SAM-output aligners
 
 rule sort_bam:
-  input: RUN_DIR + "/process_data/align/{sample}.unsorted.bam"
-  output: temp(RUN_DIR + "/process_data/align/{sample}.bam")
+  input: RUN_DIR + "/process_data/align/{sample}.{bin}.unsorted.bam"
+  output: temp(RUN_DIR + "/process_data/align/{sample}.{bin}.bam")
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "samtools sort {input} -o {output}"
 
 rule index_bam:
-  input: RUN_DIR + "/process_data/align/{sample}.bam"
-  output: temp(RUN_DIR + "/process_data/align/{sample}.bai")
+  input: RUN_DIR + "/process_data/align/{sample}.{bin}.bam"
+  output: temp(RUN_DIR + "/process_data/align/{sample}.{bin}.bai")
   resources:
     mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
   shell: "samtools index -b {input} {output}"
 
 rule post_align:
   input:
-    bam=RUN_DIR + "/process_data/align/{sample}.bam",
-    bai=RUN_DIR + "/process_data/align/{sample}.bai"
+    bam=RUN_DIR + "/process_data/align/{sample}.{bin}.bam",
+    bai=RUN_DIR + "/process_data/align/{sample}.{bin}.bai"
   output:
-    uniq=temp(RUN_DIR + "/process_data/post_align/{sample}.uniq.csv"),
-    chimera=temp(RUN_DIR + "/process_data/post_align/{sample}.chimera.rds"),
-    multihit=temp(RUN_DIR + "/process_data/post_align/{sample}.multihits.rds"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.align.stat")
+    uniq=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.uniq.csv"),
+    chimera=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.chimera.rds"),
+    multihit=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.multihits.rds"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{bin}.align.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/samqc.R",
     ref=config["Ref_Genome"],
@@ -33,7 +33,7 @@ rule post_align:
     maxLen=config["maxTempLength"],
     readNamePatternArg=config["readNamePattern"]
   log:
-    RUN_DIR + "/logs/{sample}.samqc.log"
+    RUN_DIR + "/logs/{sample}.{bin}.samqc.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
   shell:

@@ -3,17 +3,17 @@
 
 rule seq_filter:
   input:
-    R1=RUN_DIR + "/process_data/trimmed/{sample}.R1.trim.fastq.gz",
-    R2=RUN_DIR + "/process_data/trimmed/{sample}.R2.trim.fastq.gz"
+    R1=RUN_DIR + "/process_data/trimmed/{sample}.R1.{bin}.trim.fastq.gz",
+    R2=RUN_DIR + "/process_data/trimmed/{sample}.R2.{bin}.trim.fastq.gz"
   output:
-    R1=temp(RUN_DIR + "/process_data/filtered/{sample}.R1.filt.fastq.gz"),
-    R2=temp(RUN_DIR + "/process_data/filtered/{sample}.R2.filt.fastq.gz"),
-    stat=temp(RUN_DIR + "/process_data/stats/{sample}.filt.stat")
+    R1=temp(RUN_DIR + "/process_data/filtered/{sample}.R1.{bin}.filt.fastq.gz"),
+    R2=temp(RUN_DIR + "/process_data/filtered/{sample}.R2.{bin}.filt.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{bin}.filt.stat")
   params:
     tool=ROOT_DIR + "/tools/rscripts/filt.R",
     readNamePatternArg=config["readNamePattern"]
   log:
-    RUN_DIR + "/logs/{sample}.filt.log"
+    RUN_DIR + "/logs/{sample}.{bin}.filt.log"
   resources:
     mem_mb=lambda wildcards, attempt: attempt * config["filtMB"]
   shell:
