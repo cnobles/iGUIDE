@@ -1388,9 +1388,15 @@ rand_sites$gene_id <- suppressMessages(assignGeneID(
 
 rand_df <- data.frame(
   condition = "Random", 
-  "total" = length(rand_sites), 
-  "onco" = sum(stringr::str_detect(rand_sites$gene_id, "~")), 
-  "special" = sum(stringr::str_detect(rand_sites$gene_id, "!"))
+  "total" = length(
+    unique(gsub("\\*", "", rand_sites$gene_id))
+  ), 
+  "onco" = sum(stringr::str_detect(
+    unique(gsub("\\*", "", rand_sites$gene_id)), "~"
+  )), 
+  "special" = sum(stringr::str_detect(
+    unique(gsub("\\*", "", rand_sites$gene_id)), "!"
+  ))
 )
 
 ref_df <- data.frame(
@@ -1412,11 +1418,13 @@ paired_df <- dplyr::bind_rows(
     paired_list, 
     function(df){
     
-    data.frame(
-      "total" = nrow(df), 
-      "onco" = sum(stringr::str_detect(df$gene_id, "~")), 
-      "special" = sum(stringr::str_detect(df$gene_id, "!"))
-    )
+      gene_id <- unique(gsub("\\*", "", df$gene_id))
+      
+      data.frame(
+        "total" = length(gene_id), 
+        "onco" = sum(stringr::str_detect(gene_id, "~")), 
+        "special" = sum(stringr::str_detect(gene_id, "!"))
+      )
     
     }
   ), 
@@ -1434,10 +1442,12 @@ matched_df <- dplyr::bind_rows(
     matched_list, 
     function(df){
       
+      gene_id <- unique(gsub("\\*", "", df$gene_id))
+      
       data.frame(
         "total" = nrow(df), 
-        "onco" = sum(stringr::str_detect(df$gene_id, "~")), 
-        "special" = sum(stringr::str_detect(df$gene_id, "!"))
+        "onco" = sum(stringr::str_detect(gene_id, "~")), 
+        "special" = sum(stringr::str_detect(gene_id, "!"))
       )
       
     }
@@ -1449,7 +1459,8 @@ enrich_df <- dplyr::bind_rows(
     list(
       "Reference" = ref_df, 
       "Flanking Pairs" = paired_df, 
-      "Target Matched" = matched_df), 
+      "Target Matched" = matched_df
+    ), 
     .id = "origin"
   ) %>%
   dplyr::filter(total > 0)
@@ -1465,10 +1476,7 @@ enrich_df$onco.p.value <- p.adjust(
       query$diff <- abs(diff(as.numeric(query)))
       
       mat <- matrix(
-        c(
-          ref$total - ref$onco - query$total + query$onco,
-          query$diff, ref$onco - query$onco, query$onco
-        ),
+        c(ref$diff, ref$onco, query$diff, query$onco),
         nrow = 2
       )
       
@@ -1490,10 +1498,7 @@ enrich_df$special.p.value <- p.adjust(
       query$diff <- abs(diff(as.numeric(query)))
       
       mat <- matrix(
-        c(
-          ref$total - ref$special - query$total + query$special,
-          query$diff, ref$special - query$special, query$special
-        ),
+        c(ref$diff, ref$special, query$diff, query$special),
         nrow = 2
       )
       
