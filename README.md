@@ -14,7 +14,12 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 
 ### Changelog:
 
-**v1.0.0 (August 15th,2019)**
+**v1.1.0 (February ??, 2019)**
+
+* Modified how samples designated as Mock (or None) are treated during the analysis
++ Mock samples (being untreated samples such as controls) will be ...
+
+**v1.0.0 (August 15th, 2019)**
 
 * Release of version 1.0.0!!!
 * iGUIDE is a computational pipeline that supports the detection of DSBs induced

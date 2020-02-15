@@ -3,6 +3,11 @@
 ChangeLog
 =========
 
+**v1.1.0 (February ??, 2019)**
+
+- Modified how samples designated as Mock (or None) are treated during the analysis
++ Mock samples (being untreated samples such as controls) will be ...
+
 **v1.0.0 (August 15th, 2019)**
 
 - Complete support for BLAT and BWA aligners
