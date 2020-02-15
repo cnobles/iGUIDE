@@ -2,6 +2,14 @@
 # Architecture Rules
 # Related to setting up analysis directories and consolidating data
 
+def all_umitag_stats(wildcards):
+  if (config["UMItags"]):
+    return expand(
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.umitags.stat", 
+      sample=SAMPLES, bin=BINS)
+  else:
+    return []
+
 rule core_stat_matrix:
   input:
     demulti=RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat",
@@ -14,9 +22,7 @@ rule core_stat_matrix:
     trimODN=expand(
       RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.trim.stat", 
       sample=SAMPLES, bin=BINS),
-    umitags=expand(
-      RUN_DIR + "/process_data/stats/{sample}.{bin}.umitags.stat", 
-      sample=SAMPLES, bin=BINS),
+    umitags=all_umitag_stats,
     filt=expand(
       RUN_DIR + "/process_data/stats/{sample}.{bin}.filt.stat", 
       sample=SAMPLES, bin=BINS),
