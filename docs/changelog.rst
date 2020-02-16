@@ -3,10 +3,23 @@
 ChangeLog
 =========
 
-**v1.1.0 (February ??, 2019)**
+**v1.1.0 (February ??, 2020)**
 
-- Modified how samples designated as Mock (or None) are treated during the analysis
-+ Mock samples (being untreated samples such as controls) will be ...
+- Modified how samples designated as Mock (or None) are treated during the 
+  analysis
+- Updated standard report template to display more relevant information at the 
+  beginning
+- Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
+  config parameters
+
+**v1.0.2 (February 15th, 2020)**
+
+- Bugfix: UMItags set to FALSE will now process through to completion
+- Rebuild: Updated to build version 1.0.1
+
+**v1.0.1 (December 3rd, 2019)**
+
+- Bugfix: Updated Gene set enrichment test within report
 
 **v1.0.0 (August 15th, 2019)**
 
