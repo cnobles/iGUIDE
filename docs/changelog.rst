@@ -5,10 +5,11 @@ ChangeLog
 
 **v1.1.0 (February ??, 2020)**
 
-- Modified how samples designated as Mock (or None) are treated during the 
-  analysis
+- Modified how samples designated as Mock are treated during the analysis
+- Mock samples can now be indicated by "None" or "Control" as well 
+  (case-insensitive)
 - Updated standard report template to display more relevant information at the 
-  beginning
+  beginning, included the combinations table
 - Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
   config parameters
 

@@ -5,6 +5,7 @@ Supplemental_Info : "sampleInfo/simulation.supp.csv"
 Ref_Genome : "hg38"
 Aligner : "blat"
 UMItags : TRUE
+Abundance_Method : "Fragment"
 
 # Sequence files
 Seq_Path : "etc/tests/Data"

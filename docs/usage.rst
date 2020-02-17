@@ -518,10 +518,20 @@ Run configuration
   listed here.
   
 ``UMItags``
-  This is a logical parameter indicating whether to use unique molecular indices
-  (UMI) sequence tags ('TRUE') or to only use unique fragments lengths (see
-  `SonicAbundance <https://doi.org/10.1093/bioinformatics/bts004>`) to quantify
-  abundances of unique observations.
+  This is a logical parameter indicating whether to capture unique molecular 
+  indices (UMI) sequence tags ('TRUE') during processing. **Note:** Ambiguous 
+  nucleotides will need to be identified in the barcode fields of the sampleInfo
+  file. Please see supplied simulated sampleInfo file for example.
+  
+``Abundance_Method``
+  Options include 'Read', 'UMI', or 'Fragment' (default) for calculating the 
+  abundance method. 'Fragment' refers to the use of unique fragments lengths 
+  (see `SonicAbundance <https://doi.org/10.1093/bioinformatics/bts004>`) to 
+  quantify abundances of unique observations. 'UMI' will change the abundance
+  method to use the unique molecular indices (**Note** that the ``UMItags`` 
+  option will need to be set to TRUE for this feature to work). 'Read' will 
+  change the abundance counts to read counts, yet this method may be unreliable
+  due to PCR jackpotting or bias.
   
   
 Sequence files

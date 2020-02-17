@@ -1,7 +1,7 @@
 Package: iguideSupport
 Type: Package
 Title: Support functions for processing and analyzing within the iGUIDE pipeline
-Version: 0.1.0
+Version: 0.1.1
 Author: Christopher Nobles, Ph.D.
 Maintainer: Christopher Nobles <chris.l.nobles@gmail.com>
 Description: 

@@ -8,14 +8,14 @@ On-target incorporation density}
 predictESProb(x, density, range = NULL)
 }
 \arguments{
-\item{x}{integer position within range of density object indicating the
-distance from the predicted edit site.}
-
 \item{density}{a density object constructed from the incorporation site
 distribution around associated On-target editing site(s).}
 
 \item{range}{a numeric vector indicating the range of data to consider. NULL
 will default to the range of input for the denisity object.}
+
+\item{x}{integer position within range of density object indicating the
+distance from the predicted edit site.}
 }
 \description{
 
