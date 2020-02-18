@@ -272,6 +272,20 @@ signature <- paste(
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 multihit_option <- all(unlist(lapply(configs, "[[", "recoverMultihits")))
 
+abundance_option <- unique(
+  tolower(unlist(lapply(configs, "[[", "Abundance_Method")))
+)[1]
+
+if( is.na(abundance_option) ) abundance_option <- "Fragment"
+
+if( tolower(abundance_option) == "umi" & !umitag_option ){
+  stop(
+    "\n  Abundance method has been set to use UMItags, yet the current",
+    "\n  configuration does not capture UMItag data (UMItags : FALSE).",
+    "\n  Please correct this inconsistency before continuing analysis."
+  )
+}
+
 if( multihit_option ){
   
   upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
@@ -305,6 +319,7 @@ if( multihit_option ){
 sample_info <- eval_data$spec_info$sample_info
 
 specimen_levels <- eval_data$params$specimen_levels
+alt_specimen_levels <- eval_data$params$alt_specimen_levels
 
 support_present <- nrow(eval_data$spec_info$supp_data) > 0
 
@@ -328,6 +343,10 @@ treatment_df <- eval_data$spec_info$treatment_df
 ## Nuclease profiles
 nuc_profiles <- eval_data$spec_info$nuclease_profiles
 
+## Combo information
+nuclease_treatment_df <- eval_data$spec_info$nuclease_treatment_df
+combos_set_tbl <- eval_data$spec_info$combos_set_tbl
+
 ## Load in supporting information ----
 supp_data <- eval_data$spec_info$supp_data
 
@@ -341,6 +360,22 @@ if( length(unique(spec_overview$run_set)) == 1 ){
 }
 
 cond_overview <- eval_data$spec_info$cond_overview
+
+combo_overview <- nuclease_treatment_df %>%
+  dplyr::mutate(
+    unmod_specimen = stringr::str_remove(
+      as.character(specimen), "\\([\\w]+\\)$"
+    )
+  ) %>%
+  dplyr::left_join(
+    dplyr::mutate(cond_overview, specimen = as.character(specimen)),
+    by = c("unmod_specimen" = "specimen")
+  ) %>%
+  dplyr::mutate(
+    unmod_specimen = factor(unmod_specimen, levels = specimen_levels),
+    condition = paste0(as.character(condition), " (", combo, ")"),
+    condition = factor(condition, levels = unique(condition))
+  )
 
 ## Read in experimental data and contatenate different sets ----
 incorp_data <- eval_data$incorp_data
@@ -363,14 +398,14 @@ genomic_grl <- GenomicRanges::GRangesList(lapply(
   function(x){
     
     y <- makeGRangesFromDataFrame(x, seqinfo = seqinfo(ref_genome))
-    mcols(y) <- cond_overview[
-      match(x$specimen, cond_overview$specimen), "condition", drop = FALSE]
+    mcols(y) <- combo_overview[
+      match(x$specimen, combo_overview$specimen), "condition", drop = FALSE]
     y
     
   }
 ))
 
-num_conds <- max(length(unique(cond_overview$condition)), 1)
+num_conds <- max(length(unique(combo_overview$condition)), 1)
 
 names(genomic_grl) <- c(
   "All Align.", "Pileup Align.", "Flanking Pairs", "Target Matched")

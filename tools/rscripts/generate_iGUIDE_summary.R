@@ -183,6 +183,20 @@ signature <- paste(
   unique(sort(unlist(lapply(configs, "[[", "signature")))), 
   collapse = ", ")
 
+abundance_option <- unique(
+  tolower(unlist(lapply(configs, "[[", "Abundance_Method")))
+)[1]
+
+if( is.na(abundance_option) ) abundance_option <- "Fragment"
+
+if( tolower(abundance_option) == "umi" & !umitag_option ){
+  stop(
+    "\n  Abundance method has been set to use UMItags, yet the current",
+    "\n  configuration does not capture UMItag data (UMItags : FALSE).",
+    "\n  Please correct this inconsistency before continuing analysis."
+  )
+}
+
 
 # Start summary ----
 null <- catOrWrite(

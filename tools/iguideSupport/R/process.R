@@ -256,7 +256,7 @@ identifyPairedAlgnmts <- function(gr, grouping = NULL, maxgap, maxovlp = 10L){
             idx = seq_len(igraph::vcount(g)),
             grp = as.numeric(igraph::membership(igraph::clusters(g)))) %>%
           dplyr::group_by(grp) %>%
-          dplyr::filter(n() > 1) %>%
+          dplyr::filter(dplyr::n() > 1) %>%
           dplyr::ungroup() %>%
           dplyr::mutate(grp = as.integer(as.factor(grp))) %>%
           as.data.frame()
