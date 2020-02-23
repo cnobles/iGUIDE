@@ -183,6 +183,7 @@ signature <- paste(
   unique(sort(unlist(lapply(configs, "[[", "signature")))), 
   collapse = ", ")
 
+umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 abundance_option <- unique(
   tolower(unlist(lapply(configs, "[[", "Abundance_Method")))
 )[1]
@@ -213,7 +214,9 @@ null <- catOrWrite(
 )
  
 # Analysis overview table ----
-eval_summary <- eval_data$summary_tbls$eval_summary
+eval_summary <- eval_data$summary_tbls$eval_summary %>%
+  dplyr::mutate(Specimen = stringr::str_remove(Specimen, "\\([\\w]+\\)$"))
+
 eval_summary[is.na(eval_summary)] <- 0
 
 null <- catOrWrite(
@@ -227,6 +230,7 @@ null <- catOrWrite("", args)
 
 # Specimen summary table ----
 specimen_levels <- eval_data$params$specimen_levels
+alt_specimen_levels <- eval_data$params$alt_specimen_levels
 spec_overview <- eval_data$spec_info$spec_overview
 on_targets <- eval_data$spec_info$on_targets
 
@@ -243,18 +247,27 @@ spec_overview <- eval_data$incorp_data$algnmts %>%
     ifelse(edit.site %in% expandPosStr(on_targets), "On-target", "Off-target")
     )
   ) %>%
-  dplyr::group_by(specimen, type) %>%
-  dplyr::summarise(algnmts = sum(contrib)) %>%
+  dplyr::group_by(alt_specimen, type) %>%
+  dplyr::summarise(abund = sum(abund)) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(
-    specimen = factor(specimen, levels = specimen_levels),
+    alt_specimen = factor(alt_specimen, levels = alt_specimen_levels),
     type = factor(type, levels = c("On-target", "Off-target", "Independent"))
   ) %>%
-  tidyr::spread(key = "type", value = "algnmts", fill = 0) %>%
+  tidyr::spread(key = "type", value = "abund", fill = 0) %>%
   tidyr::complete(
-    specimen, fill = list("On-target" = 0, "Off-target" = 0, "Independent" = 0)
+    alt_specimen, 
+    fill = list("On-target" = 0, "Off-target" = 0, "Independent" = 0)
   ) %>%
-  dplyr::left_join(spec_overview, ., by = "specimen")
+  dplyr::mutate(
+    specimen = factor(
+      stringr::str_remove(as.character(alt_specimen), "\\([\\w]+\\)$"), 
+      levels = specimen_levels
+    )
+  ) %>%
+  dplyr::left_join(spec_overview, ., by = "specimen") %>%
+  dplyr::select(alt_specimen, dplyr::everything(), -specimen) %>%
+  dplyr::rename(specimen = alt_specimen)
 
 null <- catOrWrite(
   "Table 2. Specimen overview covering reads, umitags, and alignments:", 
@@ -264,6 +277,26 @@ null <- catOrWrite(
 null <- catOrWrite(spec_overview, args, missing = 0, style = "multiline")
 
 null <- catOrWrite("", args)
+
+# Combination info table ----
+combo_overview <- eval_data$spec_info$combo_overview
+
+combos_tbl <- eval_data$spec_info$combos_set_tbl %>%
+  dplyr::select(-run_set) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate(combo = paste0("(", combo, ")")) %>%
+  dplyr::rename(
+    "Combination" = combo,
+    "Nuclease" = nuclease,
+    "Treatment" = treatment
+  )
+
+null <- catOrWrite(
+  "Table 3. Combinations of nuclease(s) and treatment(s).",
+  args
+)
+
+null <- catOrWrite(combos_tbl, args)
 
 # Target info table ----
 ## Identify all targets used
@@ -285,7 +318,7 @@ target_tbl <- eval_data$spec_info$target_tbl %>%
   )
 
 null <- catOrWrite(
-  "Table 3. Target pattern table specifying sequences and edited loci:", 
+  "Table 4. Target pattern table specifying sequences and edited loci:", 
   args
 )
 
@@ -297,17 +330,24 @@ null <- catOrWrite("", args)
 
 
 # On-target summary table ----
-ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary[
-  , c("specimen", "condition", "ot_algns_pct", 
-      "ot_pile_pct", "ot_pair_pct", "ot_match_pct")
-]
+ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary %>%
+  dplyr::mutate(
+    specimen = combo_overview$specimen[
+      match(alt_specimen, combo_overview$alt_specimen)
+      ]
+  ) %>%
+  dplyr::select(
+    "specimen", "annotation", "ot_algns_pct", "ot_pile_pct", 
+    "ot_pair_pct", "ot_match_pct"
+  )
+
 names(ot_tbl_summary) <- c(
-  "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
+  "Specimen", "Annotation", "All\nAlign.", "Align.\nPileups", 
   "Flanking\nPairs", "Target\nMatched"
 )
 
 null <- catOrWrite(
-  "Table 4. On-target editing percentages based on alignment criteria:",
+  "Table 5. On-target editing percentages based on alignment criteria:",
   args
 )
 
@@ -325,7 +365,7 @@ on_tar_dists <- eval_data$edit_models$on_tar_dists
 sites_included <- eval_data$edit_models$sites_included
 
 on_tar_dist_summary <- on_tar_dists %>%
-  dplyr::group_by(condition, target) %>%
+  dplyr::group_by(annotation, target) %>%
   dplyr::summarise(
     quant = paste(
       round(quantile(S4Vectors::Rle(abs(edit.site.dist), cnt)), digits = 0), 
@@ -334,21 +374,21 @@ on_tar_dist_summary <- on_tar_dists %>%
   ) %>%
   dplyr::ungroup() %>%
   dplyr::left_join(
-    dplyr::select(sites_included, condition, target, prop),
-    by = c("condition", "target")
+    dplyr::select(sites_included, annotation, target, prop),
+    by = c("annotation", "target")
   ) %>%
-  dplyr::select(condition, target, prop, quant) %>%
+  dplyr::select(annotation, target, prop, quant) %>%
   tidyr::separate(
     quant, paste0(as.character(100*seq(0, 1, 0.25)), "%"), sep = ";"
   ) %>%
   dplyr::rename(
-    "Condition" = condition,
+    "Annotation" = annotation,
     "Target" = target,
     "Inclusion Pct." = prop
   )
 
 null <- catOrWrite(
-  "Table 5. On-target incorporation profile, quantile counts given in % columns:",
+  "Table 6. On-target incorporation profile, quantile counts given in % columns:",
   args
 )
 
@@ -357,11 +397,18 @@ null <- catOrWrite(on_tar_dist_summary, args, style = "multiline", missing = 0)
 null <- catOrWrite("", args)
 
 # On-target editing efficiency ----
-ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary
-names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
+ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary %>%
+  dplyr::mutate(
+    specimen = combo_overview$specimen[
+      match(alt_specimen, combo_overview$alt_specimen)
+      ]
+  ) %>%
+  dplyr::select(specimen, dplyr::everything(), -alt_specimen)
+
+names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Annotation")
 
 null <- catOrWrite(
-  "Table 6. Estimate of On-target editing efficiency (percent) for each target by specimen.",
+  "Table 7. Estimate of On-target editing efficiency (percent) for each target by specimen.",
   args
 )
 
@@ -370,17 +417,23 @@ null <- catOrWrite(ot_eff_summary, args, style = "multiline", missing = "-")
 null <- catOrWrite("", args)
 
 # Off-target summary ----
-ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary[
-  , c("specimen", "condition", "ft_algns", "ft_pile", "ft_pair", "ft_match")
-]
+ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary %>%
+  dplyr::mutate(
+    specimen = combo_overview$specimen[
+      match(alt_specimen, combo_overview$alt_specimen)
+      ]
+  ) %>%
+  dplyr::select(
+    "specimen", "annotation", "ft_algns", "ft_pile", "ft_pair", "ft_match"
+  )
 
 names(ft_tbl_summary) <- c(
-  "Specimen", "Condition", "All\nAlign.", "Align.\nPileups", 
+  "Specimen", "Annotation", "All\nAlign.", "Align.\nPileups", 
   "Flanking\nPairs", "Target\nMatched"
 )
 
 null <- catOrWrite(
-  "Table 7. Off-target loci counts from criteria-based alignments:",
+  "Table 8. Off-target loci counts from criteria-based alignments:",
   args
 )
 
@@ -396,7 +449,7 @@ null <- catOrWrite("", args)
 # Onco-gene enrichment analysis ----
 enrich_df <- eval_data$enrich_data$enrich_df %>%
   dplyr::select(
-    origin, condition, total, 
+    origin, annotation, total, 
     onco, onco.p.value, onco.power, 
     special, special.p.value, special.power
   ) %>%
@@ -406,13 +459,13 @@ enrich_df <- eval_data$enrich_data$enrich_df %>%
 
 
 names(enrich_df) <- c(
-  "Origin", "Condition", "Total Gene Count", "Onco Related Count", 
+  "Origin", "Annotation", "Total Gene Count", "Onco Related Count", 
   "Onco Enrich. p-value", "Onco Test Power", "Special Gene Count", 
   "Special Enrich. p-value", "Special Test Power"
 )
 
 null <- catOrWrite(
-  "Table 8. Off-target gene enrichment:",
+  "Table 9. Off-target gene enrichment:",
   args
 )
 
@@ -475,13 +528,13 @@ full_target_seqs <- structure(
 
 null <- lapply(seq_along(ft_seqs_list), function(i){
   
-  null <- catOrWrite(paste0("Table ", i+8, ". Off-Target Loci:"), args)
-  null <- catOrWrite(paste0("  Condition : ", names(ft_seqs_list)[i]), args)
+  null <- catOrWrite(paste0("Table ", i+9, ". Off-Target Loci:"), args)
+  null <- catOrWrite(paste0("  Annotation : ", names(ft_seqs_list)[i]), args)
   
   target_ref_seq <- full_target_seqs[unique(ft_seqs_list[[i]]$target.seq)]
   
   null <- dplyr::select(
-      ft_seqs_list[[i]], target, gene_id, edit.site, aligns, MESL, 
+      ft_seqs_list[[i]], target, gene_id, edit.site, abund, MESL, 
       aligned.sequence, mismatch
     ) %>%
     dplyr::mutate(
@@ -489,7 +542,7 @@ null <- lapply(seq_along(ft_seqs_list), function(i){
     ) %>%
     dplyr::rename(
       "Target" = target, "Gene ID" = gene_id, "Edit Site" = edit.site,
-      "Abund." = aligns, "Aligned Sequence" = aligned.sequence,
+      "Abund." = abund, "Aligned Sequence" = aligned.sequence,
       "Mismatch" = mismatch
     ) %>%
     dplyr::filter(MESL >= args$mesl_filt) %>%
