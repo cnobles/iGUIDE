@@ -11,7 +11,9 @@ ChangeLog
 - Updated standard report template to display more relevant information at the 
   beginning, included the combinations table
 - Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
-  config parameters
+  config parameters and this selection will identify the abundance method used
+  for analysis
+- Added support for alternative UMI method (dx.doi.org/10.17504/protocols.io.wikfccw)
 
 **v1.0.2 (February 15th, 2020)**
 

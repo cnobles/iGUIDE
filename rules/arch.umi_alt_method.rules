@@ -1,0 +1,76 @@
+# -*- mode: Snakemake -*-
+# Architecture Rules
+# Related to setting up analysis directories and consolidating data
+
+def all_umitag_stats(wildcards):
+  if (config["UMItags"]):
+    return expand(
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.umitags.stat", 
+      sample=SAMPLES, bin=BINS)
+  else:
+    return []
+
+rule core_stat_matrix:
+  input:
+    demulti=RUN_DIR + "/process_data/stats/" + RUN + ".demulti.stat",
+    trimBP=expand(
+      RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.trim.stat", 
+      sample=SAMPLES, bin=BINS),
+    trimPrimer=expand(
+      RUN_DIR + "/process_data/stats/{sample}.R1.{bin}.primer.trim.stat", 
+      sample=SAMPLES, bin=BINS),
+    trimODN=expand(
+      RUN_DIR + "/process_data/stats/{sample}.R1.{bin}.trim.stat", 
+      sample=SAMPLES, bin=BINS),
+    umitags=all_umitag_stats,
+    filt=expand(
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.filt.stat", 
+      sample=SAMPLES, bin=BINS),
+    consol=expand(
+      RUN_DIR + "/process_data/stats/{sample}.{read}.{bin}.consol.stat", 
+      sample=SAMPLES, read=READS, bin=BINS),
+    align=expand(
+      RUN_DIR + "/process_data/stats/{sample}.{bin}.align.stat", 
+      sample=SAMPLES, bin=BINS),
+    multihits=expand(
+      RUN_DIR + "/process_data/stats/{sample}.multihits.stat", 
+      sample=SAMPLES),   
+    assim=RUN_DIR + "/process_data/stats/" + RUN + ".assim.stat"
+  output:
+    RUN_DIR + "/output/stats.core." + RUN + ".csv"
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R",
+    data_dir=RUN_DIR + "/process_data/stats/"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: 
+    """
+    Rscript {params.tool} -d {params.data_dir} -o {output}
+    """
+
+rule eval_stat_matrix:
+  input: RUN_DIR + "/output/" + RUN + ".eval.stat"
+  output: RUN_DIR + "/output/stats.eval." + RUN + ".csv"
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/collect_stats.R"
+  resources:
+    mem_mb = lambda wildcards, attempt: attempt * config["defaultMB"]
+  shell: "Rscript {params.tool} -f {input} -o {output}"
+
+rule gen_stat_report:
+  input: 
+    core = RUN_DIR + "/output/stats.core." + RUN + ".csv",
+    eval = RUN_DIR + "/output/stats.eval." + RUN + ".csv",
+    site = RUN_DIR + "/output/incorp_sites." + RUN + ".rds"
+  output: RUN_DIR + "/reports/runstats." + RUN + ".html"
+  params: 
+    tool = ROOT_DIR + "/tools/rscripts/generate_stat_report.R",
+    config = RUN_DIR + "/" + "config.yml"
+  log: RUN_DIR + "/logs/" + RUN + ".runstats.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["reportMB"]
+  shell:
+    """
+    Rscript {params.tool} -r {input.core} -e {input.eval} -i {input.site} \
+        -o {output} -c {params.config} > {log} 2>&1
+    """

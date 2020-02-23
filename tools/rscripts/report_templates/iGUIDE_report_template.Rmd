@@ -278,9 +278,9 @@ if( args$format == "pdf" ){
 }
 ```
 
-# Experiment Overview
+# Experimental Overview
 
-...XXX...
+Each specimen was analyzed under a given combination of nuclease and treatement. A treatment is defined as a target or set of targets (delimited by a semicolon ";") for genome editing. These combinations inform critical parts of the following analysis and are therefore denoted by their "Combination" appended on to either the specimen or annotation identifiers in various tables and figures.
 
 ```{r combos_tbl}
 combos_tbl

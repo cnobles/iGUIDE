@@ -71,7 +71,8 @@ rule assimilate_sites:
     config=RUN_DIR + "/config.yml",
     tool=ROOT_DIR + "/tools/rscripts/assimilate_incorp_data.R",
     umitagDir=RUN_DIR + "/process_data/indices",
-    multiDir=RUN_DIR + "/process_data/multihits"
+    multiDir=RUN_DIR + "/process_data/multihits",
+    readNamePatternArg=config["readNamePattern"]
   log:
     RUN_DIR + "/logs/" + RUN + ".assim.log"
   resources:
@@ -82,7 +83,8 @@ rule assimilate_sites:
         call_str=call_str + "-u {params.umitagDir} "
     if (config["recoverMultihits"]):
         call_str=call_str + "-m {params.multiDir} "
-    call_str=call_str + "-c {params.config} --stat {output.stat} > {log} 2>&1"
+    call_str=call_str + "-c {params.config} --stat {output.stat} "
+    call_str=call_str + "--readNamePattern {params.readNamePatternArg} > {log} 2>&1"
     shell(call_str)
 
 

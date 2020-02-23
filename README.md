@@ -22,7 +22,9 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 * Updated standard report template to display more relevant information at the 
   beginning, included the combinations table
 * Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
-  config parameters
+  config parameters and this selection will identify the abundance method used
+  for analysis
+* Added support for alternative UMI method (dx.doi.org/10.17504/protocols.io.wikfccw)
 
 **v1.0.0 (August 15th, 2019)**
 

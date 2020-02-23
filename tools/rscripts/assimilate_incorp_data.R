@@ -7,7 +7,7 @@
 #' Names with ".": arguments / options for functions
 
 # Required / highly suggested option parameters and library ----
-options(stringsAsFactors = FALSE, scipen = 99, width = 999)
+options(stringsAsFactors = FALSE, scipen = 99, width = 180)
 suppressMessages(library("magrittr"))
 suppressMessages(library("iguideSupport"))
 
@@ -42,7 +42,8 @@ parser$add_argument(
   "-u", "--umitags", nargs = 1, type = "character",
   help = paste(
     "Path to directory with associated fasta files containing read specific",
-    "random captured sequences (*.umitags.fasta.gz)."
+    "random captured sequences. Directory should contain files with file names",
+    "like *.umitags.fasta."
   )
 )
 
@@ -60,6 +61,12 @@ parser$add_argument(
     "File name to be written in output directory of read couts for each",
     "sample. CSV file format. ie. test.stat.csv."
   )
+)
+
+parser$add_argument(
+  "--readNamePattern", nargs = 1, type = "character", 
+  default = "[\\w\\:\\-\\+]+", 
+  help = "Regular expresion capturing the read name for a given sequence."
 )
 
 parser$add_argument(
@@ -339,7 +346,7 @@ rm(temp_table)
 ## based abundances should be interpreted with caution as they are prone / 
 ## susceptable to PCR artifacts.
 
-if( all(!is.null(args$umitags)) ){
+if( !is.null(args$umitags) ){
   
   umitag_files <- list.files(path = args$umitags, full.names = TRUE)
   
@@ -349,9 +356,13 @@ if( all(!is.null(args$umitags)) ){
   
   umitags <- lapply(umitag_files, ShortRead::readFasta)
   umitags <- serialAppendS4(umitags)
+  umitag_read_ids <- stringr::str_extract(
+    as.character(ShortRead::id(umitags)),
+    args$readNamePattern
+  )
   
   reads$umitag <- as.character(ShortRead::sread(umitags))[
-    match(reads$ID, as.character(ShortRead::id(umitags)))
+    match(reads$ID, umitag_read_ids)
   ]
   
 }

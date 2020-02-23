@@ -66,24 +66,6 @@ elif ".tsv" in config["Sample_Info"]:
 else:
     raise SystemExit("\n  Sample Info file needs to contain extention '.csv' or '.tsv'.\n")
 
-# Sample information
-sampleInfo = import_sample_info(
-    config["Sample_Info"], config["Sample_Name_Column"], delim)
-
-SAMPLES=sampleInfo[config["Sample_Name_Column"]]
-READ_TYPES=config["Read_Types"]
-READS=config["Genomic_Reads"]
-REQ_TYPES=READS[:]
-
-if config["UMItags"]: 
-    REQ_TYPES.append("I2")
-
-R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
-R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
-R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
-R2_LEAD_ODN=choose_sequence_data(config["R2_Leading_Trim_ODN"], sampleInfo)
-R2_OVER=choose_sequence_data(config["R2_Overreading_Trim"], sampleInfo)
-
 # Default params if not included in config
 if not "maxNcount" in config:
     config["maxNcount"] = 1
@@ -97,6 +79,33 @@ else:
 
 if not "skipDemultiplexing" in config:
     config["skipDemultiplexing"] = False
+
+if not "Alternate_UMI_Method" in config:
+    config["Alternate_UMI_Method"] = False
+    
+
+# Sample information
+sampleInfo = import_sample_info(
+    config["Sample_Info"], config["Sample_Name_Column"], delim)
+
+SAMPLES=sampleInfo[config["Sample_Name_Column"]]
+READ_TYPES=config["Read_Types"]
+READS=config["Genomic_Reads"]
+REQ_TYPES=READS[:]
+
+if config["UMItags"] and not config["Alternate_UMI_Method"]: 
+    REQ_TYPES.append("I2")
+
+R1_LEAD=choose_sequence_data(config["R1_Leading_Trim"], sampleInfo)
+R1_OVER=choose_sequence_data(config["R1_Overreading_Trim"], sampleInfo)
+R2_LEAD=choose_sequence_data(config["R2_Leading_Trim"], sampleInfo)
+R2_OVER=choose_sequence_data(config["R2_Overreading_Trim"], sampleInfo)
+
+if config["Alternate_UMI_Method"]:
+    R1_LEAD_ODN=choose_sequence_data(config["R1_Leading_Trim_ODN"], sampleInfo)
+else:
+    R2_LEAD_ODN=choose_sequence_data(config["R2_Leading_Trim_ODN"], sampleInfo)
+
 
 ## Memory and default params
 if not "demultiMB" in config:
@@ -160,7 +169,10 @@ rule all:
       stats=RUN_DIR + "/reports/runstats." + RUN + ".html"
 
 # Architecture Rules
-include: "rules/arch.rules"
+if (config["Alternate_UMI_Method"]):
+    include: "rules/arch.umi_alt_method.rules"
+else:
+    include: "rules/arch.rules"
 
 # Processing Rules
 if (config["skipDemultiplexing"]):
@@ -169,11 +181,18 @@ else:
     include: "rules/demulti.rules"
     
 include: "rules/binning.rules"
-include: "rules/trim.rules"
+
+if (config["Alternate_UMI_Method"]):
+    include: "rules/trim.umi_alt_method.rules"
+else:
+    include: "rules/trim.rules"
 
 if (config["UMItags"]):
-    include: "rules/umitag.rules"
-    UMIseqs = sampleInfo["barcode2"]
+    if (config["Alternate_UMI_Method"]):
+        include: "rules/umitag.umi_alt_method.rules"
+    else:
+        include: "rules/umitag.rules"
+        UMIseqs = sampleInfo["barcode2"]
 else:
     include: "rules/umitag_stub.rules"
 
@@ -182,10 +201,16 @@ include: "rules/filt.rules"
 if (config["Aligner"] == "BLAT" or config["Aligner"] == "blat"):
     include: "rules/consol.rules"
     include: "rules/align.blat.rules"
-    include: "rules/quality.blat.rules"
+    if (config["Alternate_UMI_Method"]):
+        include: "rules/quality.blat.umi_alt_method.rules"
+    else:
+        include: "rules/quality.blat.rules"
 elif (config["Aligner"] == "BWA" or config["Aligner"] == "bwa"):
     include: "rules/consol_stub.rules"
-    include: "rules/align.bwa.rules"
+    if (config["Alternate_UMI_Method"]):
+        include: "rules/align.bwa.umi_alt_method.rules"
+    else:
+        include: "rules/align.bwa.rules"
     include: "rules/quality.sam.rules"
 else:
     raise SystemExit( 
