@@ -1647,7 +1647,7 @@ pile_up_df <- dplyr::bind_rows(
     ), 
     .id = "annotation"
   ) %>%
-  dplyr::mutate(annotation = paste0(as.character(annotation), " (*)"))
+  dplyr::mutate(annotation = as.character(annotation))
 
 paired_list <- paired_regions %>%
   dplyr::filter(alt_specimen %in% sapply(combos_exp_specimen_list, "[[", 1)) %>%
@@ -1678,7 +1678,7 @@ paired_df <- dplyr::bind_rows(
     ), 
     .id = "annotation"
   ) %>%
-  dplyr::mutate(annotation = paste0(as.character(annotation), " (*)"))
+  dplyr::mutate(annotation = as.character(annotation))
 
 matched_list <- split(
   x = matched_summary, 
