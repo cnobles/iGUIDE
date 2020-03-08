@@ -207,7 +207,9 @@ if( args$tables ){
 }
 
 eval_summary %>%
-  dplyr::mutate(Specimen = stringr::str_remove(Specimen, "\\([\\w]+\\)$")) %>%
+  dplyr::mutate(
+    Annotation = stringr::str_remove(Annotation, "\\([\\w]+\\)$")
+    ) %>%
   kable(
     format = report_format, row.names = FALSE, booktabs = TRUE, 
     longtable = TRUE, escape = TRUE, caption = tbl_caps[1],

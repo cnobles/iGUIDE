@@ -436,10 +436,9 @@ names(genomic_grl) <- c(
 
 # On-target summary ----
 ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary %>%
+  dplyr::rename("specimen" = alt_specimen) %>%
   dplyr::mutate(
-    specimen = combo_overview$specimen[
-      match(alt_specimen, combo_overview$alt_specimen)
-    ]
+    annotation = stringr::str_remove(annotation, "\\([\\w]+\\)$")
   ) %>%
   dplyr::select(
     "specimen", "annotation", "ot_algns_pct", "ot_pile_pct", 
@@ -447,12 +446,11 @@ ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary %>%
   )
 
 ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary %>%
+  dplyr::rename("specimen" = alt_specimen) %>%
   dplyr::mutate(
-    specimen = combo_overview$specimen[
-      match(alt_specimen, combo_overview$alt_specimen)
-      ]
+    annotation = stringr::str_remove(annotation, "\\([\\w]+\\)$")
   ) %>%
-  dplyr::select(specimen, dplyr::everything(), -alt_specimen)
+  dplyr::select(specimen, annotation, dplyr::everything())
 
 eval_summary <- eval_data$summary_tbls$eval_summary
 
@@ -462,10 +460,9 @@ sites_included <- eval_data$edit_models$sites_included
 
 # Off-target summary ----
 ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary %>%
+  dplyr::rename("specimen" = alt_specimen) %>%
   dplyr::mutate(
-    specimen = combo_overview$specimen[
-      match(alt_specimen, combo_overview$alt_specimen)
-    ]
+    annotation = stringr::str_remove(annotation, "\\([\\w]+\\)$")
   ) %>%
   dplyr::select(
     "specimen", "annotation", "ft_algns", "ft_pile", "ft_pair", "ft_match"
