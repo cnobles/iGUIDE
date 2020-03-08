@@ -283,7 +283,7 @@ if( args$format == "pdf" ){
 Each specimen was analyzed under a given combination of nuclease and treatement. A treatment is defined as a target or set of targets (delimited by a semicolon ";") for genome editing. These combinations inform critical parts of the following analysis and are therefore denoted by their "Combination" appended on to either the specimen or annotation identifiers in various tables and figures.
 
 ```{r combos_tbl}
-combos_tbl
+#combos_tbl
 
 if( args$tables ){
   
@@ -718,124 +718,131 @@ if( args$format == "pdf" ){
 Off-target sites can be identified by sequence similarity within `r format(upstream_dist, big.mark = ",")` bp upstream of incorporation sites. The sequences of the top target matched sites are displayed below in Figure 3 for each condition and target along with the number of mismatches to the targeting sequence (`Mismatch`), an indication if the site is associated with an On- or Off-target location (`Target`), the total number of unique alignments associated with the site (`Abund.`), the maximum edit site likelyhood (`MESL`), and an identifier denoted by the nearest gene (`Gene_ID`). MESL is a score for the percentage likelyhood the off-target site is associated with directed nuclease editing, based solely on the respective On-target incorporation distribution. The gene name within the `Gene_ID` is the nearest gene to the genomic location. Further, symbols after the gene name indicate: `*` that the site is within the transcription unit of the gene, `~` the gene appears on the cancer-association list, `!` and that the gene appears on the special gene list. For this report, gene lists used were: `r paste(unique(c(sapply(configs, function(x) x$oncoGeneList$file), sapply(configs, function(x) x$specialGeneList$file))), collapse = " and ")`. For a complete list of predicted Off-target sites identified by the analysis, please see the Supporting material section, Off-target site tables.
 
 ```{r off_target_seqs}
-ft_seq_plots <- lapply(
-  ft_seqs_list, 
-  function(x){
-    
-    ref_target_seqs <- sapply(seq_len(nrow(target_tbl)), function(i){
+if( length(ft_seqs_list) > 0 ){
+
+  ft_seq_plots <- lapply(
+    ft_seqs_list, 
+    function(x){
       
-      prof <- nuc_profiles[[target_tbl$Nuclease[i]]]
+      ref_target_seqs <- sapply(seq_len(nrow(target_tbl)), function(i){
+        
+        prof <- nuc_profiles[[target_tbl$Nuclease[i]]]
+        
+        if( prof$PAM_Loc == "5p" ){
+          return(paste0(target_tbl$PAM[i], target_tbl$Sequence[i]))
+        }else if( prof$PAM_Loc == "3p" ){
+          return(paste0(target_tbl$Sequence[i], target_tbl$PAM[i]))
+        }else{
+          return(target_tbl$Sequence[i])
+        }
+        
+      })
       
-      if( prof$PAM_Loc == "5p" ){
-        return(paste0(target_tbl$PAM[i], target_tbl$Sequence[i]))
-      }else if( prof$PAM_Loc == "3p" ){
-        return(paste0(target_tbl$Sequence[i], target_tbl$PAM[i]))
+      ref_seq <- ref_target_seqs[match(unique(x$target.seq), target_tbl$Target)]
+      
+      if( support_present ){
+        title <- paste0(
+          unique(x$annotation), "\nTarget: ", unique(x$target.seq)
+        )
       }else{
-        return(target_tbl$Sequence[i])
+        title <- paste0("Target: ", unique(x$target.seq))
       }
       
-    })
-    
-    ref_seq <- ref_target_seqs[match(unique(x$target.seq), target_tbl$Target)]
-    
-    if( support_present ){
-      title <- paste0(unique(x$annotation), "\nTarget: ", unique(x$target.seq))
-    }else{
-      title <- paste0("Target: ", unique(x$target.seq))
+      y <- head(x, n = 10)
+      
+      dplyr::select(
+          y, aligned.sequence, mismatch, target, abund, MESL, gene_id
+        ) %>%
+        dplyr::rename(
+          "Mismatch" = mismatch, "Target" = target, 
+          "Abund." = abund, "Gene_ID" = gene_id
+        ) %>%
+        dplyr::mutate(MESL = sprintf("%.1f", round(MESL, digits = 1))) %>%
+        plotSeqDiverge(
+          ref = ref_seq, padding = 7, text.size = 3.5, 
+          font.family = "Courier", font.face = "plain", force.sq = TRUE) +
+        labs(title = title) +
+        blank_theme +
+        theme(
+          title = element_text(size = 9, face = "bold")
+        )
+      
     }
-    
-    y <- head(x, n = 10)
-    
-    dplyr::select(
-        y, aligned.sequence, mismatch, target, abund, MESL, gene_id
-      ) %>%
-      dplyr::rename(
-        "Mismatch" = mismatch, "Target" = target, 
-        "Abund." = abund, "Gene_ID" = gene_id
-      ) %>%
-      dplyr::mutate(MESL = sprintf("%.1f", round(MESL, digits = 1))) %>%
-      plotSeqDiverge(
-        ref = ref_seq, padding = 7, text.size = 3.5, 
-        font.family = "Courier", font.face = "plain", force.sq = TRUE) +
-      labs(title = title) +
-      blank_theme +
-      theme(
-        title = element_text(size = 9, face = "bold")
+  )
+  
+  layout_seq <- c(
+    rep(seq_along(ft_seqs_list), sapply(
+      ft_seqs_list, 
+      function(x) min(nrow(x), 10)
+    ) + 4)
+  )
+  
+  lines_per_page <- 42
+  layout_list <- split(layout_seq, layout_seq)
+  
+  null <- mapply(
+    function(seq, ft_plot, fp){
+      
+      len <- length(seq) * 10 / lines_per_page
+      file_pdf <- sprintf("off_target_seqs-%s.pdf", unique(seq))
+      file_png <- sprintf("off_target_seqs-%s.png", unique(seq))
+      
+      ggsave(
+        filename = file_pdf, 
+        plot = ft_plot, 
+        device = "pdf", 
+        path = fp, 
+        width = 7.5, 
+        height = len, 
+        units = "in"
       )
+      
+      ggsave(
+        filename = file_png, 
+        plot = ft_plot, 
+        device = "png", 
+        path = fp, 
+        width = 7.5,
+        height = len, 
+        units = "in",
+        dpi = 300
+      )
+  
+      
+    },
+    seq = layout_list,
+    ft_plot = ft_seq_plots,
+    MoreArgs = list(fp = figure_path)
+  )
+  
+  if( args$format == "pdf"){
+    
+    knitr::include_graphics(
+      path = sprintf(
+        file.path(figure_path, "off_target_seqs-%s.pdf"), 
+        seq_along(layout_list)
+      )
+    )
+    
+    
+  }else{
+    
+    knitr::include_graphics(
+      path = sprintf(
+        file.path(figure_path, "off_target_seqs-%s.png"), 
+        seq_along(layout_list)
+      )
+    )
     
   }
-)
 
-layout_seq <- c(
-  rep(seq_along(ft_seqs_list), sapply(
-    ft_seqs_list, 
-    function(x) min(nrow(x), 10)
-  ) + 4)
-)
-
-lines_per_page <- 42
-layout_list <- split(layout_seq, layout_seq)
-
-null <- mapply(
-  function(seq, ft_plot, fp){
-    
-    len <- length(seq) * 10 / lines_per_page
-    file_pdf <- sprintf("off_target_seqs-%s.pdf", unique(seq))
-    file_png <- sprintf("off_target_seqs-%s.png", unique(seq))
-    
-    ggsave(
-      filename = file_pdf, 
-      plot = ft_plot, 
-      device = "pdf", 
-      path = fp, 
-      width = 7.5, 
-      height = len, 
-      units = "in"
-    )
-    
-    ggsave(
-      filename = file_png, 
-      plot = ft_plot, 
-      device = "png", 
-      path = fp, 
-      width = 7.5,
-      height = len, 
-      units = "in",
-      dpi = 300
-    )
-
-    
-  },
-  seq = layout_list,
-  ft_plot = ft_seq_plots,
-  MoreArgs = list(fp = figure_path)
-)
-
-if( args$format == "pdf"){
-  
-  knitr::include_graphics(
-    path = sprintf(
-      file.path(figure_path, "off_target_seqs-%s.pdf"), 
-      seq_along(layout_list)
-    )
-  )
-  
-  
 }else{
-  
-  knitr::include_graphics(
-    path = sprintf(
-      file.path(figure_path, "off_target_seqs-%s.png"), 
-      seq_along(layout_list)
-    )
-  )
-  
+  cat("**No figures were generated due to insufficient data.**")
 }
-
 ```
 
 ```{r} 
-cat(fig_caps[2]) 
+if( length(ft_seqs_list) > 0 ) cat(fig_caps[2]) 
 ```
 
 ```{r} 
