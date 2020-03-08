@@ -29,8 +29,8 @@ R1_Overreading_Trim : "ACTCACCGCTCTTGTAG"
 Target_Sequences:
     EMXs1 : "GAGTCCGAGCAGAAGAAGAA"
 On_Target_Sites :
-    EMXs1 : "chr2:+:72933872"
-
+    EMXs1 : "chr2:+:72933869"
+     
 # Specimen target treatment
 # Data can be input here or referenced in sampleInfo by just putting 
 # 'sampleInfo:{column}'. For simplicity, if all specimens were treated with the 
