@@ -1708,7 +1708,7 @@ matched_df <- dplyr::bind_rows(
 enrich_df <- dplyr::bind_rows(
     list(
       "Reference" = ref_df, 
-      "Alignment Pile Ups" = pile_up_df,
+      "Pile Ups" = pile_up_df,
       "Flanking Pairs" = paired_df, 
       "Target Matched" = matched_df
     ), 
