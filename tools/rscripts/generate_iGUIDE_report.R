@@ -344,6 +344,9 @@ treatment_df <- eval_data$spec_info$treatment_df
 nuc_profiles <- eval_data$spec_info$nuclease_profiles
 
 ## Combo information
+nuc_treatment_unmod_df <- eval_data$spec_info$nuclease_df %>%
+  dplyr::full_join(treatment_df, by = c("run_set", "specimen"))
+
 nuclease_treatment_df <- eval_data$spec_info$nuclease_treatment_df
 combos_set_tbl <- eval_data$spec_info$combos_set_tbl
 
@@ -362,9 +365,19 @@ supp_data <- eval_data$spec_info$supp_data
 
 ## Consolidate supplementary data ----
 spec_overview <- eval_data$spec_info$spec_overview %>%
-  dplyr::mutate(specimen = nuclease_treatment_df$alt_specimen[
-    match(specimen, nuclease_treatment_df$specimen)
-  ])
+  dplyr::mutate(
+    specimen = ifelse(
+      nuc_treatment_unmod_df$nuclease[
+        match(specimen, nuc_treatment_unmod_df$specimen)
+      ] == "Mock" | nuc_treatment_unmod_df$treatment[
+        match(specimen, nuc_treatment_unmod_df$specimen)
+      ] == "Mock",
+      as.character(specimen),
+      as.character(nuclease_treatment_df$alt_specimen)[
+        match(specimen, nuclease_treatment_df$specimen)
+      ]
+    )
+  )
 
 if( length(unique(spec_overview$run_set)) == 1 ){
   spec_overview <- dplyr::select(spec_overview, -run_set)

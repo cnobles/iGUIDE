@@ -14,13 +14,11 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 
 ### Changelog:
 
-**v1.1.0 (February ??, 2019)**
+**v1.1.0 (March 8th, 2020)**
 
 * Modified how samples designated as Mock are treated during the analysis
 * Mock samples can now be indicated by "None" or "Control" as well 
   (case-insensitive)
-* Updated standard report template to display more relevant information at the 
-  beginning, included the combinations table
 * Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
   config parameters and this selection will identify the abundance method used
   for analysis
