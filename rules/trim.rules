@@ -1,7 +1,7 @@
 # -*- mode: Snakemake -*-
 # Sequence Trimming Rules
 
-rule seq_trim_R1:
+rule seq_trim_bp_read:
   input:
     RUN_DIR + "/process_data/binned/{sample}.R1.{bin}.fastq.gz"
   output:
@@ -27,7 +27,7 @@ rule seq_trim_R1:
       --compress > {log} 2>&1
     """
 
-rule seq_trim_R2_primer:
+rule seq_trim_ic_read_primer:
   input:
     RUN_DIR + "/process_data/binned/{sample}.R2.{bin}.fastq.gz"
   output:
@@ -53,7 +53,7 @@ rule seq_trim_R2_primer:
       --compress > {log} 2>&1
     """
 
-rule seq_trim_R2_odn:
+rule seq_trim_ic_read_odn:
   input:
     RUN_DIR + "/process_data/trimmed/primer/{sample}.R2.{bin}.primer.trim.fastq.gz"
   output:

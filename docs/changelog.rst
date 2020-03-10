@@ -3,6 +3,25 @@
 ChangeLog
 =========
 
+**v1.1.0 (March 8th, 2020)**
+
+- Modified how samples designated as Mock are treated during the analysis
+- Mock samples can now be indicated by "None" or "Control" as well 
+  (case-insensitive)
+- Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
+  config parameters and this selection will identify the abundance method used
+  for analysis
+- Added support for alternative UMI method (dx.doi.org/10.17504/protocols.io.wikfccw)
+
+**v1.0.2 (February 15th, 2020)**
+
+- Bugfix: UMItags set to FALSE will now process through to completion
+- Rebuild: Updated to build version 1.0.1
+
+**v1.0.1 (December 3rd, 2019)**
+
+- Bugfix: Updated Gene set enrichment test within report
+
 **v1.0.0 (August 15th, 2019)**
 
 - Complete support for BLAT and BWA aligners

@@ -1,0 +1,75 @@
+# -*- mode: Snakemake -*-
+# Sequence Trimming Rules
+
+rule seq_trim_bp_read:
+  input:
+    RUN_DIR + "/process_data/binned/{sample}.R2.{bin}.fastq.gz"
+  output:
+    trim=temp(RUN_DIR + "/process_data/trimmed/{sample}.R2.{bin}.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R2.{bin}.trim.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
+    lead=lambda wildcards: R2_LEAD[wildcards.sample],
+    over=lambda wildcards: R2_OVER[wildcards.sample],
+    leadMis=config["R2leadMismatch"],
+    overMis=config["R2overMismatch"],
+    overLen=config["R2overMaxLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.R2.{bin}.trim.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output.trim} \
+      -l {params.lead} --leadMismatch {params.leadMis} \
+      -r {params.over} --overMismatch {params.overMis} \
+      --overMaxLength {params.overLen} --stat {output.stat} \
+      --compress > {log} 2>&1
+    """
+
+rule seq_trim_ic_read_primer:
+  input:
+    RUN_DIR + "/process_data/binned/{sample}.R1.{bin}.fastq.gz"
+  output:
+    trim=temp(RUN_DIR + "/process_data/trimmed/primer/{sample}.R1.{bin}.primer.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R1.{bin}.primer.trim.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
+    lead=lambda wildcards: R1_LEAD[wildcards.sample],
+    over=lambda wildcards: R1_OVER[wildcards.sample],
+    leadMis=config["R1leadMismatch"],
+    overMis=config["R1overMismatch"],
+    overLen=config["R1overMaxLength"]
+  log:
+    RUN_DIR + "/logs/{sample}.R1.{bin}.primer.trim.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output.trim} \
+      -l {params.lead} --leadMismatch {params.leadMis} \
+      -r {params.over} --overMismatch {params.overMis} \
+      --overMaxLength {params.overLen} --stat {output.stat} \
+      --compress > {log} 2>&1
+    """
+
+rule seq_trim_ic_read_odn:
+  input:
+    RUN_DIR + "/process_data/trimmed/primer/{sample}.R1.{bin}.primer.trim.fastq.gz"
+  output:
+    trim=temp(RUN_DIR + "/process_data/trimmed/{sample}.R1.{bin}.trim.fastq.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.R1.{bin}.trim.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
+    lead=lambda wildcards: R1_LEAD_ODN[wildcards.sample],
+    leadMis=config["R1odnMismatch"]
+  log:
+    RUN_DIR + "/logs/{sample}.R1.{bin}.odn.trim.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output.trim} \
+      -l {params.lead} --leadMismatch {params.leadMis} \
+      --noQualTrimming --stat {output.stat} --compress > {log} 2>&1
+    """

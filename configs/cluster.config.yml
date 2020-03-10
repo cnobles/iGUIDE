@@ -1,8 +1,0 @@
-__default__ :
-    nCPUs     : 1
-    memory    : "{resources.mem_mb}"
-    partition : "normal"
-    resources : "\"span[hosts=1]\""
-    name      : "JOBNAME.{rule}.{wildcards}"
-    output    : "{RUN_DIR}/logs/{rule}.{wildcards}.out"
-    error     : "{RUN_DIR}/logs/{rule}.{wildcards}.err"

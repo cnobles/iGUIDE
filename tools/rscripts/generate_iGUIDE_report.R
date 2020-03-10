@@ -272,6 +272,20 @@ signature <- paste(
 umitag_option <- all(unlist(lapply(configs, "[[", "UMItags")))
 multihit_option <- all(unlist(lapply(configs, "[[", "recoverMultihits")))
 
+abundance_option <- unique(
+  tolower(unlist(lapply(configs, "[[", "Abundance_Method")))
+)[1]
+
+if( is.na(abundance_option) ) abundance_option <- "Fragment"
+
+if( abundance_option == "umi" & !umitag_option ){
+  stop(
+    "\n  Abundance method has been set to use UMItags, yet the current",
+    "\n  configuration does not capture UMItag data (UMItags : FALSE).",
+    "\n  Please correct this inconsistency before continuing analysis."
+  )
+}
+
 if( multihit_option ){
   
   upstream_dist <- unique(sapply(configs, function(x) x$upstreamDist))
@@ -305,6 +319,7 @@ if( multihit_option ){
 sample_info <- eval_data$spec_info$sample_info
 
 specimen_levels <- eval_data$params$specimen_levels
+alt_specimen_levels <- eval_data$params$alt_specimen_levels
 
 support_present <- nrow(eval_data$spec_info$supp_data) > 0
 
@@ -328,11 +343,41 @@ treatment_df <- eval_data$spec_info$treatment_df
 ## Nuclease profiles
 nuc_profiles <- eval_data$spec_info$nuclease_profiles
 
+## Combo information
+nuc_treatment_unmod_df <- eval_data$spec_info$nuclease_df %>%
+  dplyr::full_join(treatment_df, by = c("run_set", "specimen"))
+
+nuclease_treatment_df <- eval_data$spec_info$nuclease_treatment_df
+combos_set_tbl <- eval_data$spec_info$combos_set_tbl
+
+combos_tbl <- combos_set_tbl %>%
+  dplyr::select(-run_set) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate(combo = paste0("(", combo, ")")) %>%
+  dplyr::rename(
+    "Combination" = combo,
+    "Nuclease" = nuclease,
+    "Treatment" = treatment
+  )
+
 ## Load in supporting information ----
 supp_data <- eval_data$spec_info$supp_data
 
 ## Consolidate supplementary data ----
-spec_overview <- eval_data$spec_info$spec_overview
+spec_overview <- eval_data$spec_info$spec_overview %>%
+  dplyr::mutate(
+    specimen = ifelse(
+      nuc_treatment_unmod_df$nuclease[
+        match(specimen, nuc_treatment_unmod_df$specimen)
+      ] == "Mock" | nuc_treatment_unmod_df$treatment[
+        match(specimen, nuc_treatment_unmod_df$specimen)
+      ] == "Mock",
+      as.character(specimen),
+      as.character(nuclease_treatment_df$alt_specimen)[
+        match(specimen, nuclease_treatment_df$specimen)
+      ]
+    )
+  )
 
 if( length(unique(spec_overview$run_set)) == 1 ){
   spec_overview <- dplyr::select(spec_overview, -run_set)
@@ -340,7 +385,15 @@ if( length(unique(spec_overview$run_set)) == 1 ){
   spec_overview <- dplyr::rename(spec_overview, "Run Name" = run_set)
 }
 
-cond_overview <- eval_data$spec_info$cond_overview
+annot_overview <- eval_data$spec_info$annot_overview
+
+combo_overview <- nuclease_treatment_df %>%
+  dplyr::left_join(annot_overview, by = "specimen") %>%
+  dplyr::mutate(
+    annotation = paste0(as.character(annotation), " (", combo, ")"),
+    annotation = factor(annotation, levels = unique(annotation))
+  )
+
 
 ## Read in experimental data and contatenate different sets ----
 incorp_data <- eval_data$incorp_data
@@ -363,26 +416,41 @@ genomic_grl <- GenomicRanges::GRangesList(lapply(
   function(x){
     
     y <- makeGRangesFromDataFrame(x, seqinfo = seqinfo(ref_genome))
-    mcols(y) <- cond_overview[
-      match(x$specimen, cond_overview$specimen), "condition", drop = FALSE]
+    mcols(y) <- combo_overview[
+      match(x$alt_specimen, combo_overview$alt_specimen), 
+      "annotation", 
+      drop = FALSE
+    ]
+    
     y
     
   }
 ))
 
-num_conds <- max(length(unique(cond_overview$condition)), 1)
+num_conds <- max(length(unique(combo_overview$annotation)), 1)
 
 names(genomic_grl) <- c(
-  "All Align.", "Pileup Align.", "Flanking Pairs", "Target Matched")
+  "All Align.", "Pileup Align.", "Flanking Pairs", "Target Matched"
+)
 
 
 # On-target summary ----
-ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary[
-  , c("specimen", "condition", "ot_algns_pct", 
-      "ot_pile_pct", "ot_pair_pct", "ot_match_pct")
-]
+ot_tbl_summary <- eval_data$summary_tbls$ot_tbl_summary %>%
+  dplyr::rename("specimen" = alt_specimen) %>%
+  dplyr::mutate(
+    annotation = stringr::str_remove(annotation, "\\([\\w]+\\)$")
+  ) %>%
+  dplyr::select(
+    "specimen", "annotation", "ot_algns_pct", "ot_pile_pct", 
+    "ot_pair_pct", "ot_match_pct"
+  )
 
-ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary
+ot_eff_summary <- eval_data$summary_tbls$ot_eff_summary %>%
+  dplyr::rename("specimen" = alt_specimen) %>%
+  dplyr::mutate(
+    annotation = stringr::str_remove(annotation, "\\([\\w]+\\)$")
+  ) %>%
+  dplyr::select(specimen, annotation, dplyr::everything())
 
 eval_summary <- eval_data$summary_tbls$eval_summary
 
@@ -391,9 +459,14 @@ on_tar_dists <- eval_data$edit_models$on_tar_dists
 sites_included <- eval_data$edit_models$sites_included
 
 # Off-target summary ----
-ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary[
-  , c("specimen", "condition", "ft_algns", "ft_pile", "ft_pair", "ft_match")
-]
+ft_tbl_summary <- eval_data$summary_tbls$ft_tbl_summary %>%
+  dplyr::rename("specimen" = alt_specimen) %>%
+  dplyr::mutate(
+    annotation = stringr::str_remove(annotation, "\\([\\w]+\\)$")
+  ) %>%
+  dplyr::select(
+    "specimen", "annotation", "ft_algns", "ft_pile", "ft_pair", "ft_match"
+  )
 
 
 # Off-target sequence analysis ----

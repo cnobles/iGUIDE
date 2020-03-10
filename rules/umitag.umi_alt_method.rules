@@ -1,0 +1,25 @@
+# -*- mode: Snakemake -*-
+# Sequence Collecting Rules
+
+rule collect_umitags:
+  input:
+    RUN_DIR + "/process_data/binned/{sample}.R2.{bin}.fastq.gz"
+  output:
+    seq=temp(RUN_DIR + "/process_data/indices/{sample}.R2.{bin}.trim.fastq.gz"),
+    umi=temp(RUN_DIR + "/process_data/indices/{sample}.{bin}.umitags.fasta.gz"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{bin}.umitags.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/trim.R",
+    seq=config["R2_Leading_Trim"],
+    mis=config["R2leadMismatch"]
+  log:
+    RUN_DIR + "/logs/{sample}.{bin}.umitag.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["trimMB"]
+  shell:
+    """
+    Rscript {params.tool} {input} -o {output.seq} \
+      -l {params.seq} --leadMismatch {params.mis} --noQualTrimming \
+      --minSeqLength 0 --collectRandomIDs {output.umi} --stat {output.stat} \
+      --compress > {log} 2>&1
+    """

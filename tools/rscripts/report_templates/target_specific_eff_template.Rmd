@@ -3,10 +3,10 @@
 The table below displays the estimated On-target editing efficiency for each target across the specimens tested using all target **Matched** observations.
 
 ```{r on_target_efficiency}
-names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Condition")
+names(ot_eff_summary)[c(1,2)] <- c("Specimen", "Annotation")
 
 ot_eff_data <- ot_eff_summary %>%
-  dplyr::select(-Specimen, -Condition) %>%
+  dplyr::select(-Specimen, -Annotation) %>%
   dplyr::mutate_all(
     pNums, 
     na.replace = ifelse(report_format == "latex", "-", "\\-"), 
@@ -21,7 +21,7 @@ if( args$tables ){
   
   write.csv(
     x = ot_eff_save, 
-    file = file.path(tables_path, "tbl5.ontarget.efficiency.csv"),
+    file = file.path(tables_path, "tbl6.ontarget.efficiency.csv"),
     quote = TRUE, row.names = FALSE
   )
   
@@ -30,7 +30,7 @@ if( args$tables ){
 tbl_caption <- "Estimate of On-target editing efficiency (percent) for each target by specimen."
 
 if( args$format == "html" ){
-  tbl_caption <- paste0("Table 5. ", tbl_caption)
+  tbl_caption <- paste0("Table 6. ", tbl_caption)
 }
 
 kable(

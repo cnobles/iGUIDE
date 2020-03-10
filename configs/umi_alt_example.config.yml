@@ -1,14 +1,15 @@
 # Run configuration
-Run_Name : "simulation"
-Sample_Info : "sampleInfo/simulation.sampleInfo.csv"
-Supplemental_Info : "sampleInfo/simulation.supp.csv"
+Run_Name : "umi_alt_example"
+Sample_Info : "sampleInfo/umi_alt_example.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/umi_alt_example.supp.csv"
 Ref_Genome : "hg38"
-Aligner : "blat"
+Aligner : "bwa"
 UMItags : TRUE
-Abundance_Method : "Fragment"
+Abundance_Method : "UMI"
+Alternate_UMI_Method : TRUE
 
 # Sequence files
-Seq_Path : "etc/tests/Data"
+Seq_Path : "analysis/umi_alt_example/input_data"
 R1: "Undetermined_S0_L001_R1_001.fastq.gz"
 R2: "Undetermined_S0_L001_R2_001.fastq.gz"
 I1: "Undetermined_S0_L001_I1_001.fastq.gz"
@@ -18,23 +19,18 @@ I2: "Undetermined_S0_L001_I2_001.fastq.gz"
 Sample_Name_Column : "sampleName"
 
 # Sequence information
-R1_Leading_Trim : "."
-R1_Overreading_Trim : "TCGCGTATACCGTTATTAACATATGACAACTCAA"
-R2_Leading_Trim : "TTGAGTTGTCATATGTTAATAACGGTAT"
-R2_Leading_Trim_ODN : "ACGCGA"
-R2_Overreading_Trim : "AGATCGGAAGAGCGTCGTGT"
+R2_Leading_Trim : "NNNNNNNNSCTACAAGAGCGGTGAGT"
+R2_Overreading_Trim : "GTTTAATTGAGTTGTCATATGTTAATAACGG" # Minus option, use "CCGTTATTAACATATGACAACTCAATTAAAC" for Plus.
+R1_Leading_Trim : "NNNCCGTTATTAACATATGACAACTCAATTAAAC"  # Minus option, use "NNNGTTTAATTGAGTTGTCATATGTTAATAACGG" for Plus.
+R1_Leading_Trim_ODN : "."                               # Minus option, use "TAT" for Plus.
+R1_Overreading_Trim : "ACTCACCGCTCTTGTAG"
 
 # Target sequence information, do not include PAM sequence with gRNAs
 Target_Sequences:
-    B2M : "GAGTAGCGCGAGCACAGCTA"
-    TRAC : "TGTGCTAGACATGAGGTCTA"
-    TRBC : "GGAGAATGACGAGTGGACCC"
+    EMXs1 : "GAGTCCGAGCAGAAGAAGAA"
 On_Target_Sites :
-    B2M : "chr15:-:44711569"
-    TRAC : "chr14:+:22547664"
-    TRBC'1 : "chr7:+:142792010-142792030"
-    TRBC'2 : "chr7:+:142801367"
-
+    EMXs1 : "chr2:+:72933869"
+     
 # Specimen target treatment
 # Data can be input here or referenced in sampleInfo by just putting 
 # 'sampleInfo:{column}'. For simplicity, if all specimens were treated with the 
@@ -42,7 +38,7 @@ On_Target_Sites :
 # target sequence name(s). If placing data in sampleInfo, delimit multiple 
 # target sequence names with a semicolon ';'.
 Treatment :
-    all : "sampleInfo:gRNA"
+    all : "EMXs1"
 
 # Specimen nuclease treatment
 # Similar to target treatment above, this parameter dictates which nuclease(s)
@@ -82,7 +78,7 @@ Nuclease_Profiles :
 
 # ------------------------------------------------------------------------------
 # iGUIDE configuration
-Read_Types : ["R1", "R2", "I1", "I2"]
+Read_Types : ["R1", "R2"]
 Genomic_Reads : ["R1", "R2"]
 readNamePattern : "'[\\w\\:\\-\\+]+'"
 
@@ -99,7 +95,7 @@ evaluateMB : 8000
 reportMB : 4000
 
 # Demultiplexing parameters
-skipDemultiplexing : FALSE
+skipDemultiplexing : TRUE
 barcode1Length : 8
 barcode2Length : 8
 barcode1 : "I1"
@@ -110,18 +106,18 @@ maxNcount : 1
 
 # Sequence trimming
 ## R1 sequence
-R1leadMismatch : 0
+R1leadMismatch : 3
+R1odnMismatch : 0
 R1overMismatch : 4
 R1overMaxLength : 20
 ## R2 sequence
-R2leadMismatch : 3
-R2odnMismatch : 0
+R2leadMismatch : 2
 R2overMismatch : 4
 R2overMaxLength : 20
 
 # Binning
-bins : 3
-level : 250
+bins : 10
+level : 25000
 
 # Reference Alignment
 BLATparams : "-tileSize=11 -stepSize=9 -minIdentity=85 -maxIntron=5 -minScore=27 -dots=1000 -out=psl -noHead"

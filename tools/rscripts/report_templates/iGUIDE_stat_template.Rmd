@@ -138,6 +138,8 @@ names(read_tbl) <- c(
   "unique", "multihit", "chimera"
 )
 
+read_tbl[is.na(read_tbl)] <- 0
+
 read_print <- kable(
     read_tbl, format = tbl_format, row.names = FALSE, caption = tbl_caps[1], 
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE
@@ -175,6 +177,8 @@ names(algn_tbl) <- c(
   "reads", "lengths", "clusters", "reads"
 )
 
+algn_tbl[is.na(algn_tbl)] <- 0
+
 algn_print <- kable(
     algn_tbl, format = tbl_format, row.names = FALSE, caption = tbl_caps[2], 
     format.args = list(big.mark = ","), booktabs = TRUE, longtable = TRUE
@@ -205,6 +209,8 @@ if( output_format == "pdf_document" ){
 names(incorp_tbl) <- c(
   "sampleName", "Total", "Combined", "Pileups", "Paired", "Total", "On", "Off"
 )
+
+incorp_tbl[is.na(incorp_tbl)] <- 0
 
 incorp_print <- kable(
     incorp_tbl, format = tbl_format, row.names = FALSE, caption = tbl_caps[3], 

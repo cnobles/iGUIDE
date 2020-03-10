@@ -113,6 +113,13 @@ if( !file.exists(args$config) ){
 
 config <- yaml::yaml.load_file(args$config)
 
+# Check config for defaults ----
+if( !"UMItags" %in% names(config) ) config$UMItags <- TRUE
+
+if( !"Alternate_UMI_Method" %in% names(config) ){
+  config$Alternate_UMI_Method <- FALSE
+}
+
 # Check for format ----
 report_formats <- c("html" = "html_document", "pdf" = "pdf_document")
 
@@ -216,11 +223,19 @@ sampleName_levels <- c(
 
 # Read attrition table ----
 read_tbl <- dplyr::select(
-    stat_df, c(sampleName, demulti.reads, R1.trim.reads, R2.primer.trim.reads,
-    R2.trim.reads, if( config$UMItags ) umitags.reads, filt.reads, 
-    if( tolower(config$Aligner) == "blat" ) R1.consol.reads, 
-    if( tolower(config$Aligner) == "blat" ) R2.consol.reads, 
-    align.unique.reads, align.chimera.reads, align.multihit.reads
+    stat_df, c(
+      "sampleName", "demulti.reads", 
+      "R1.trim.reads", 
+      if( config$Alternate_UMI_Method ) "R1.primer.trim.reads",
+      if( !config$Alternate_UMI_Method ) "R2.primer.trim.reads",
+      "R2.trim.reads", 
+      if( config$UMItags ) "umitags.reads", 
+      "filt.reads", 
+      if( tolower(config$Aligner) == "blat" ) "R1.consol.reads", 
+      if( tolower(config$Aligner) == "blat" ) "R2.consol.reads", 
+      "align.unique.reads", 
+      "align.chimera.reads", 
+      "align.multihit.reads"
   )) %>%
   dplyr::mutate(sampleName = factor(sampleName, levels = sampleName_levels)) %>%
   dplyr::arrange(sampleName)
@@ -242,8 +257,20 @@ names(algn_tbl) <- stringr::str_replace(names(algn_tbl), "align.", "")
 
 
 # Incorporation breakdown table ----
-incorp_tbl <- dplyr::select(
-    stat_df, sampleName, eval.total.algns, eval.combined.algns, 
+incorp_levels <- c(
+  "eval.total.algns", "eval.combined.algns", 
+  "eval.pileup.algns", "eval.paired.algns", "eval.matched.algns", 
+  "eval.ontarget.algns", "eval.offtarget.algns"
+)
+
+incorp_tbl <- stat_df[, names(stat_df) %in% c("sampleName", incorp_levels)] %>%
+  tidyr::gather(key = "metric", value = "counts", -sampleName) %>%
+  dplyr::mutate(metric = factor(metric, levels = incorp_levels)) %>%
+  tidyr::complete(metric) %>%
+  dplyr::mutate(metric = as.character(metric)) %>%
+  tidyr::spread(key = metric, value = counts) %>%
+  dplyr::select(
+    sampleName, eval.total.algns, eval.combined.algns, 
     eval.pileup.algns, eval.paired.algns, eval.matched.algns, 
     eval.ontarget.algns, eval.offtarget.algns
   ) %>%

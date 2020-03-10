@@ -14,7 +14,17 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 
 ### Changelog:
 
-**v1.0.0 (August 15th,2019)**
+**v1.1.0 (March 8th, 2020)**
+
+* Modified how samples designated as Mock are treated during the analysis
+* Mock samples can now be indicated by "None" or "Control" as well 
+  (case-insensitive)
+* Abundance can now be selected as [Read], [UMI], or [Fragment]{default} within 
+  config parameters and this selection will identify the abundance method used
+  for analysis
+* Added support for alternative UMI method (dx.doi.org/10.17504/protocols.io.wikfccw)
+
+**v1.0.0 (August 15th, 2019)**
 
 * Release of version 1.0.0!!!
 * iGUIDE is a computational pipeline that supports the detection of DSBs induced

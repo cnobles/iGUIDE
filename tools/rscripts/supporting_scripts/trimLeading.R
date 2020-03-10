@@ -54,6 +54,8 @@ trimLeading <- function(seqs, trim.sequence, phasing = 0L, max.mismatch = 1L,
     
     trim_segments <- unlist(strsplit(trim.sequence, "[^A^T^G^C]+"))
     
+    trim_segments <- trim_segments[nchar(trim_segments) > 0]
+    
     trim_seg_ir <- sapply(
       trim_segments, Biostrings::vmatchPattern, subject = trim.sequence
     )

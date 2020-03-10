@@ -1,0 +1,37 @@
+# -*- mode: Snakemake -*-
+# Quality Processing: BLAT
+
+rule post_align:
+  input:
+    sampleR1=RUN_DIR + "/process_data/align/{sample}.R1.{bin}.psl.gz",
+    sampleR2=RUN_DIR + "/process_data/align/{sample}.R2.{bin}.psl.gz",
+    keyR1=RUN_DIR + "/process_data/consol/{sample}.R1.{bin}.key.csv",
+    keyR2=RUN_DIR + "/process_data/consol/{sample}.R2.{bin}.key.csv"
+  output:
+    uniq=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.uniq.csv"),
+    chimera=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.chimera.rds"),
+    multihit=temp(RUN_DIR + "/process_data/post_align/{sample}.{bin}.multihits.rds"),
+    stat=temp(RUN_DIR + "/process_data/stats/{sample}.{bin}.align.stat")
+  params:
+    tool=ROOT_DIR + "/tools/rscripts/couple.R",
+    ref=config["Ref_Genome"],
+    start=config["maxAlignStart"],
+    pct=config["minPercentIdentity"],
+    minLen=config["minTempLength"],
+    maxLen=config["maxTempLength"],
+    readNamePatternArg=config["readNamePattern"]
+  log:
+    RUN_DIR + "/logs/{sample}.{bin}.couple.log"
+  resources:
+    mem_mb=lambda wildcards, attempt: attempt * config["qualCtrlMB"]
+  shell:
+    """
+    Rscript {params.tool} {input.sampleR1} {input.sampleR2} \
+      -k {input.keyR1} {input.keyR2} -o {output.uniq} \
+      --chimera {output.chimera} --multihit {output.multihit} -g {params.ref} \
+      --maxAlignStart {params.start} --minPercentIdentity {params.pct} \
+      --minTempLength {params.minLen} --maxTempLength {params.maxLen} \
+      --readNamePattern {params.readNamePatternArg} \
+      --stat {output.stat} > {log} 2>&1
+    """
+
