@@ -1003,21 +1003,42 @@ matched_summaries <- list(
 
 matched_summaries <- matched_summaries[!sapply(matched_summaries, is.null)]
 
-matched_summary <- matched_algns %>%
-  dplyr::mutate(
-    target.match = stringr::str_replace(
-      string = target.match, 
-      pattern = "\\:\\([\\w]+\\)$",
-      replacement = ""
-    )
-  ) %>%
-  dplyr::group_by(
-    alt_specimen, edit.site, aligned.sequence, target.match, target.mismatch
-  ) %>%
-  dplyr::summarise(!!! matched_summaries) %>%
-  dplyr::ungroup() %>% 
-  dplyr::arrange(alt_specimen, target.match, desc(abund)) %>%
-  as.data.frame()
+if( nrow(matched_algns) > 0 ){
+  
+  matched_summary <- matched_algns %>%
+    dplyr::mutate(
+      target.match = stringr::str_replace(
+        string = target.match, 
+        pattern = "\\:\\([\\w]+\\)$",
+        replacement = ""
+      )
+    ) %>%
+    dplyr::group_by(
+      alt_specimen, edit.site, aligned.sequence, target.match, target.mismatch
+    ) %>%
+    dplyr::summarise(!!! matched_summaries) %>%
+    dplyr::ungroup() %>% 
+    dplyr::arrange(alt_specimen, target.match, desc(abund)) %>%
+    as.data.frame()
+  
+}else{
+  
+  matched_summary <- data.frame(
+    alt_specimen = factor(character(), levels = alt_specimen_levels),
+    edit.site = character(),
+    aligned.sequence = character(),
+    target.match = character(),
+    target.mismatch = numeric(),
+    on.off.target = character(),
+    paired.align = character(),
+    count = numeric(),
+    umitag = if(umitag_option) numeric(),
+    aligns = numeric(),
+    abund = numeric(),
+    orient = character()
+  )
+  
+}
 
 if( nrow(matched_algns) == 0 ) matched_summary <- matched_summary[0,]
 
@@ -1026,29 +1047,48 @@ paired_algns <- probable_algns[
   probable_algns$paired.algn %in% names(tbl_paired_algn),
 ]
 
-
-paired_summaries <- list(
-  seqnames = dplyr::quo(unique(seqnames)),
-  start = dplyr::quo(min(pos)), 
-  end = dplyr::quo(max(pos)), 
-  mid = dplyr::quo(start + (end-start)/2),
-  strand = dplyr::quo("*"), 
-  width = dplyr::quo(end - start), 
-  count = dplyr::quo(sum(count)), 
-  umitag = if( umitag_option ) dplyr::quo(sum(umitag)), 
-  algns = dplyr::quo(sum(contrib)),
-  abund = dplyr::quo(sum(abund))
-)
-
-paired_summaries <- paired_summaries[!sapply(paired_summaries, is.null)]
-
-paired_regions <- paired_algns %>%
-  dplyr::group_by(alt_specimen, paired.algn, strand) %>%
-  dplyr::mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
-  dplyr::group_by(alt_specimen, paired.algn) %>%
-  dplyr::summarise(!!! paired_summaries) %>%
-  dplyr::ungroup()
+if( nrow(paired_algns) > 0 ){
   
+  paired_summaries <- list(
+    seqnames = dplyr::quo(unique(seqnames)),
+    start = dplyr::quo(min(pos)), 
+    end = dplyr::quo(max(pos)), 
+    mid = dplyr::quo(start + (end-start)/2),
+    strand = dplyr::quo("*"), 
+    width = dplyr::quo(end - start), 
+    count = dplyr::quo(sum(count)), 
+    umitag = if( umitag_option ) dplyr::quo(sum(umitag)), 
+    algns = dplyr::quo(sum(contrib)),
+    abund = dplyr::quo(sum(abund))
+  )
+  
+  paired_summaries <- paired_summaries[!sapply(paired_summaries, is.null)]
+  
+  paired_regions <- paired_algns %>%
+    dplyr::group_by(alt_specimen, paired.algn, strand) %>%
+    dplyr::mutate(pos = ifelse(strand == "+", min(start), max(end))) %>%
+    dplyr::group_by(alt_specimen, paired.algn) %>%
+    dplyr::summarise(!!! paired_summaries) %>%
+    dplyr::ungroup()
+  
+}else{
+  
+  paired_regions <- data.frame(
+    alt_specimen = factor(character(), levels = alt_specimen_levels),
+    paired.align = logical(),
+    seqnames = character(),
+    start = numeric(),
+    end = numeric(),
+    mid = numeric(),
+    strand = character(),
+    width = numeric(),
+    count = numeric(),
+    umitag = if(umitag_option) numeric(),
+    aligns = numeric(),
+    abund = numeric()
+  )
+  
+}
 
 if( nrow(paired_regions) > 0 & length(on_targets) > 0 ){
   
@@ -1122,20 +1162,35 @@ pile_up_summaries <- list(
 
 pile_up_summaries <- pile_up_summaries[!sapply(pile_up_summaries, is.null)]
 
-pile_up_summary <- pile_up_algns %>%
-  dplyr::mutate(
-    target.match = stringr::str_replace(
-      string = target.match, 
-      pattern = "\\:\\([\\w]+\\)$",
-      replacement = ""
-    )
-  ) %>%
-  dplyr::group_by(alt_specimen, clus.ori) %>%
-  dplyr::summarise(!!! pile_up_summaries) %>%
-  dplyr::ungroup() %>% 
-  dplyr::arrange(alt_specimen, desc(abund)) %>%
-  as.data.frame()
+if( nrow(pile_up_algns) > 0){
+  pile_up_summary <- pile_up_algns %>%
+    dplyr::mutate(
+      target.match = stringr::str_replace(
+        string = target.match, 
+        pattern = "\\:\\([\\w]+\\)$",
+        replacement = ""
+      )
+    ) %>%
+    dplyr::group_by(alt_specimen, clus.ori) %>%
+    dplyr::summarise(!!! pile_up_summaries) %>%
+    dplyr::ungroup() %>% 
+    dplyr::arrange(alt_specimen, desc(abund)) %>%
+    as.data.frame()
 
+}else{
+  
+  pile_up_summary <- data.frame(
+    alt_specimen = factor(character(), levels = alt_specimen_levels),
+    clus.ori = character(),
+    on.off.target = character(),
+    paired.align = character(),
+    count = numeric(),
+    umitag = if(umitag_option) numeric(),
+    aligns = numeric(),
+    abund = numeric()
+  )
+  
+}
 
 # Generate stats if requested ----
 ## If requested, generate stats from the analysis for qc.
@@ -1630,24 +1685,37 @@ pile_up_list <- pile_up_summary %>%
     ]
   )
 
-pile_up_df <- dplyr::bind_rows(
-  lapply(
-      pile_up_list, 
-      function(df){
-        
-        gene_id <- unique(gsub("\\*", "", df$gene_id))
-        
-        data.frame(
-          "total" = length(gene_id), 
-          "onco" = sum(stringr::str_detect(gene_id, "~")), 
-          "special" = sum(stringr::str_detect(gene_id, "!"))
-        )
-        
-      }
-    ), 
-    .id = "annotation"
-  ) %>%
-  dplyr::mutate(annotation = as.character(annotation))
+if( length(pile_up_list) > 0){
+  
+  pile_up_df <- dplyr::bind_rows(
+    lapply(
+        pile_up_list, 
+        function(df){
+          
+          gene_id <- unique(gsub("\\*", "", df$gene_id))
+          
+          data.frame(
+            "total" = length(gene_id), 
+            "onco" = sum(stringr::str_detect(gene_id, "~")), 
+            "special" = sum(stringr::str_detect(gene_id, "!"))
+          )
+          
+        }
+      ), 
+      .id = "annotation"
+    ) %>%
+    dplyr::mutate(annotation = as.character(annotation))
+  
+}else{
+  
+  pile_up_df <- data.frame(
+    annotation = character(),
+    total = numeric(),
+    onco = numeric(),
+    special = numeric()
+  )
+  
+}
 
 paired_list <- paired_regions %>%
   dplyr::filter(alt_specimen %in% sapply(combos_exp_specimen_list, "[[", 1)) %>%
@@ -1661,24 +1729,37 @@ paired_list <- paired_regions %>%
     ]
   )
 
-paired_df <- dplyr::bind_rows(
-    lapply(
-      paired_list, 
-      function(df){
-      
-        gene_id <- unique(gsub("\\*", "", df$gene_id))
+if( length(paired_list) > 0 ){
+
+  paired_df <- dplyr::bind_rows(
+      lapply(
+        paired_list, 
+        function(df){
         
-        data.frame(
-          "total" = length(gene_id), 
-          "onco" = sum(stringr::str_detect(gene_id, "~")), 
-          "special" = sum(stringr::str_detect(gene_id, "!"))
-        )
-      
-      }
-    ), 
-    .id = "annotation"
-  ) %>%
-  dplyr::mutate(annotation = as.character(annotation))
+          gene_id <- unique(gsub("\\*", "", df$gene_id))
+          
+          data.frame(
+            "total" = length(gene_id), 
+            "onco" = sum(stringr::str_detect(gene_id, "~")), 
+            "special" = sum(stringr::str_detect(gene_id, "!"))
+          )
+        
+        }
+      ), 
+      .id = "annotation"
+    ) %>%
+    dplyr::mutate(annotation = as.character(annotation))
+  
+}else{
+  
+  paired_df <- data.frame(
+    annotation = character(),
+    total = numeric(),
+    onco = numeric(),
+    special = numeric()
+  )
+  
+}
 
 matched_list <- split(
   x = matched_summary, 
@@ -1687,24 +1768,37 @@ matched_list <- split(
   ]
 )
 
-matched_df <- dplyr::bind_rows(
-  lapply(
-    matched_list, 
-    function(df){
-      
-      gene_id <- unique(gsub("\\*", "", df$gene_id))
-      
-      data.frame(
-        "total" = nrow(df), 
-        "onco" = sum(stringr::str_detect(gene_id, "~")), 
-        "special" = sum(stringr::str_detect(gene_id, "!"))
-      )
-      
-    }
-  ), 
-  .id = "annotation"
-)
+if( length(matched_list) > 0 ){
 
+  matched_df <- dplyr::bind_rows(
+    lapply(
+      matched_list, 
+      function(df){
+        
+        gene_id <- unique(gsub("\\*", "", df$gene_id))
+        
+        data.frame(
+          "total" = nrow(df), 
+          "onco" = sum(stringr::str_detect(gene_id, "~")), 
+          "special" = sum(stringr::str_detect(gene_id, "!"))
+        )
+        
+      }
+    ), 
+    .id = "annotation"
+  )
+
+}else{
+  
+  matched_df <- data.frame(
+    annotation = character(),
+    total = numeric(),
+    onco = numeric(),
+    special = numeric()
+  )
+  
+}
+  
 enrich_df <- dplyr::bind_rows(
     list(
       "Reference" = ref_df, 
