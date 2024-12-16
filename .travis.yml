@@ -1,9 +1,0 @@
-language: ruby
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install xdotool
-  - sudo apt-get install texlive-latex-extra
-  - sudo apt-get install libgfortran3
-install:
-  - bash install.sh
-script: bash etc/tests/test.sh
