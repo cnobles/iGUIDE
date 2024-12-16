@@ -16,6 +16,7 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 **v1.1.1 (December XXth, 2024)**
 
 * Added reference gene lists to `./genomes` directory, as well as updated versions.
+* Resolved bug associated with recovering multihit sites during analysis.
 
 **v1.1.0 (March 8th, 2020)**
 

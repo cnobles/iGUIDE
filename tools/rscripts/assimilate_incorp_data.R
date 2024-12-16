@@ -242,13 +242,13 @@ if( all(!is.null(args$multihits)) ){
     seqinfo = GenomeInfoDb::seqinfo(ref_genome)
   )
   
-  multihit_files <- list.files(path = args$multihit, full.names = TRUE)
+  multihit_files <- list.files(path = args$multihits, full.names = TRUE)
   
-  mulithit_files <- multihit_files[
-    stringr::str_detect(mulithit_files, ".multihits.rds")
+  multihit_files <- multihit_files[
+    stringr::str_detect(multihit_files, ".multihits.rds")
   ]
   
-  multi_reads <- unlist(GRangesList(lapply(mulithit_files, function(x){
+  multi_reads <- unlist(GRangesList(lapply(multihit_files, function(x){
     
     multi <- readRDS(x)
     GenomeInfoDb::seqinfo(multi$unclustered_multihits) <- 
