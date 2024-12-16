@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'iGUIDE'
-copyright = '2019, Christopher Nobles, Ph.D.'
+copyright = '2024, Christopher Nobles, Ph.D.'
 author = 'Christopher Nobles, Ph.D.'
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = 'v1.0.0'
+release = 'v1.1.1'
 
 
 # -- General configuration ---------------------------------------------------
