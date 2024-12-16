@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'iGUIDE'
-copyright = '2024, Christopher Nobles, Ph.D.'
+copyright = '2024, Christopher Nobles, Ph.D'
 author = 'Christopher Nobles, Ph.D.'
 
 # The short X.Y version
