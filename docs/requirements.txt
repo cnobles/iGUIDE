@@ -1,0 +1,2 @@
+# Requirements file for ReadTheDocs environment build
+sphinx_rtd_theme
