@@ -13,11 +13,13 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 
 ### Changelog:
 
-**v1.1.1 (December XXth, 2024)**
+**v1.1.1 (December 16th, 2024)**
 
 * Added reference gene lists to `./genomes` directory, as well as updated versions.
 * Resolved bug associated with recovering multihit sites during analysis.
 * Added option for Anaconda testing in test script to support custom installs. Try: `bash etc/tests/test.sh iguide 1 anaconda` with an anaconda install.
+* Added functionality for more compatible gene lists between reference gene sets used for enrichment analysis.
+* Updated sections of the documentation.
 
 **v1.1.0 (March 8th, 2020)**
 
