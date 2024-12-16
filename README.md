@@ -17,6 +17,7 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 
 * Added reference gene lists to `./genomes` directory, as well as updated versions.
 * Resolved bug associated with recovering multihit sites during analysis.
+* Added option for Anaconda testing in test script to support custom installs. Try: `bash etc/tests/test.sh iguide 1 anaconda` with an anaconda install.
 
 **v1.1.0 (March 8th, 2020)**
 
