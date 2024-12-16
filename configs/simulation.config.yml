@@ -138,10 +138,10 @@ refGenes :
     file : "genomes/hg38.refSeq.ext.nomodel.rds"
     symbolCol : "name2"
 oncoGeneList : 
-    file : "http://bushmanlab.org/assets/doc/allOnco_Feb2017.tsv"
+    file : "genomes/allOnco_Feb2017.tsv"
     symbolCol : "symbol"
 specialGeneList : 
-    file : "http://bushmanlab.org/assets/doc/humanLymph.tsv"
+    file : "genomes/humanLymph.tsv"
     symbolCol : "symbol"
 maxTargetMismatch : 6
 upstreamDist : 100

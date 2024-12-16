@@ -1,5 +1,4 @@
 ## iGUIDE - improved Genome-wide Unbiased Identification of Double-strand DNA break Events
-[![Build Status](https://travis-ci.org/cnobles/iGUIDE.svg?branch=master)](https://travis-ci.org/cnobles/iGUIDE)
 [![CircleCI](https://circleci.com/gh/cnobles/iGUIDE.svg?style=svg)](https://circleci.com/gh/cnobles/iGUIDE)
 [![Documentation Status](https://readthedocs.org/projects/iguide/badge/?version=latest)](http://iguide.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/88088016.svg)](https://zenodo.org/badge/latestdoi/88088016)
@@ -13,6 +12,10 @@ iGUIDE is a pipeline written in [snakemake](http://snakemake.readthedocs.io/) fo
 To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](https://iguide.readthedocs.io/).
 
 ### Changelog:
+
+**v1.1.1 (December XXth, 2024)**
+
+* Added reference gene lists to `./genomes` directory, as well as updated versions.
 
 **v1.1.0 (March 8th, 2020)**
 

@@ -1,0 +1,39 @@
+geneID	symbol	geneName	species	humanOrtho
+25	ABL1	c-abl oncogene 1, non-receptor tyrosine kinase	human	25
+596	BCL2	B-cell CLL/lymphoma 2	human	596
+53335	BCL11A	B-cell CLL/lymphoma 11A (zinc finger protein)	human	53335
+64919	BCL11B	B-cell CLL/lymphoma 11B (zinc finger protein)	human	64919
+613	BCR	breakpoint cluster region	human	613
+648	BMI1	BMI1 polycomb ring finger oncogene	human	648
+6046	BRD2	bromodomain containing 2	human	6046
+595	CCND1	cyclin D1	human	595
+894	CCND2	cyclin D2	human	894
+1045	CDX2	caudal type homeobox 2	human	1045
+2120	ETV6	ets variant 6	human	2120
+3717	JAK2	Janus kinase 2	human	3717
+3727	JUND	jun D proto-oncogene	human	3727
+1316	KLF6	Kruppel-like factor 6	human	1316
+3932	LCK	lymphocyte-specific protein tyrosine kinase	human	3932
+4004	LMO1	LIM domain only 1 (rhombotin 1)	human	4004
+4005	LMO2	LIM domain only 2 (rhombotin-like 1)	human	4005
+4066	LYL1	lymphoblastic leukemia derived sequence 1	human	4066
+4297	MLL	myeloid/lymphoid or mixed-lineage leukemia (trithorax homolog, Drosophila)	human	4297
+8028	MLLT10	myeloid/lymphoid or mixed-lineage leukemia (trithorax homolog, Drosophila); translocated to, 10	human	8028
+4515	MTCP1	mature T-cell proliferation 1	human	4515
+4609	MYC	v-myc myelocytomatosis viral oncogene homolog (avian)	human	4609
+4791	NFKB2	nuclear factor of kappa light polypeptide gene enhancer in B-cells 2 (p49/p100)	human	4791
+4851	NOTCH1	notch 1	human	4851
+4928	NUP98	nucleoporin 98kDa	human	4928
+10215	OLIG2	oligodendrocyte lineage transcription factor 2	human	10215
+5087	PBX1	pre-B-cell leukemia homeobox 1	human	5087
+8301	PICALM	phosphatidylinositol binding clathrin assembly protein	human	8301
+5910	RAP1GDS1	RAP1, GTP-GDP dissociation stimulator 1	human	5910
+861	RUNX1	runt-related transcription factor 1	human	861
+6491	STIL	SCL/TAL1 interrupting locus	human	6491
+6886	TAL1		human	6886
+6887	TAL2		human	6887
+154215	NKAIN2	Na+/K+ transporting ATPase interacting 2	human	154215
+6929	TCF3		human	6929
+8115	TCL1A		human	8115
+3195	TLX1		human	3195
+30012	TLX3		human	30012
