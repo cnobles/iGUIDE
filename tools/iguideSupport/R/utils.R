@@ -110,10 +110,10 @@ loadRefFiles <- function(ref, type = "gene.list", freeze = NULL, root = NULL){
   if( type == "GRanges" ){
 
     if( class(ref_set) == "GRanges" ){
-      ref_set$annot_sym <- GenomicRanges::mcols(ref_set)[,ref$symbol]
+      ref_set$annot_sym <- toupper(GenomicRanges::mcols(ref_set)[,ref$symbol])
       return(ref_set)
     }else{
-      ref_set$annot_sym <- ref_set[,ref$symbol]
+      ref_set$annot_sym <- toupper(ref_set[,ref$symbol])
       return(GenomicRanges::makeGRangesFromDataFrame(
         ref_set, keep.extra.columns = TRUE
       ))
@@ -124,7 +124,7 @@ loadRefFiles <- function(ref, type = "gene.list", freeze = NULL, root = NULL){
     ref_set <- try(as.data.frame(ref_set), silent = TRUE)
 
     if( class(ref_set) == "data.frame" ){
-      return(ref_set[,ref$symbol])
+      return(toupper(ref_set[,ref$symbol]))
     }else{
       stop("Cannot coerce to geneList. Check input parameters.")
     }
@@ -134,7 +134,7 @@ loadRefFiles <- function(ref, type = "gene.list", freeze = NULL, root = NULL){
     ref_set <- try(as.data.frame(ref_set), silent = TRUE)
 
     if( class(ref_set) == "data.frame" ){
-      ref_set$annot_sym <- ref_set[,ref$symbol]
+      ref_set$annot_sym <- toupper(ref_set[,ref$symbol])
       return(ref_set)
 
     }else{

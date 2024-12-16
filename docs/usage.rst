@@ -436,6 +436,97 @@ used::
   rm -r path/to/miniconda3
 
 
+Manual Install
+--------------
+
+**Installing miniconda**
+Skip to installing iGUIDE if you already have miniconda or anaconda installed. 
+These can be executed in your home directory.
+
+Get the latest version of miniconda install script.::
+
+  __conda_url=https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  wget -q ${__conda_url} -O miniconda.sh
+
+Installing miniconda through downloaded script. You can choose a different path 
+for the install, here it is installed into the home directory.::
+
+  __conda_path="~/miniconda3"
+  bash miniconda.sh -b -p ${__conda_path}
+
+Source conda to activate the installation for use.::
+  
+  source ${__conda_path}/etc/profile.d/conda.sh
+
+**Installing iGUIDE**
+The following commands should be called from within the iGUIDE directory 
+(`/path/to/iGUIDE/`) after the repository is cloned.
+
+Install the conda environment from the requirements file. The name field here 
+can be changed to what you would like to call the environment, default for the 
+install script is 'iguide'.::
+
+  conda create --name=iguide --quiet --yes --file etc/build.b1.0.1.txt
+
+After successful creation of the environment, activate the iguide environment (or what 
+you've named it).::
+
+  conda activate iguide
+
+Install the supporting R-package into the environment.::
+
+  R CMD INSTALL tools/iguideSupport 
+
+Setup your environmental variables.::
+
+  __iguide_dir=$(pwd)
+
+  echo -ne "#/bin/sh\nexport IGUIDE_DIR=${__iguide_dir}" > \
+      ${CONDA_PREFIX}/etc/conda/activate.d/env_vars.sh
+
+  mkdir -p ${CONDA_PREFIX}/etc/conda/deactivate.d/
+
+  echo -ne "#/bin/sh\nunset IGUIDE_DIR" > \
+      ${CONDA_PREFIX}/etc/conda/deactivate.d/env_vars.sh
+
+You should now deactivate and reactivate the environment to initiate the environmental 
+variables.::
+
+  conda deactivate
+  conda activate iguide
+
+Lastely, install the command line interface for iGUIDE using pip.::
+  
+  pip install --upgrade tools/iguidelib/
+
+**Testing**
+Test to make sure the components were installed correctly.
+
+Test for required R-packages installed.::
+
+  $(Rscript tools/rscripts/check_for_required_packages.R &> /dev/null) && echo true || echo false
+
+Check to make sure iguideSupport was installed correctly.::
+
+  $(Rscript tools/rscripts/check_pkgs.R iguideSupport &> /dev/null) && echo true || echo false
+
+Run unit tests for iguideSupport.::
+
+  `$(Rscript tools/rscripts/check_iguideSupport.R &> /dev/null) && echo true || echo false'
+
+Check to make sure the pip install of the CLI was successful.::
+
+  command -v iguide &> /dev/null && echo true || echo false
+
+Run tests for iGUIDE, this step will take a little bit to complete if it starts processing 
+the test case. Go grab a coffee, you deserve it getting to this point. :) The test will 
+activate the environment as part of the test, so you should deactivate your environment 
+first and then initiate the test.::
+
+  conda deactivate
+  bash etc/tests/test.sh iguide
+
+
 Config Files
 ************
 
@@ -733,10 +824,10 @@ Demultiplexing parameters
 
 ``skipDemultiplexing``
   Logical (either TRUE or FALSE) to indicate if demultiplexing should be carried
-  out. If TRUE, sequence files (\*.fastq.gz) need to be placed or linked in the 
+  out. If FALSE, sequence files (\*.fastq.gz) need to be placed or linked in the 
   input_data directory of an existing project directory (as with 
   ``iguide setup``), one sequence file for each type (R1, R2, I1, I2). These 
-  need to be identified in the "Run" portion of the config file. If FALSE, then 
+  need to be identified in the "Run" portion of the config file. If TRUE, then 
   demultiplexed files need to be included in the input_data directory of an 
   existing project directory. The files need to be appropriately named, in the 
   format of ``{sampleName}.{readtype}.fastq.gz``, where ``sampleName`` matches 

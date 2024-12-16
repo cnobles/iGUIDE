@@ -4,12 +4,21 @@ set -e
 # Input arguments
 __IGUIDE_ENV=${1-iguide}
 __CORES=${2-1}
+__INSTALL=${3-miniconda3}  # Options include: miniconda3 (default) or anaconda
 
 # Clear test directory
 rm -rf analysis/simulation
 
 # Activate conda environment
-source ${HOME}/miniconda3/etc/profile.d/conda.sh
+if [[ ${__INSTALL} = "miniconda3" ]]; then
+    source ${HOME}/miniconda3/etc/profile.d/conda.sh
+elif [[ ${__INSTALL} = "anaconda" ]]; then
+    source ${HOME}/anaconda/etc/profile.d/conda.sh
+else
+    echo "Please use either 'miniconda3' or 'anaconda' for managing conda environments."
+    exit 1
+fi
+
 conda activate ${__IGUIDE_ENV}
 
 # Create test analysis directory
