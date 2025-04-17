@@ -43,7 +43,7 @@ parser$add_argument(
 parser$add_argument(
   "--stat", nargs = 1, type = "character", default = FALSE, 
   help = paste(
-    "File name to be written in output directory of read couts for each",
+    "File name to be written in output directory of read counts for each",
     "sample. CSV file format. ie. test.stat.csv."
   )
 )
@@ -525,11 +525,9 @@ nuclease_treatment_df <- split(
   }) %>%
   dplyr::bind_rows() %>%
   dplyr::group_by(run_set) %>%
-  dplyr::mutate(
-    alt_specimen = paste0(as.character(specimen), "(", combo, ")"),
-    alt_specimen = factor(alt_specimen, levels = unique(alt_specimen))
-  ) %>%
-  dplyr::ungroup()
+  dplyr::mutate(alt_specimen = paste0(as.character(specimen), "(", combo, ")"))%>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(alt_specimen = factor(alt_specimen, levels = unique(alt_specimen)))
 
 alt_specimen_levels <- levels(nuclease_treatment_df$alt_specimen)
 

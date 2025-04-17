@@ -3,6 +3,12 @@
 ChangeLog
 =========
 
+**v1.1.2 (April 17th, 2025)**
+
+- Resolved a bug dealing with factor levels during auxiliary workflow solutions.
+- Added a second simulation data set (B) and labeled the original simulation data set (A).
+- Expanded tests to cover auxiliary workflow solutions.
+
 **v1.1.1 (December 16th, 2024)**
 
 - Added reference gene lists to `./genomes` directory, as well as updated versions.

@@ -6,7 +6,7 @@
 # delimited by a semi-colon ";". Required fields are sampleName, gRNA, barcode1,
 # and barcode2. Barcode1 is associated with the I1 read while barcode2 is 
 # associated with the I2 read.
-sample_info : "../sampleInfo.csv"
+sample_info : "../simulationA.sampleInfo.csv"
 
 # Reference genome, recommened hg38. Genome will need to be installed through
 # the BSgenome R-package (BioConductor).
