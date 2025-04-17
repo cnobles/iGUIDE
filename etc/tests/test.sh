@@ -75,10 +75,10 @@ if [[ $(__blat_aligner) = true ]]; then
 fi
 
 # Cleanup
-#iguide clean configs/simulationA.config.yml
-#iguide clean configs/simulationA.config.yml --remove_proj
-#iguide clean configs/simulationB.config.yml
-#iguide clean configs/simulationB.config.yml --remove_proj
+iguide clean configs/simulationA.config.yml
+iguide clean configs/simulationA.config.yml --remove_proj
+iguide clean configs/simulationB.config.yml
+iguide clean configs/simulationB.config.yml --remove_proj
 
 # Deactivate conda environment
 conda deactivate
