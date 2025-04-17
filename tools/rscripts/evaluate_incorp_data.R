@@ -525,7 +525,7 @@ nuclease_treatment_df <- split(
   }) %>%
   dplyr::bind_rows() %>%
   dplyr::group_by(run_set) %>%
-  dplyr::mutate(alt_specimen = paste0(as.character(specimen), "(", combo, ")"))%>%
+  dplyr::mutate(alt_specimen = paste0(as.character(specimen), "(", combo, ")")) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(alt_specimen = factor(alt_specimen, levels = unique(alt_specimen)))
 
