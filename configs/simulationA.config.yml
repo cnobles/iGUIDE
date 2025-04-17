@@ -1,14 +1,14 @@
 # Run configuration
-Run_Name : "simulation"
-Sample_Info : "sampleInfo/simulation.sampleInfo.csv"
-Supplemental_Info : "sampleInfo/simulation.supp.csv"
+Run_Name : "simulationA"
+Sample_Info : "sampleInfo/simulationA.sampleInfo.csv"
+Supplemental_Info : "sampleInfo/simulationA.supp.csv"
 Ref_Genome : "hg38"
 Aligner : "blat"
 UMItags : TRUE
 Abundance_Method : "Fragment"
 
 # Sequence files
-Seq_Path : "etc/tests/Data"
+Seq_Path : "etc/tests/DataA"
 R1: "Undetermined_S0_L001_R1_001.fastq.gz"
 R2: "Undetermined_S0_L001_R2_001.fastq.gz"
 I1: "Undetermined_S0_L001_I1_001.fastq.gz"
