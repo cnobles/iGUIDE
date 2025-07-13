@@ -122,7 +122,7 @@ trimLeading <- function(seqs, trim.sequence, phasing = 0L, max.mismatch = 1L,
     fixed = FALSE
   )
   
-  matched_idx <- which(S4Vectors::lengths(aln) == 1)
+  matched_idx <- which(lengths(aln) == 1)
   
   # Serially align segment(s) from trim.sequence to seqs
   if( length(trim_seg_ir) > 1 ){
@@ -151,14 +151,14 @@ trimLeading <- function(seqs, trim.sequence, phasing = 0L, max.mismatch = 1L,
           fixed = FALSE
         )
       
-        if( any(S4Vectors::lengths(aln) > 1) ){
+        if( any(lengths(aln) > 1) ){
           stop(
             "\nAlignment too permissive. Ambiguous mapping of sequences.
              Please adjust max.mismatch criteria."
           )
         }
         
-        idx <- S4Vectors::lengths(aln) == 1 
+        idx <- lengths(aln) == 1 
         
         return(list("match" = aln, "idx" = idx))
         
@@ -225,7 +225,7 @@ trimLeading <- function(seqs, trim.sequence, phasing = 0L, max.mismatch = 1L,
           fixed = FALSE
         )
         
-        matched_random_idx <- which(S4Vectors::lengths(matched_random_idx) == 1)
+        matched_random_idx <- which(lengths(matched_random_idx) == 1)
         
         rand_seqs[matched_random_idx]
         

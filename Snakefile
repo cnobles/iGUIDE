@@ -154,11 +154,11 @@ for i in range(1, config["bins"] + 1, 1):
 
 # Regex constraints on wildcards
 wildcard_constraints:
-    sample="[\w\-\_]+",
+    sample="[\\w\\-\\_]+",
     read="R[12]",
     read_type="[RI][12]",
     req_type="[RI][12]",
-    bin="bin[\d]+"
+    bin="bin[\\d]+"
 
 # Target Rules
 rule all:

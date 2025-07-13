@@ -389,7 +389,7 @@ expandPosStr <- function(pos.str, delim = ":", return = "vector"){
 
   pos_mod <- pos_mod[
     rep(seq_len(nrow(pos_mod)), lengths(exp_pos)), , drop = FALSE
-    ]
+  ]
 
   pos_mod[,3] <- unlist(exp_pos)
 
@@ -584,10 +584,10 @@ clusterKV <- function(key, val, return = "standard"){
   # Determine which keys overlap based on associated values
   g <- GenomicRanges::findOverlaps(grl) %>%
     as.matrix() %>%
-    igraph::graph.edgelist(directed = FALSE) %>%
+    igraph::graph_from_edgelist(directed = FALSE) %>%
     igraph::simplify()
 
-  clus <- igraph::clusters(g)
+  clus <- igraph::components(g)
 
   # Return data in different formats
   if( return == "standard" ){
@@ -737,7 +737,7 @@ vcollapse <- function(d, sep = "", fill = "NA"){
 
   }
 
-  if( class(d) != "matrix" ) d <- as.matrix(d)
+  if( all(class(d) != "matrix") ) d <- as.matrix(d)
 
   mat <- d
 

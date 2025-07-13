@@ -57,8 +57,8 @@ trimOverreading <- function(seqs, trim.sequence, percent.id,
           fixed = FALSE
         )
         
-        idx <- which( BiocGenerics::lengths(vmp) >= 1 )
-        len <- BiocGenerics::lengths(vmp[idx])
+        idx <- which( lengths(vmp) >= 1 )
+        len <- lengths(vmp[idx])
         len <- len[ which(len >= 1) ]
         idx <- S4Vectors::Rle(values = idx, lengths = len)
         ir <- unlist(vmp)

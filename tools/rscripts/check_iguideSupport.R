@@ -2,12 +2,8 @@
 
 tto <- devtools::test(pkg = "tools/iguideSupport")
 
-num_success <- sum(
-  sapply(seq_along(tto), function(i){
-    tto[[i]]$results[[1]]$message}
-  ) == "success"
-)
+tto_df <- as.data.frame(tto)
 
-num_failed <- length(tto) - num_success
+num_failed <- sum(tto_df$failed)
 
 q(save = "no", status = num_failed)

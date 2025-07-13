@@ -217,7 +217,9 @@ null <- catOrWrite(
 eval_summary <- eval_data$summary_tbls$eval_summary %>%
   dplyr::mutate(Specimen = stringr::str_remove(Specimen, "\\([\\w]+\\)$"))
 
-eval_summary[is.na(eval_summary)] <- 0
+eval_summary[,3][is.na(eval_summary[,3])] <- 0
+eval_summary[,4][is.na(eval_summary[,4])] <- "NA"
+eval_summary[,5][is.na(eval_summary[,5])] <- 0L
 
 null <- catOrWrite(
   "Table 1. Analysis overview with specific data highlights.", 

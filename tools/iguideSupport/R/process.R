@@ -112,7 +112,7 @@ groupPileups <- function(gr, strand, maxgap){
   nodes <- BiocGenerics::unlist(red.gr$revmap)
   edgelist <- unique(matrix( c(axil_nodes, nodes), ncol = 2 ))
 
-  pile_ups <- igraph::clusters(igraph::graph.edgelist(
+  pile_ups <- igraph::components(igraph::graph_from_edgelist(
     el = edgelist, directed = FALSE
   ))
 
@@ -254,7 +254,7 @@ identifyPairedAlgnmts <- function(gr, grouping = NULL, maxgap, maxovlp = 10L){
 
         mem <- data.frame(
             idx = seq_len(igraph::vcount(g)),
-            grp = as.numeric(igraph::membership(igraph::clusters(g)))) %>%
+            grp = as.numeric(igraph::membership(igraph::components(g)))) %>%
           dplyr::group_by(grp) %>%
           dplyr::filter(dplyr::n() > 1) %>%
           dplyr::ungroup() %>%
@@ -377,7 +377,7 @@ assignLociID <- function(gr, pilegap = 0L, pairgap = 200L, maxovlp = 10L,
         el = pp_el, directed = FALSE
       ))
 
-      mem <- igraph::membership(igraph::clusters(g))
+      mem <- igraph::membership(igraph::components(g))
       gs$mem <- mem[gs$pile.id]
       gs
 
@@ -717,7 +717,7 @@ alnTargetSeqs <- function(seqs, target.seqs, tolerance, fixed = 'subject'){
   )
 
   dplyr::group_by(df, start, end, width, names, target) %>%
-    dplyr::mutate(target.mismatch = min(mismatches)) %>%
+    dplyr::mutate(target.mismatch = min(mismatches, rm.na = TRUE)) %>%
     dplyr::ungroup() %>%
     dplyr::select(names, target, target.mismatch, start, end, width) %>%
     dplyr::distinct() %>%
@@ -726,7 +726,8 @@ alnTargetSeqs <- function(seqs, target.seqs, tolerance, fixed = 'subject'){
       start = ifelse(start <= 0, 1, start),
       end = ifelse(end > nt_width, nt_width, end),
       width = end - start + 1
-    )
+    ) %>%
+    as.data.frame()
 
 }
 
@@ -954,13 +955,20 @@ filterInappropriateComparisons <- function(guideRNA.match, specimen, treatment){
       mapply(
         function(d, treat){
 
-          d$guideRNA <- ifelse(
-            stringr::str_extract(d$guideRNA, "[\\w\\-\\.]+") %in%
+          dr <- d
+
+          dr$guideRNA <- ifelse(
+            stringr::str_extract(dr$guideRNA, "[\\w\\-\\.]+") %in%
               as.character(treat),
-            d$guideRNA,
+            dr$guideRNA,
             "No_valid_match"
           )
-          d
+
+          if(nrow(dr) > 0){
+            return(dr)
+          }else{
+            return(d)
+          }
 
         },
         d = dfl,

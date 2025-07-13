@@ -7,7 +7,7 @@ __CORES=${2-1}
 __INSTALL=${3-miniconda3}  # Options include: miniconda3 (default) or anaconda
 
 # Clear test directory
-rm -rf analysis/simulation
+rm -rf analysis/simulation*
 
 # Activate conda environment
 if [[ ${__INSTALL} = "miniconda3" ]]; then

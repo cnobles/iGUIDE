@@ -13,7 +13,7 @@ dependencies:
   - pandoc
   - semantic_version
   - ruamel.yaml
-  - r=3.5.1
+  - r>=4.4
   - r-base
   - r-argparse
   - r-pander
