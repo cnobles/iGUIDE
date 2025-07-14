@@ -70,7 +70,7 @@ __reqs_install=false
 __update_lib=false
 __update_pkg=false
 __update_env=false
-__req_r_version="4.4.3"
+__req_r_version="4.4"
 __old_path=$PATH
 __output=${2-/dev/stdout}
 
@@ -348,7 +348,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.b1.0.1.txt"
+        __build_source="etc/build.b1.1.0.txt"
     fi
 
     info "Creating iGUIDE environment..."
