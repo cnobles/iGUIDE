@@ -70,7 +70,7 @@ __reqs_install=false
 __update_lib=false
 __update_pkg=false
 __update_env=false
-__req_r_version="3.4.1"
+__req_r_version="4.4.3"
 __old_path=$PATH
 __output=${2-/dev/stdout}
 

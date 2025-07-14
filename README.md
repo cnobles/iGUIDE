@@ -13,11 +13,17 @@ To get started, checkout the iGUIDE documentation at [iGUIDE.ReadTheDocs.io](htt
 
 ### Changelog:
 
+**v1.2.0 (July 13th, 2025)**
+
+* Updated build to R-base 4.4 (overdue) and rebuilt environment files.
+* Due to the large jump in many package versions, minor modifications needed to be made the the software, making many changes incompatible with prior scripts.
+* Special Note: ReadName patterns in configs need to be double escaped (ie. [\\\\w]). Please see simulation config files for examples.
+
 **v1.1.2 (April 17th, 2025)**
 
-- Resolved a bug dealing with factor levels during auxiliary workflow solutions.
-- Added a second simulation data set (B) and labeled the original simulation data set (A).
-- Expanded tests to cover auxiliary workflow solutions.
+* Resolved a bug dealing with factor levels during auxiliary workflow solutions.
+* Added a second simulation data set (B) and labeled the original simulation data set (A).
+* Expanded tests to cover auxiliary workflow solutions.
 
 **v1.1.1 (December 16th, 2024)**
 
