@@ -226,7 +226,7 @@ function install_environment () {
         local install_options="--quiet --file etc/requirements.yml"
         debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --yes --file etc/build.b1.0.1.txt"
+        local install_options="--quiet --yes --file etc/build.b1.1.0.txt"
         debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
 
