@@ -45,7 +45,7 @@ if [[ -f "analysis/simulationA/reports/simulationA.dag.svg" ]]; then
 fi
 
 echo "Test 05 - Run simulation A workflow."
-iguide run configs/simulationA.config.yml -- -p -w 30 --notemp --nolock --cores ${__CORES}
+iguide run configs/simulationA.config.yml -- -F -p -w 30 --notemp --nolock --cores ${__CORES}
 echo "Test 05 - PASS."
 
 # Evaluate and report out using a different metadata set

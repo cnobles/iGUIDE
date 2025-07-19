@@ -717,7 +717,9 @@ alnTargetSeqs <- function(seqs, target.seqs, tolerance, fixed = 'subject'){
   )
 
   dplyr::group_by(df, start, end, width, names, target) %>%
-    dplyr::mutate(target.mismatch = min(mismatches, rm.na = TRUE)) %>%
+    dplyr::arrange(mismatches) %>%
+    dplyr::slice(1) %>%
+    dplyr::mutate(target.mismatch = mismatches) %>%
     dplyr::ungroup() %>%
     dplyr::select(names, target, target.mismatch, start, end, width) %>%
     dplyr::distinct() %>%
