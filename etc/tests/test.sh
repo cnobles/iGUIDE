@@ -32,7 +32,7 @@ echo "Test 02 - PASS."
 
 # Generate test DAG graph and run
 echo "Test 03 - Dry run of simulation A."
-iguide run configs/simulationA.config.yml -- -np
+iguide run configs/simulationA.config.yml -- -np -F
 echo "Test 03 - PASS."
 
 echo "Test 04 - DAG generation of simulation A workflow."
