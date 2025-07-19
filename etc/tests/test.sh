@@ -71,7 +71,7 @@ fi
 
 # Generate simulation B data
 echo "Test 08 - Run Evaluation workflow on simulation B."
-iguide run configs/simulationB.config.yml -- -p -w 30 --notemp --nolock --cores ${__CORES}
+iguide run configs/simulationB.config.yml -- -F -p -w 30 --notemp --nolock --cores ${__CORES}
 echo "Test 08 - PASS."
 
 # Generate combination simulation data
