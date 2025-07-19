@@ -18,14 +18,14 @@ file3 :
 file4 :
     name : "stats.core.simulationB.csv"
     path : "analysis/simulationB/output/stats.core.simulationB.csv"
-    md5  : "2e2b32656368fe6d373dc4dc12c52a68"
+    md5  : "39754e02b3912c7705c89ea64a5d1f5c"
 
 file5 :
     name : "stats.eval.simulationB.csv"
     path : "analysis/simulationB/output/stats.eval.simulationB.csv"
-    md5  : "325486ab8481dac5d22365e121add6f7"
+    md5  : "7e914891f3ba407ea9dbd7e65230a147"
 
 file6 :
     name : "iguide.stat.combination.test.csv"
     path : "analysis/simulationB/reports/iguide.stat.combination.test.csv"
-    md5  : "fcd32b9d57df303b7637b91a9563d4dc"
+    md5  : "df690b5d569abd93a9c1b04979b0867d"
