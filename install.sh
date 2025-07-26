@@ -70,7 +70,7 @@ __reqs_install=false
 __update_lib=false
 __update_pkg=false
 __update_env=false
-__req_r_version="3.4.1"
+__req_r_version="4.4"
 __old_path=$PATH
 __output=${2-/dev/stdout}
 
@@ -184,7 +184,11 @@ function __test_iguide () {
 }
 
 function __test_bashrc () {
-  grep conda.sh ~/.bashrc > /dev/null && echo true || echo false
+    grep conda.sh ~/.bashrc > /dev/null && echo true || echo false
+}
+
+function __test_git () {
+    command -v git &> /dev/null && echo true || echo false
 }
 
 function activate_iguide () {
@@ -222,7 +226,7 @@ function install_environment () {
         local install_options="--quiet --file etc/requirements.yml"
         debug_capture conda env update --name=$__iguide_env ${install_options} 2>&1
     else
-        local install_options="--quiet --yes --file etc/build.b1.0.1.txt"
+        local install_options="--quiet --yes --file etc/build.b1.1.0.txt"
         debug_capture conda create --name=$__iguide_env ${install_options} 2>&1
     fi
 
@@ -242,14 +246,18 @@ function install_environment () {
 function install_iguideSupport () {
     activate_iguide
     
-    if [[ $(__unittest_iguideSupport) != true ]]; then
-        installation_error "iGUIDE Support R-package unit tests"
+    if [[ $(__test_env) != true ]]; then
+        installation_error "Environment creation"
     else
         debug_capture R CMD INSTALL tools/iguideSupport &> /dev/null
     fi
-    
+
     if [[ $(__test_iguideSupport) != true ]]; then
       	installation_error "iGUIDE Support R-package installation"
+    fi
+
+    if [[ $(__unittest_iguideSupport) != true ]]; then
+        installation_error "iGUIDE Support R-package unit tests"
     fi
     
     deactivate_iguide
@@ -272,7 +280,7 @@ function install_env_vars () {
 function install_iguidelib () {
     activate_iguide
 
-    debug_capture pip install --upgrade ${__iguide_dir}/tools/iguidelib/ 2>&1
+    debug_capture pip install --upgrade ${__iguide_dir}/tools/iguidelib/ --use-pep517 --no-build-isolation 2>&1
 
     if [[ $(__test_iguidelib) != true ]]; then
       	installation_error "Library installation"
@@ -288,8 +296,14 @@ info "    iGUIDE src:  ${__iguide_dir}"
 info "    iGUIDE env:  '${__iguide_env}'"
 
 debug "Components detected:"
+__git_installed=$(__test_git)
+debug "    Git:           ${__git_installed}"
 __conda_installed=$(__test_conda)
 debug "    Conda:         ${__conda_installed}"
+
+if [[ $__git_installed = false ]]; then
+    installation_error "Git check"
+fi
 
 if [[ $__conda_installed = false ]]; then
     PATH=$PATH:${__conda_path}/bin
@@ -334,7 +348,7 @@ else
     if [[ $__reqs_install = "true" ]]; then
         __build_source="etc/requirements.yml"
     else
-        __build_source="etc/build.b1.0.1.txt"
+        __build_source="etc/build.b1.1.0.txt"
     fi
 
     info "Creating iGUIDE environment..."

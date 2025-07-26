@@ -5,10 +5,10 @@ ref_genome <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
 expected_sites <- GenomicRanges::GRanges(
   seqnames = c("chr3", "chr4", "chr6", "chr9", "chr18"),
   ranges = IRanges::IRanges(
-    start = c(40843844, 33583665, 117347610, 53157926, 61874684),
+    start = c(79310131L, 85229418L, 129367534L, 21612295L, 73949913L),
     width = 1
   ),
-  strand = c("-", "-", "-", "-", "+"),
+  strand = c("+", "+", "+", "-", "-"),
   seqinfo = GenomeInfoDb::seqinfo(ref_genome)
 )
 

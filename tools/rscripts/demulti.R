@@ -267,7 +267,7 @@ parseIndexReads <- function(barcode.seqs, reads, indices = NULL,
   # Sequence variability accounted for and ambiguous, degenerate, and unassigned
   # sequences identified
   degenerate_idxs <- which(
-    stringr::str_count(unique_index_seqs, "N") > max.N.count
+    stringr::str_count(as.character(unique_index_seqs), "N") > max.N.count
   )
   
   ambiguous_idxs <- as.numeric(names(table(unlist(bc_to_unique_idxs)))[
