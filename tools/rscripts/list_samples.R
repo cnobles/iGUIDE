@@ -149,7 +149,7 @@ sample_info <- sample_info %>%
     specimen = stringr::str_extract(sample_info$sampleName, "[\\w]+")
   ) %>%
   dplyr::group_by(specimen) %>%
-  dplyr::summarise(replicates = n()) %>%
+  dplyr::summarise(replicates = dplyr::n()) %>%
   dplyr::ungroup()
 
 if( exists("supp_info") ){

@@ -258,19 +258,19 @@ calcPctID <- function(cigar, MD){
       mismatch = rowSums(matrix(
         stringr::str_extract_all(md, "[ATGC]", simplify = TRUE) %in% 
           c("A", "T", "G", "C"), 
-        nrow = n()), na.rm = TRUE
+        nrow = dplyr::n()), na.rm = TRUE
       ),
       match = rowSums(matrix(as.numeric(gsub(
           "M", "",stringr::str_extract_all(cig, "[0-9]+M", simplify = TRUE)
         )), 
-        nrow = n()), na.rm = TRUE
+        nrow = dplyr::n()), na.rm = TRUE
       ) - mismatch,
       length = rowSums(matrix(as.numeric(gsub(
           "[HSMIDX=]", "", stringr::str_extract_all(
             cig, "[0-9]+[HSMIDX=]", simplify = TRUE
           )
         )),
-        nrow = n()), na.rm = TRUE
+        nrow = dplyr::n()), na.rm = TRUE
       ),
       pctID = round(100 * (match / length), digits = 1)
     ) %>%
@@ -406,7 +406,7 @@ cntClipped <- function(cigar, type = "both", end = "5p"){
       seqnames = as.character(seqnames),
       strand = as.character(strand),
       type = "anchor",
-      anchorid = seq_len(n()),
+      anchorid = seq_len(dplyr::n()),
       posid = paste0("anchor:", seqnames, strand, start)
     )
   
@@ -761,12 +761,12 @@ if( nrow(all_valid_aligns) == 0 ){
 ## Group alignments into unique and multihit alignments ----
 uniq_aligns <- all_valid_aligns %>%
   dplyr::group_by(id) %>%
-  dplyr::filter(n() == 1) %>%
+  dplyr::filter(dplyr::n() == 1) %>%
   dplyr::ungroup()
 
 multihits <- all_valid_aligns %>%
   dplyr::group_by(id) %>%
-  dplyr::filter(n() > 1) %>%
+  dplyr::filter(dplyr::n() > 1) %>%
   dplyr::ungroup()
 
 ## Recover any reads not captured in the two groups above ----
